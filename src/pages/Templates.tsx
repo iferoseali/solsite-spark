@@ -208,8 +208,10 @@ const TemplatePreviewCard = ({
             </div>
             <iframe
               src={previewUrl}
-              className="w-full h-full"
+              className="w-full h-full border-0"
               title={`Preview: ${layout.name} × ${personality.name}`}
+              sandbox="allow-scripts allow-same-origin"
+              loading="lazy"
             />
           </div>
         </div>

@@ -66,6 +66,125 @@ function generateWebsiteHTML(project: Project, template: Template | null): strin
     </a>` : ''}
   `;
 
+  // Layout-specific sections
+  const statsSection = (layout === 'stats-heavy' || layout === 'hero-roadmap') ? `
+    <section class="stats-section fade-in-section">
+      <div class="container">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value" data-counter="1000000">1M+</div>
+            <div class="stat-label">Total Supply</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" data-counter="5000">5,000+</div>
+            <div class="stat-label">Holders</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" data-counter="100">$100K+</div>
+            <div class="stat-label">Market Cap</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">0%</div>
+            <div class="stat-label">Buy/Sell Tax</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  ` : '';
+
+  const communitySection = (layout === 'community' || layout === 'hero-roadmap') ? `
+    <section class="community-section fade-in-section">
+      <div class="container">
+        <h2 class="section-title">Join the Community</h2>
+        <p class="community-subtitle">Connect with fellow ${project.coin_name} enthusiasts</p>
+        <div class="community-grid">
+          ${project.twitter_url ? `
+          <a href="${project.twitter_url}" target="_blank" rel="noopener" class="community-card twitter">
+            <div class="community-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
+            </div>
+            <div class="community-name">Twitter</div>
+            <div class="community-action">Follow Us</div>
+          </a>
+          ` : ''}
+          ${project.discord_url ? `
+          <a href="${project.discord_url}" target="_blank" rel="noopener" class="community-card discord">
+            <div class="community-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M7.5 7.5c3.5-1 5.5-1 9 0"/><path d="M7 16.5c3.5 1 6.5 1 10 0"/></svg>
+            </div>
+            <div class="community-name">Discord</div>
+            <div class="community-action">Join Server</div>
+          </a>
+          ` : ''}
+          ${project.telegram_url ? `
+          <a href="${project.telegram_url}" target="_blank" rel="noopener" class="community-card telegram">
+            <div class="community-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+            </div>
+            <div class="community-name">Telegram</div>
+            <div class="community-action">Join Group</div>
+          </a>
+          ` : ''}
+        </div>
+      </div>
+    </section>
+  ` : '';
+
+  const storySection = (layout === 'story-lore') ? `
+    <section class="story-section fade-in-section">
+      <div class="container">
+        <h2 class="section-title">The Legend of ${project.coin_name}</h2>
+        <div class="story-content">
+          <div class="story-chapter">
+            <div class="chapter-number">Chapter I</div>
+            <h3 class="chapter-title">The Beginning</h3>
+            <p class="chapter-text">${project.description || `In the vast digital cosmos of Solana, a new force emerged. ${project.coin_name} was born from the collective dreams of degens and visionaries alike, destined to reshape the meme coin landscape forever.`}</p>
+          </div>
+          <div class="story-chapter">
+            <div class="chapter-number">Chapter II</div>
+            <h3 class="chapter-title">The Journey</h3>
+            <p class="chapter-text">As word spread across the blockchain, believers gathered. Each holder became part of something greater—a movement that transcended mere transactions. ${project.ticker} became a symbol of unity and endless possibility.</p>
+          </div>
+          <div class="story-chapter">
+            <div class="chapter-number">Chapter III</div>
+            <h3 class="chapter-title">The Future</h3>
+            <p class="chapter-text">The path ahead glows with promise. With diamond hands and unwavering conviction, the ${project.coin_name} community marches toward the moon. This is not just a coin—it's a legacy in the making.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  ` : '';
+
+  const utilitySection = (layout === 'utility') ? `
+    <section class="utility-section fade-in-section">
+      <div class="container">
+        <h2 class="section-title">Token Utility</h2>
+        <div class="utility-grid">
+          <div class="utility-card">
+            <div class="utility-icon">🔒</div>
+            <h3 class="utility-title">Staking Rewards</h3>
+            <p class="utility-desc">Stake your ${project.ticker} to earn passive rewards and participate in governance decisions.</p>
+          </div>
+          <div class="utility-card">
+            <div class="utility-icon">🎮</div>
+            <h3 class="utility-title">Exclusive Access</h3>
+            <p class="utility-desc">Holders get early access to new features, NFT drops, and community events.</p>
+          </div>
+          <div class="utility-card">
+            <div class="utility-icon">💎</div>
+            <h3 class="utility-title">Holder Benefits</h3>
+            <p class="utility-desc">Diamond hand rewards, airdrops, and special perks for long-term believers.</p>
+          </div>
+          <div class="utility-card">
+            <div class="utility-icon">🌐</div>
+            <h3 class="utility-title">Ecosystem Integration</h3>
+            <p class="utility-desc">Use ${project.ticker} across partner platforms and upcoming DeFi integrations.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  ` : '';
+
   const roadmapSection = project.show_roadmap ? `
     <section class="roadmap-section fade-in-section">
       <h2 class="section-title">Roadmap</h2>
@@ -520,6 +639,188 @@ function generateWebsiteHTML(project: Project, template: Template | null): strin
       margin: 0 auto;
     }
 
+    /* Stats Section */
+    .stats-section {
+      padding: 60px 0;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 24px;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 32px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--primary);
+    }
+
+    .stat-value {
+      font-size: 36px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* Community Section */
+    .community-section {
+      padding: 80px 0;
+    }
+
+    .community-subtitle {
+      text-align: center;
+      color: var(--text-muted);
+      margin-bottom: 48px;
+      font-size: 18px;
+    }
+
+    .community-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 24px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .community-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 32px;
+      text-align: center;
+      text-decoration: none;
+      color: var(--text);
+      transition: all 0.3s ease;
+    }
+
+    .community-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .community-card.twitter:hover { border-color: #1DA1F2; }
+    .community-card.discord:hover { border-color: #5865F2; }
+    .community-card.telegram:hover { border-color: #0088cc; }
+
+    .community-icon {
+      margin-bottom: 16px;
+    }
+
+    .community-icon svg {
+      width: 48px;
+      height: 48px;
+    }
+
+    .community-name {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .community-action {
+      color: var(--primary);
+      font-size: 14px;
+    }
+
+    /* Story Section */
+    .story-section {
+      padding: 80px 0;
+    }
+
+    .story-content {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .story-chapter {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 40px;
+      margin-bottom: 24px;
+      transition: all 0.3s ease;
+    }
+
+    .story-chapter:hover {
+      border-color: var(--primary);
+    }
+
+    .chapter-number {
+      color: var(--primary);
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .chapter-title {
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+
+    .chapter-text {
+      color: var(--text-muted);
+      line-height: 1.8;
+      font-size: 16px;
+    }
+
+    /* Utility Section */
+    .utility-section {
+      padding: 80px 0;
+    }
+
+    .utility-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 24px;
+    }
+
+    .utility-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 32px;
+      transition: all 0.3s ease;
+    }
+
+    .utility-card:hover {
+      transform: translateY(-8px);
+      border-color: var(--primary);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .utility-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .utility-title {
+      font-size: 20px;
+      margin-bottom: 12px;
+    }
+
+    .utility-desc {
+      color: var(--text-muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
     /* Animations */
     .fade-in-section {
       opacity: 0;
@@ -552,6 +853,10 @@ function generateWebsiteHTML(project: Project, template: Template | null): strin
       .btn {
         width: 100%;
         text-align: center;
+      }
+
+      .stats-grid, .community-grid, .utility-grid {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -590,6 +895,11 @@ function generateWebsiteHTML(project: Project, template: Template | null): strin
       </div>
     </section>
     ` : ''}
+
+    ${statsSection}
+    ${storySection}
+    ${utilitySection}
+    ${communitySection}
 
     <div class="container">
       ${roadmapSection}
