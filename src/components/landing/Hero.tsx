@@ -1,25 +1,27 @@
 import { Button } from "@/components/ui/button";
 import { Sparkles, ArrowRight, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
-
 export const Hero = () => {
-  return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+  return <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background effects */}
       <div className="absolute inset-0 bg-grid opacity-30" />
       <div className="absolute top-1/4 -left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[120px] animate-pulse-soft" />
-      <div className="absolute bottom-1/4 -right-1/4 w-96 h-96 bg-accent/20 rounded-full blur-[120px] animate-pulse-soft" style={{ animationDelay: '2s' }} />
+      <div className="absolute bottom-1/4 -right-1/4 w-96 h-96 bg-accent/20 rounded-full blur-[120px] animate-pulse-soft" style={{
+      animationDelay: '2s'
+    }} />
       
       {/* Floating elements */}
       <div className="absolute top-20 right-20 w-20 h-20 border border-primary/30 rounded-full animate-float opacity-40" />
-      <div className="absolute bottom-40 left-20 w-16 h-16 border border-accent/30 rounded-lg rotate-45 animate-float opacity-40" style={{ animationDelay: '1s' }} />
+      <div className="absolute bottom-40 left-20 w-16 h-16 border border-accent/30 rounded-lg rotate-45 animate-float opacity-40" style={{
+      animationDelay: '1s'
+    }} />
       
       <div className="container relative z-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-8 fade-in-up fade-in-delay-1">
             <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-muted-foreground">The fastest way to launch your meme coin</span>
+            <span className="text-sm font-medium text-muted-foreground">The fastest way to launch your Website</span>
           </div>
           
           {/* Main heading */}
@@ -56,7 +58,9 @@ export const Hero = () => {
           </div>
           
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-8 mt-16 max-w-lg mx-auto fade-in-up" style={{ animationDelay: '0.5s' }}>
+          <div className="grid grid-cols-3 gap-8 mt-16 max-w-lg mx-auto fade-in-up" style={{
+          animationDelay: '0.5s'
+        }}>
             <div className="text-center">
               <div className="text-3xl sm:text-4xl font-bold text-gradient-primary">30+</div>
               <div className="text-sm text-muted-foreground mt-1">Templates</div>
@@ -72,6 +76,5 @@ export const Hero = () => {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
