@@ -26,13 +26,13 @@ export const Hero = () => {
           
           {/* Main heading */}
           <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-display font-bold leading-tight mb-6 fade-in-up fade-in-delay-2">
-            Build Your{" "}
-            <span className="text-gradient-primary text-primary bg-primary">​Website</span>
+            <span className="inline-block animate-slide-in-left">Build Your</span>{" "}
+            <span className="inline-block animate-slide-in-right text-primary">Website</span>
             <br />
-            Website in{" "}
-            <span className="relative inline-block">
-              <span className="text-primary">Seconds</span>
-              <Zap className="absolute -top-2 -right-8 w-8 h-8 text-primary animate-pulse" />
+            <span className="inline-block animate-slide-in-left" style={{ animationDelay: '0.2s' }}>in less than</span>{" "}
+            <span className="relative inline-block animate-slide-in-right" style={{ animationDelay: '0.3s' }}>
+              <span className="text-primary">60 Seconds</span>
+              <Zap className="absolute -top-2 -right-8 w-8 h-8 text-primary animate-bounce" />
             </span>
           </h1>
           
