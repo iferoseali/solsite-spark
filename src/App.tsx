@@ -11,6 +11,7 @@ import Builder from "./pages/Builder";
 import Dashboard from "./pages/Dashboard";
 import Site from "./pages/Site";
 import WebsiteRenderer from "./pages/WebsiteRenderer";
+import TemplateBuilder from "./pages/admin/TemplateBuilder";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/site/:subdomain" element={<Site />} />
               <Route path="/preview" element={<WebsiteRenderer />} />
+              <Route path="/admin/template-builder" element={<TemplateBuilder />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

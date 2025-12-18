@@ -187,6 +187,48 @@ export type Database = {
           },
         ]
       }
+      template_blueprints: {
+        Row: {
+          animations: Json
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          layout_category: string | null
+          name: string
+          personality: string | null
+          reference_url: string | null
+          sections: Json
+          styles: Json
+          updated_at: string | null
+        }
+        Insert: {
+          animations?: Json
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          layout_category?: string | null
+          name: string
+          personality?: string | null
+          reference_url?: string | null
+          sections?: Json
+          styles?: Json
+          updated_at?: string | null
+        }
+        Update: {
+          animations?: Json
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          layout_category?: string | null
+          name?: string
+          personality?: string | null
+          reference_url?: string | null
+          sections?: Json
+          styles?: Json
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       templates: {
         Row: {
           config: Json | null
