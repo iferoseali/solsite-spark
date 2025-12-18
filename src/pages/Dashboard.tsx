@@ -209,7 +209,7 @@ const Dashboard = () => {
                     {project.status === 'published' && project.subdomain && (
                       <Button variant="ghost" size="sm" asChild>
                         <a 
-                          href={`https://${project.subdomain}.solsite.xyz`}
+                          href={`/site/${project.subdomain}`}
                           target="_blank"
                           rel="noopener noreferrer"
                         >

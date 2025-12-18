@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Templates from "./pages/Templates";
 import Builder from "./pages/Builder";
 import Dashboard from "./pages/Dashboard";
+import Site from "./pages/Site";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
               <Route path="/templates" element={<Templates />} />
               <Route path="/builder" element={<Builder />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/site/:subdomain" element={<Site />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
