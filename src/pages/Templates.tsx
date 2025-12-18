@@ -3,47 +3,76 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, Check, Eye, Sparkles, Layout, Palette } from "lucide-react";
+import { ArrowRight, Check, Eye, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-const layouts = [
-  { id: "minimal", name: "Minimal", description: "Clean and simple single-page design", icon: "◻️" },
-  { id: "hero-roadmap", name: "Hero + Roadmap", description: "Full featured with timeline", icon: "📊" },
-  { id: "story-lore", name: "Story/Lore", description: "Narrative driven experience", icon: "📖" },
-  { id: "stats-heavy", name: "Stats Heavy", description: "Data and metrics focused", icon: "📈" },
-  { id: "community", name: "Community", description: "Social engagement first", icon: "👥" },
-  { id: "utility", name: "Utility/Serious", description: "Professional and functional", icon: "⚙️" },
-];
-
-const personalities = [
-  { id: "degen", name: "Degenerate", emoji: "🔥", color: "from-red-500 to-orange-500", bg: "bg-gradient-to-br from-red-950 to-orange-950" },
-  { id: "professional", name: "Professional", emoji: "💼", color: "from-blue-500 to-cyan-500", bg: "bg-gradient-to-br from-blue-950 to-cyan-950" },
-  { id: "dark-cult", name: "Dark Cult", emoji: "🌙", color: "from-purple-500 to-pink-500", bg: "bg-gradient-to-br from-purple-950 to-pink-950" },
-  { id: "playful", name: "Playful Meme", emoji: "😂", color: "from-yellow-500 to-green-500", bg: "bg-gradient-to-br from-yellow-950 to-green-950" },
-  { id: "premium", name: "Premium", emoji: "👑", color: "from-gray-400 to-gray-600", bg: "bg-gradient-to-br from-gray-900 to-slate-900" },
-];
-
-interface Template {
+interface TemplateBlueprint {
   id: string;
-  layout_id: string;
-  personality_id: string;
   name: string;
-  config: {
-    primary_color?: string;
-    accent_color?: string;
+  personality: string;
+  layout_category: string;
+  styles: {
+    background?: string;
+    primary?: string;
+    text?: string;
   };
+  sections: unknown[];
+  animations: Record<string, string>;
+  is_active: boolean;
 }
 
-const TemplatePreviewCard = ({ 
-  template, 
-  layout, 
-  personality, 
-  isSelected, 
-  onSelect 
-}: { 
-  template: Template;
-  layout: typeof layouts[0];
-  personality: typeof personalities[0];
+// Map blueprint names to render-site templateId
+const templateIdMap: Record<string, string> = {
+  "Cult Minimal": "cult_minimal",
+  "VC Grade Pro": "vc_pro",
+  "Degenerate Meme": "degen_meme",
+  "Dark Cult Narrative": "dark_cult",
+  "Luxury Token": "luxury_token",
+  "Builder Utility": "builder_utility",
+};
+
+// Template metadata for display
+const templateMeta: Record<string, { emoji: string; tagline: string; features: string[] }> = {
+  "cult_minimal": {
+    emoji: "⚡",
+    tagline: "Stark, glitchy, monospace aesthetic for cult followings",
+    features: ["Matrix rain effect", "Glitch text animation", "Neon green accents"],
+  },
+  "vc_pro": {
+    emoji: "💼",
+    tagline: "Clean, professional design that screams legitimacy",
+    features: ["Gradient orb backgrounds", "Glass morphism cards", "Split hero layout"],
+  },
+  "degen_meme": {
+    emoji: "🚀",
+    tagline: "Wild, chaotic energy for maximum degen appeal",
+    features: ["Floating emoji particles", "Shake animations", "Giant ticker display"],
+  },
+  "dark_cult": {
+    emoji: "🌙",
+    tagline: "Mysterious, moody atmosphere for lore-heavy projects",
+    features: ["Fog particle effects", "Serif typography", "Blood red accents"],
+  },
+  "luxury_token": {
+    emoji: "👑",
+    tagline: "Elegant, refined design for premium positioning",
+    features: ["Gold dust particles", "Shimmer text effects", "Minimal layout"],
+  },
+  "builder_utility": {
+    emoji: "⚙️",
+    tagline: "Terminal-inspired design for utility-focused tokens",
+    features: ["Grid line background", "Monospace fonts", "Dev-focused aesthetic"],
+  },
+};
+
+const TemplateCard = ({
+  template,
+  templateId,
+  isSelected,
+  onSelect,
+}: {
+  template: TemplateBlueprint;
+  templateId: string;
   isSelected: boolean;
   onSelect: () => void;
 }) => {
@@ -53,22 +82,12 @@ const TemplatePreviewCard = ({
   const [isLoading, setIsLoading] = useState(false);
   const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
 
-  const templateKeyByLayout: Record<string, string> = {
-    minimal: "cult_minimal",
-    "hero-roadmap": "vc_pro",
-    "story-lore": "dark_cult",
-    "stats-heavy": "luxury_token",
-    community: "degen_meme",
-    utility: "builder_utility",
-  };
+  const previewUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?preview=true&templateId=${templateId}`;
+  const meta = templateMeta[templateId] || { emoji: "🎨", tagline: "Custom template", features: [] };
 
-  const templateKey = templateKeyByLayout[layout.id] ?? "cult_minimal";
-  const previewUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?preview=true&templateId=${templateKey}`;
-
-  // Load thumbnail preview on mount (cached in localStorage)
+  // Load thumbnail on mount
   useEffect(() => {
-    const key = `tplthumb:v2:${templateKey}`;
-
+    const key = `tplthumb:v3:${templateId}`;
     const fromCache = (() => {
       try {
         return localStorage.getItem(key);
@@ -95,11 +114,11 @@ const TemplatePreviewCard = ({
           // ignore quota / private mode
         }
       } catch (error) {
-        console.error('Error loading thumbnail:', error);
+        console.error("Error loading thumbnail:", error);
       }
     };
     loadThumbnail();
-  }, [previewUrl, templateKey]);
+  }, [previewUrl, templateId]);
 
   const loadPreview = async () => {
     setIsLoading(true);
@@ -108,7 +127,7 @@ const TemplatePreviewCard = ({
       const html = await response.text();
       setPreviewHtml(html);
     } catch (error) {
-      console.error('Error loading preview:', error);
+      console.error("Error loading preview:", error);
     } finally {
       setIsLoading(false);
     }
@@ -119,15 +138,20 @@ const TemplatePreviewCard = ({
       onClick={onSelect}
       className={`group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-500 ${
         isSelected
-          ? 'ring-2 ring-primary shadow-2xl shadow-primary/30 scale-[1.02]'
-          : 'hover:ring-1 hover:ring-primary/50 hover:shadow-xl'
+          ? "ring-2 ring-primary shadow-2xl shadow-primary/30 scale-[1.02]"
+          : "hover:ring-1 hover:ring-primary/50 hover:shadow-xl"
       }`}
     >
-      {/* Background gradient based on personality */}
-      <div className={`absolute inset-0 ${personality.bg} opacity-90`} />
-      
+      {/* Background with template colors */}
+      <div
+        className="absolute inset-0 opacity-90"
+        style={{
+          background: `linear-gradient(135deg, ${template.styles?.background || "#0a0a0a"} 0%, ${template.styles?.primary || "#00d4ff"}20 100%)`,
+        }}
+      />
+
       {/* Live preview thumbnail */}
-      <div className="relative aspect-[3/4] p-3">
+      <div className="relative aspect-[4/5] p-4">
         <div className="w-full h-full rounded-xl bg-black/40 backdrop-blur-sm border border-white/10 overflow-hidden flex flex-col">
           {/* Mini browser header */}
           <div className="flex items-center gap-1.5 px-3 py-2 bg-black/30 border-b border-white/5">
@@ -135,32 +159,36 @@ const TemplatePreviewCard = ({
             <div className="w-2 h-2 rounded-full bg-yellow-400" />
             <div className="w-2 h-2 rounded-full bg-green-400" />
             <div className="flex-1 mx-3 h-4 rounded bg-white/5 flex items-center px-2">
-              <span className="text-[8px] text-white/40 truncate">solsite.xyz/{template.name.toLowerCase().replace(/\s/g, '-')}</span>
+              <span className="text-[8px] text-white/40 truncate">
+                solsite.xyz/preview
+              </span>
             </div>
           </div>
-          
+
           {/* Actual website preview - scaled down */}
           <div className="flex-1 relative overflow-hidden">
             {thumbnailLoaded && thumbnailHtml ? (
-              <div className="absolute inset-0 origin-top-left" style={{ transform: 'scale(0.25)', width: '400%', height: '400%' }}>
+              <div
+                className="absolute inset-0 origin-top-left"
+                style={{ transform: "scale(0.22)", width: "455%", height: "455%" }}
+              >
                 <iframe
                   srcDoc={thumbnailHtml}
                   className="w-full h-full border-0 pointer-events-none"
-                  title={`Thumbnail: ${layout.name} × ${personality.name}`}
+                  title={`Thumbnail: ${template.name}`}
                   sandbox="allow-scripts"
                 />
               </div>
             ) : (
-              // Loading skeleton
-              <div className="flex-1 p-3 flex flex-col gap-2 animate-pulse">
-                <div className="flex flex-col items-center justify-center py-4 gap-2">
-                  <div 
-                    className="w-12 h-12 rounded-full"
-                    style={{ background: `linear-gradient(135deg, ${template.config?.primary_color || '#ff4444'}, ${template.config?.accent_color || '#ff8800'})` }}
-                  />
-                  <div className="w-20 h-3 rounded bg-white/20" />
-                  <div className="w-28 h-2 rounded bg-white/10" />
-                </div>
+              <div className="flex-1 p-3 flex flex-col gap-2 animate-pulse h-full items-center justify-center">
+                <div
+                  className="w-16 h-16 rounded-full"
+                  style={{
+                    background: `linear-gradient(135deg, ${template.styles?.primary || "#00d4ff"}, ${template.styles?.background || "#0a0a0a"})`,
+                  }}
+                />
+                <div className="w-24 h-3 rounded bg-white/20" />
+                <div className="w-32 h-2 rounded bg-white/10" />
               </div>
             )}
           </div>
@@ -169,7 +197,7 @@ const TemplatePreviewCard = ({
 
       {/* Selection indicator */}
       {isSelected && (
-        <div className="absolute top-4 right-4 w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-lg">
+        <div className="absolute top-5 right-5 w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-lg">
           <Check className="w-5 h-5 text-primary-foreground" />
         </div>
       )}
@@ -187,44 +215,50 @@ const TemplatePreviewCard = ({
           }}
         >
           <Eye className="w-4 h-4" />
-          Preview
+          Full Preview
         </Button>
       </div>
 
-      {/* Label */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-lg">{personality.emoji}</span>
-          <h3 className="font-semibold text-white">{layout.name}</h3>
+      {/* Label section */}
+      <div className="relative p-5 bg-gradient-to-t from-black/90 via-black/60 to-transparent -mt-8 pt-12">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-2xl">{meta.emoji}</span>
+          <h3 className="font-bold text-lg text-white">{template.name}</h3>
         </div>
-        <p className="text-xs text-white/60">{personality.name} personality</p>
+        <p className="text-sm text-white/60 mb-3 line-clamp-2">{meta.tagline}</p>
+        <div className="flex flex-wrap gap-1.5">
+          {meta.features.slice(0, 2).map((feature, i) => (
+            <span
+              key={i}
+              className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/70"
+            >
+              {feature}
+            </span>
+          ))}
+        </div>
       </div>
 
       {/* Preview modal */}
       {showPreview && (
-        <div 
+        <div
           className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={(e) => {
             e.stopPropagation();
             setShowPreview(false);
           }}
         >
-          <div 
-            className="relative w-full max-w-5xl h-[80vh] rounded-2xl overflow-hidden bg-background border border-border shadow-2xl"
+          <div
+            className="relative w-full max-w-6xl h-[85vh] rounded-2xl overflow-hidden bg-background border border-border shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="absolute top-4 right-4 z-10 flex gap-2">
-              <Link to={`/builder?layout=${layout.id}&personality=${personality.id}`}>
+              <Link to={`/builder?templateId=${templateId}&blueprintId=${template.id}`}>
                 <Button variant="glow" size="sm" className="gap-2">
                   <Sparkles className="w-4 h-4" />
-                  Use Template
+                  Use This Template
                 </Button>
               </Link>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowPreview(false)}
-              >
+              <Button variant="outline" size="sm" onClick={() => setShowPreview(false)}>
                 Close
               </Button>
             </div>
@@ -236,7 +270,7 @@ const TemplatePreviewCard = ({
               <iframe
                 srcDoc={previewHtml}
                 className="w-full h-full border-0"
-                title={`Preview: ${layout.name} × ${personality.name}`}
+                title={`Preview: ${template.name}`}
                 sandbox="allow-scripts"
               />
             ) : null}
@@ -248,165 +282,100 @@ const TemplatePreviewCard = ({
 };
 
 const Templates = () => {
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [selectedLayout, setSelectedLayout] = useState<string | null>(null);
-  const [selectedPersonality, setSelectedPersonality] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'grid' | 'filter'>('grid');
+  const [templates, setTemplates] = useState<TemplateBlueprint[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchTemplates = async () => {
-      const { data } = await supabase
-        .from('templates')
-        .select('*');
-      if (data) {
-        setTemplates(data as Template[]);
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from("template_blueprints")
+        .select("*")
+        .eq("is_active", true)
+        .order("name");
+
+      if (data && !error) {
+        setTemplates(data as TemplateBlueprint[]);
       }
+      setIsLoading(false);
     };
     fetchTemplates();
   }, []);
 
-  const filteredTemplates = templates.filter(t => {
-    if (selectedLayout && t.layout_id !== selectedLayout) return false;
-    if (selectedPersonality && t.personality_id !== selectedPersonality) return false;
-    return true;
-  });
-
-  const selectedTemplate = selectedLayout && selectedPersonality
-    ? templates.find(t => t.layout_id === selectedLayout && t.personality_id === selectedPersonality)
+  const selectedTemplateData = templates.find((t) => t.id === selectedTemplate);
+  const selectedTemplateId = selectedTemplateData
+    ? templateIdMap[selectedTemplateData.name] || "cult_minimal"
     : null;
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       <main className="pt-24 pb-16">
         <div className="container px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="text-center mb-12 animate-fade-in">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-4">
-              Template{" "}
-              <span className="text-gradient-primary">Gallery</span>
+              Choose Your{" "}
+              <span className="text-gradient-primary">Template</span>
             </h1>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              6 layouts × 5 personalities = 30 unique combinations. Preview them all and find your coin's perfect match.
+              6 unique designs, each with distinct personality, animations, and visual effects.
+              Pick the one that matches your coin's vibe.
             </p>
           </div>
 
-          {/* Filters */}
-          <div className="mb-8 space-y-6">
-            {/* Layout Filter */}
-            <div className="flex flex-col items-center gap-3">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Layout className="w-4 h-4" />
-                <span>Filter by Layout</span>
-              </div>
-              <div className="flex flex-wrap justify-center gap-2">
-                <button
-                  onClick={() => setSelectedLayout(null)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                    !selectedLayout 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-secondary hover:bg-secondary/80 text-muted-foreground'
-                  }`}
-                >
-                  All Layouts
-                </button>
-                {layouts.map((l) => (
-                  <button
-                    key={l.id}
-                    onClick={() => setSelectedLayout(l.id === selectedLayout ? null : l.id)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
-                      selectedLayout === l.id 
-                        ? 'bg-primary text-primary-foreground' 
-                        : 'bg-secondary hover:bg-secondary/80 text-muted-foreground'
-                    }`}
-                  >
-                    <span>{l.icon}</span>
-                    <span>{l.name}</span>
-                  </button>
-                ))}
-              </div>
+          {/* Loading state */}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
-
-            {/* Personality Filter */}
-            <div className="flex flex-col items-center gap-3">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Palette className="w-4 h-4" />
-                <span>Filter by Personality</span>
+          ) : (
+            <>
+              {/* Template Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                {templates.map((template) => {
+                  const templateId = templateIdMap[template.name] || "cult_minimal";
+                  return (
+                    <TemplateCard
+                      key={template.id}
+                      template={template}
+                      templateId={templateId}
+                      isSelected={selectedTemplate === template.id}
+                      onSelect={() => setSelectedTemplate(template.id)}
+                    />
+                  );
+                })}
               </div>
-              <div className="flex flex-wrap justify-center gap-2">
-                <button
-                  onClick={() => setSelectedPersonality(null)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                    !selectedPersonality 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-secondary hover:bg-secondary/80 text-muted-foreground'
-                  }`}
-                >
-                  All Styles
-                </button>
-                {personalities.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => setSelectedPersonality(p.id === selectedPersonality ? null : p.id)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
-                      selectedPersonality === p.id 
-                        ? `bg-gradient-to-r ${p.color} text-white` 
-                        : 'bg-secondary hover:bg-secondary/80 text-muted-foreground'
-                    }`}
-                  >
-                    <span>{p.emoji}</span>
-                    <span>{p.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
 
-          {/* Results count */}
-          <div className="text-center mb-6">
-            <p className="text-sm text-muted-foreground">
-              Showing {filteredTemplates.length} template{filteredTemplates.length !== 1 ? 's' : ''}
-            </p>
-          </div>
+              {/* Empty state */}
+              {templates.length === 0 && (
+                <div className="text-center py-20 text-muted-foreground">
+                  <p>No templates available yet.</p>
+                </div>
+              )}
+            </>
+          )}
 
-          {/* Template Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
-            {filteredTemplates.map((template) => {
-              const layout = layouts.find(l => l.id === template.layout_id);
-              const personality = personalities.find(p => p.id === template.personality_id);
-              
-              if (!layout || !personality) return null;
-
-              const isSelected = selectedTemplate?.id === template.id;
-
-              return (
-                <TemplatePreviewCard
-                  key={template.id}
-                  template={template}
-                  layout={layout}
-                  personality={personality}
-                  isSelected={isSelected}
-                  onSelect={() => {
-                    setSelectedLayout(template.layout_id);
-                    setSelectedPersonality(template.personality_id);
-                  }}
-                />
-              );
-            })}
-          </div>
-
-          {/* CTA */}
-          {selectedTemplate && (
+          {/* Floating CTA */}
+          {selectedTemplate && selectedTemplateData && (
             <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 animate-fade-in">
               <div className="glass rounded-2xl p-4 shadow-2xl border border-primary/30 flex items-center gap-4">
                 <div>
-                  <p className="font-semibold">
-                    {layouts.find(l => l.id === selectedLayout)?.name} × {personalities.find(p => p.id === selectedPersonality)?.name}
+                  <p className="font-semibold flex items-center gap-2">
+                    <span className="text-xl">
+                      {templateMeta[selectedTemplateId || ""]?.emoji || "🎨"}
+                    </span>
+                    {selectedTemplateData.name}
                   </p>
-                  <p className="text-xs text-muted-foreground">Click to start building</p>
+                  <p className="text-xs text-muted-foreground">
+                    Click to start building your site
+                  </p>
                 </div>
-                <Link to={`/builder?layout=${selectedLayout}&personality=${selectedPersonality}`}>
+                <Link
+                  to={`/builder?templateId=${selectedTemplateId}&blueprintId=${selectedTemplate}`}
+                >
                   <Button variant="glow" className="gap-2">
                     Use Template
                     <ArrowRight className="w-4 h-4" />
