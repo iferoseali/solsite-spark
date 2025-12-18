@@ -5,13 +5,9 @@ import {
   SystemProgram,
   PublicKey,
   LAMPORTS_PER_SOL,
-  Connection,
 } from '@solana/web3.js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
-// Public RPC (no API key)
-const SOLANA_RPC = 'https://rpc.ankr.com/solana';
 
 // Treasury wallet address
 const TREASURY_WALLET = new PublicKey(import.meta.env.VITE_TREASURY_WALLET || '11111111111111111111111111111111');
@@ -66,8 +62,17 @@ export function usePayment() {
       throw new Error('Wallet not connected');
     }
 
-    // Use reliable RPC connection
-    const reliableConnection = new Connection(SOLANA_RPC, 'confirmed');
+    // Get blockhash via Edge Function to bypass CORS issues
+    const { data: rpcData, error: rpcError } = await supabase.functions.invoke('solana-rpc', {
+      body: { method: 'getLatestBlockhash', params: [{ commitment: 'confirmed' }] }
+    });
+
+    if (rpcError || !rpcData?.result?.value) {
+      console.error('Failed to get blockhash:', rpcError, rpcData);
+      throw new Error('Failed to get recent blockhash');
+    }
+
+    const { blockhash, lastValidBlockHeight } = rpcData.result.value;
 
     const lamports = Math.ceil(amount * LAMPORTS_PER_SOL);
     
@@ -79,21 +84,50 @@ export function usePayment() {
       })
     );
 
-    const { blockhash, lastValidBlockHeight } = await reliableConnection.getLatestBlockhash();
     transaction.recentBlockhash = blockhash;
     transaction.feePayer = publicKey;
 
-    const signature = await sendTransaction(transaction, reliableConnection);
+    // Sign and send using the wallet (wallet handles its own RPC)
+    const signedTx = await signTransaction(transaction);
     
-    // Wait for confirmation
-    await reliableConnection.confirmTransaction({
-      signature,
-      blockhash,
-      lastValidBlockHeight
+    // Send raw transaction via Edge Function
+    const { data: sendData, error: sendError } = await supabase.functions.invoke('solana-rpc', {
+      body: { 
+        method: 'sendRawTransaction', 
+        params: [Buffer.from(signedTx.serialize()).toString('base64'), { encoding: 'base64' }] 
+      }
     });
 
+    if (sendError || sendData?.error || !sendData?.result) {
+      console.error('Failed to send transaction:', sendError, sendData);
+      throw new Error(sendData?.error || 'Failed to send transaction');
+    }
+
+    const signature = sendData.result;
+
+    // Confirm transaction via Edge Function
+    let confirmed = false;
+    let attempts = 0;
+    while (!confirmed && attempts < 30) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const { data: statusData } = await supabase.functions.invoke('solana-rpc', {
+        body: { method: 'getSignatureStatuses', params: [[signature]] }
+      });
+
+      const status = statusData?.result?.value?.[0];
+      if (status?.confirmationStatus === 'confirmed' || status?.confirmationStatus === 'finalized') {
+        confirmed = true;
+      }
+      attempts++;
+    }
+
+    if (!confirmed) {
+      throw new Error('Transaction confirmation timeout');
+    }
+
     return signature;
-  }, [publicKey, signTransaction, sendTransaction]);
+  }, [publicKey, signTransaction]);
 
   const verifyPayment = useCallback(async (
     paymentId: string,
