@@ -52,11 +52,22 @@ const TemplatePreviewCard = ({
   const [thumbnailHtml, setThumbnailHtml] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
-  const previewUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?preview=true&layout=${layout.id}&personality=${personality.id}`;
+
+  const templateKeyByLayout: Record<string, string> = {
+    minimal: "cult_minimal",
+    "hero-roadmap": "vc_pro",
+    "story-lore": "dark_cult",
+    "stats-heavy": "luxury_token",
+    community: "degen_meme",
+    utility: "builder_utility",
+  };
+
+  const templateKey = templateKeyByLayout[layout.id] ?? "cult_minimal";
+  const previewUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?preview=true&templateId=${templateKey}`;
 
   // Load thumbnail preview on mount (cached in localStorage)
   useEffect(() => {
-    const key = `tplthumb:v1:${layout.id}:${personality.id}`;
+    const key = `tplthumb:v2:${templateKey}`;
 
     const fromCache = (() => {
       try {
@@ -88,7 +99,7 @@ const TemplatePreviewCard = ({
       }
     };
     loadThumbnail();
-  }, [previewUrl, layout.id, personality.id]);
+  }, [previewUrl, templateKey]);
 
   const loadPreview = async () => {
     setIsLoading(true);
