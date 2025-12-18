@@ -48,7 +48,22 @@ const TemplatePreviewCard = ({
   onSelect: () => void;
 }) => {
   const [showPreview, setShowPreview] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const previewUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?preview=true&layout=${layout.id}&personality=${personality.id}`;
+
+  const loadPreview = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(previewUrl);
+      const html = await response.text();
+      setPreviewHtml(html);
+    } catch (error) {
+      console.error('Error loading preview:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div
@@ -162,6 +177,7 @@ const TemplatePreviewCard = ({
           onClick={(e) => {
             e.stopPropagation();
             setShowPreview(true);
+            loadPreview();
           }}
         >
           <Eye className="w-4 h-4" />
@@ -206,13 +222,18 @@ const TemplatePreviewCard = ({
                 Close
               </Button>
             </div>
-            <iframe
-              src={previewUrl}
-              className="w-full h-full border-0"
-              title={`Preview: ${layout.name} × ${personality.name}`}
-              sandbox="allow-scripts allow-same-origin"
-              loading="lazy"
-            />
+            {isLoading ? (
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : previewHtml ? (
+              <iframe
+                srcDoc={previewHtml}
+                className="w-full h-full border-0"
+                title={`Preview: ${layout.name} × ${personality.name}`}
+                sandbox="allow-scripts"
+              />
+            ) : null}
           </div>
         </div>
       )}

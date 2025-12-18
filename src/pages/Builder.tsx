@@ -45,6 +45,7 @@ const Builder = () => {
   } | null>(null);
 
   const [previewKey, setPreviewKey] = useState(0);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [isRefreshingPreview, setIsRefreshingPreview] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -82,11 +83,24 @@ const Builder = () => {
   }, [preselectedLayout, preselectedPersonality]);
 
 
-  // Refresh preview (reload iframe)
-  const refreshPreview = () => {
+  // Refresh preview (fetch HTML and update srcDoc)
+  const refreshPreview = async () => {
     if (!generatedProject) return;
     setIsRefreshingPreview(true);
-    setPreviewKey((k) => k + 1);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?subdomain=${generatedProject.subdomain}&t=${Date.now()}`
+      );
+      const html = await response.text();
+      setPreviewHtml(html);
+      setPreviewKey((k) => k + 1);
+      toast.success('Preview refreshed');
+    } catch (error) {
+      console.error('Error refreshing preview:', error);
+      toast.error('Failed to refresh preview');
+    } finally {
+      setIsRefreshingPreview(false);
+    }
   };
 
   // Save changes and refresh preview
@@ -694,20 +708,19 @@ const Builder = () => {
                 {/* Preview Content */}
                 <div className="h-[calc(100%-3.5rem)] overflow-hidden">
                   {generatedProject ? (
-                    <iframe
-                      key={previewKey}
-                      src={`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?subdomain=${generatedProject.subdomain}`}
-                      className="w-full h-full border-0"
-                      title="Site Preview"
-                      sandbox="allow-scripts allow-same-origin"
-                      loading="lazy"
-                      onLoad={() => {
-                        if (isRefreshingPreview) {
-                          setIsRefreshingPreview(false);
-                          toast.success('Preview refreshed');
-                        }
-                      }}
-                    />
+                    isRefreshingPreview && !previewHtml ? (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                      </div>
+                    ) : previewHtml ? (
+                      <iframe
+                        key={previewKey}
+                        srcDoc={previewHtml}
+                        className="w-full h-full border-0"
+                        title="Site Preview"
+                        sandbox="allow-scripts"
+                      />
+                    ) : null
                   ) : (
                     <LivePreview 
                       formData={formData} 

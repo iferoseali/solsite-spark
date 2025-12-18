@@ -980,10 +980,13 @@ Deno.serve(async (req) => {
 
       const html = generateWebsiteHTML(demoProject, demoTemplate);
       return new Response(html, {
+        status: 200,
         headers: {
-          ...corsHeaders,
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
           'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'public, max-age=3600',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'X-Content-Type-Options': 'nosniff',
         },
       });
     }
@@ -1023,10 +1026,15 @@ Deno.serve(async (req) => {
 
     if (!project) {
       console.log('Project not found');
-      return new Response(
-        generateNotFoundHTML(),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
-      );
+      return new Response(generateNotFoundHTML(), {
+        status: 404,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+          'Content-Type': 'text/html; charset=utf-8',
+          'X-Content-Type-Options': 'nosniff',
+        },
+      });
     }
 
     // Fetch template if exists
@@ -1045,10 +1053,13 @@ Deno.serve(async (req) => {
     const html = generateWebsiteHTML(project, template);
 
     return new Response(html, {
+      status: 200,
       headers: {
-        ...corsHeaders,
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
         'Content-Type': 'text/html; charset=utf-8',
-        'Cache-Control': 'public, max-age=300', // 5 minute cache
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'X-Content-Type-Options': 'nosniff',
       },
     });
   } catch (error) {
