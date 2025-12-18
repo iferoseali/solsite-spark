@@ -2505,7 +2505,13 @@ Deno.serve(async (req) => {
 
     // Get template info to determine which template to use
     let selectedTemplateId = 'cult_minimal';
-    if (project.template_id) {
+    
+    // First check if templateId is stored in config (new method)
+    if (project.config?.templateId) {
+      selectedTemplateId = project.config.templateId;
+    }
+    // Fall back to template_id lookup (old method)
+    else if (project.template_id) {
       const { data: templateData } = await supabase
         .from('template_blueprints')
         .select('name')
