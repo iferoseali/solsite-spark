@@ -2,3 +2,6 @@ project_id = "bzbxdiaqpbroxhcibtpm"
 
 [functions.render-site]
 verify_jwt = false
+
+[functions.analyze-reference]
+verify_jwt = false
