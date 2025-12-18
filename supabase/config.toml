@@ -4,4 +4,4 @@ project_id = "bzbxdiaqpbroxhcibtpm"
 verify_jwt = false
 
 [functions.analyze-reference]
-verify_jwt = false
+verify_jwt = true
