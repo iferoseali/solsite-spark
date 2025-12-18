@@ -25,28 +25,183 @@ interface ProjectData {
 interface TemplateConfig {
   layout: string;
   personality: string;
+  templateId?: string;
 }
 
-function getPersonalityStyles(personality: string): { primary: string; accent: string; bgGradient: string } {
+interface TemplateStyles {
+  primary: string;
+  accent: string;
+  bgGradient: string;
+  bgColor: string;
+  text: string;
+  muted: string;
+  fontHeading: string;
+  fontBody: string;
+}
+
+// Template configurations matching the edge function
+function getTemplateStyles(templateId?: string, personality?: string): TemplateStyles {
+  // If we have a specific templateId, use that
+  if (templateId) {
+    switch (templateId) {
+      case 'cult_minimal':
+        return { 
+          primary: '#a6ff00', accent: '#00ff88', 
+          bgGradient: 'linear-gradient(135deg, #0b0b0b 0%, #0b0b0b 100%)', 
+          bgColor: '#0b0b0b', text: '#ffffff', muted: 'rgba(166,255,0,0.6)',
+          fontHeading: 'JetBrains Mono', fontBody: 'JetBrains Mono'
+        };
+      case 'vc_pro':
+        return { 
+          primary: '#5da9ff', accent: '#a855f7', 
+          bgGradient: 'linear-gradient(135deg, #0e1117 0%, #0e1117 100%)', 
+          bgColor: '#0e1117', text: '#e6e6e6', muted: 'rgba(93,169,255,0.6)',
+          fontHeading: 'Inter', fontBody: 'Inter'
+        };
+      case 'degen_meme':
+        return { 
+          primary: '#ff4fd8', accent: '#ffeb3b', 
+          bgGradient: 'linear-gradient(135deg, #120018 0%, #120018 100%)', 
+          bgColor: '#120018', text: '#ffffff', muted: 'rgba(255,79,216,0.7)',
+          fontHeading: 'Bangers', fontBody: 'Fredoka'
+        };
+      case 'dark_cult':
+        return { 
+          primary: '#ff0000', accent: '#8b0000', 
+          bgGradient: 'linear-gradient(135deg, #050505 0%, #050505 100%)', 
+          bgColor: '#050505', text: '#f5f5f5', muted: 'rgba(255,0,0,0.5)',
+          fontHeading: 'Crimson Text', fontBody: 'Crimson Text'
+        };
+      case 'luxury_token':
+        return { 
+          primary: '#d4af37', accent: '#c0a030', 
+          bgGradient: 'linear-gradient(135deg, #0a0a0a 0%, #0a0a0a 100%)', 
+          bgColor: '#0a0a0a', text: '#ffffff', muted: 'rgba(212,175,55,0.6)',
+          fontHeading: 'Playfair Display', fontBody: 'Cormorant Garamond'
+        };
+      case 'builder_utility':
+        return { 
+          primary: '#00ffa3', accent: '#00d4ff', 
+          bgGradient: 'linear-gradient(135deg, #0d1117 0%, #0d1117 100%)', 
+          bgColor: '#0d1117', text: '#c9d1d9', muted: 'rgba(0,255,163,0.6)',
+          fontHeading: 'Space Grotesk', fontBody: 'Fira Code'
+        };
+      case 'neo_grid':
+        return { 
+          primary: '#7c8cff', accent: '#a855f7', 
+          bgGradient: 'linear-gradient(135deg, #0b0f1a 0%, #0b0f1a 100%)', 
+          bgColor: '#0b0f1a', text: '#eaeaff', muted: 'rgba(124,140,255,0.6)',
+          fontHeading: 'Orbitron', fontBody: 'Rajdhani'
+        };
+      case 'scroll_story':
+        return { 
+          primary: '#ffffff', accent: '#888888', 
+          bgGradient: 'linear-gradient(135deg, #000000 0%, #000000 100%)', 
+          bgColor: '#000000', text: '#cccccc', muted: 'rgba(255,255,255,0.5)',
+          fontHeading: 'Libre Baskerville', fontBody: 'Lora'
+        };
+      case 'web3_gaming':
+        return { 
+          primary: '#00f0ff', accent: '#ff00ff', 
+          bgGradient: 'linear-gradient(135deg, #0c1022 0%, #0c1022 100%)', 
+          bgColor: '#0c1022', text: '#ffffff', muted: 'rgba(0,240,255,0.6)',
+          fontHeading: 'Audiowide', fontBody: 'Exo 2'
+        };
+      case 'ai_crypto':
+        return { 
+          primary: '#00ffcc', accent: '#00ff88', 
+          bgGradient: 'linear-gradient(135deg, #05070a 0%, #05070a 100%)', 
+          bgColor: '#05070a', text: '#e0fdf8', muted: 'rgba(0,255,204,0.6)',
+          fontHeading: 'Sora', fontBody: 'Space Grotesk'
+        };
+      case 'dao_portal':
+        return { 
+          primary: '#b08cff', accent: '#7c5cff', 
+          bgGradient: 'linear-gradient(135deg, #101014 0%, #101014 100%)', 
+          bgColor: '#101014', text: '#ffffff', muted: 'rgba(176,140,255,0.6)',
+          fontHeading: 'Plus Jakarta Sans', fontBody: 'Plus Jakarta Sans'
+        };
+      case 'ultra_brutalist':
+        return { 
+          primary: '#000000', accent: '#ff0000', 
+          bgGradient: 'linear-gradient(135deg, #ffffff 0%, #ffffff 100%)', 
+          bgColor: '#ffffff', text: '#000000', muted: 'rgba(0,0,0,0.6)',
+          fontHeading: 'Archivo Black', fontBody: 'IBM Plex Mono'
+        };
+      case 'infra_terminal':
+        return { 
+          primary: '#00ff88', accent: '#00d4ff', 
+          bgGradient: 'linear-gradient(135deg, #020409 0%, #020409 100%)', 
+          bgColor: '#020409', text: '#9effc3', muted: 'rgba(0,255,136,0.5)',
+          fontHeading: 'JetBrains Mono', fontBody: 'JetBrains Mono'
+        };
+      case 'social_first':
+        return { 
+          primary: '#ffcc00', accent: '#ff6b00', 
+          bgGradient: 'linear-gradient(135deg, #0f0f12 0%, #0f0f12 100%)', 
+          bgColor: '#0f0f12', text: '#ffffff', muted: 'rgba(255,204,0,0.6)',
+          fontHeading: 'DM Sans', fontBody: 'DM Sans'
+        };
+      case 'futuristic_3d':
+        return { 
+          primary: '#7b5cff', accent: '#00f0ff', 
+          bgGradient: 'linear-gradient(135deg, #030014 0%, #030014 100%)', 
+          bgColor: '#030014', text: '#ffffff', muted: 'rgba(123,92,255,0.6)',
+          fontHeading: 'Orbitron', fontBody: 'Exo 2'
+        };
+    }
+  }
+
+  // Fallback to personality-based styles
   switch (personality) {
     case 'degen':
-      return { primary: '#ff4444', accent: '#ff8800', bgGradient: 'linear-gradient(135deg, #1a0505 0%, #2d1810 100%)' };
+      return { 
+        primary: '#ff4444', accent: '#ff8800', 
+        bgGradient: 'linear-gradient(135deg, #1a0505 0%, #2d1810 100%)', 
+        bgColor: '#1a0505', text: '#ffffff', muted: 'rgba(255,68,68,0.6)',
+        fontHeading: 'Outfit', fontBody: 'Space Grotesk'
+      };
     case 'professional':
-      return { primary: '#00d4ff', accent: '#0088ff', bgGradient: 'linear-gradient(135deg, #0a1628 0%, #0d2137 100%)' };
+      return { 
+        primary: '#00d4ff', accent: '#0088ff', 
+        bgGradient: 'linear-gradient(135deg, #0a1628 0%, #0d2137 100%)', 
+        bgColor: '#0a1628', text: '#ffffff', muted: 'rgba(0,212,255,0.6)',
+        fontHeading: 'Inter', fontBody: 'Inter'
+      };
     case 'dark-cult':
-      return { primary: '#a855f7', accent: '#ec4899', bgGradient: 'linear-gradient(135deg, #150520 0%, #1f0a30 100%)' };
+      return { 
+        primary: '#a855f7', accent: '#ec4899', 
+        bgGradient: 'linear-gradient(135deg, #150520 0%, #1f0a30 100%)', 
+        bgColor: '#150520', text: '#ffffff', muted: 'rgba(168,85,247,0.6)',
+        fontHeading: 'Crimson Text', fontBody: 'Crimson Text'
+      };
     case 'playful':
-      return { primary: '#fbbf24', accent: '#22c55e', bgGradient: 'linear-gradient(135deg, #1a1a0a 0%, #0a1a10 100%)' };
+      return { 
+        primary: '#fbbf24', accent: '#22c55e', 
+        bgGradient: 'linear-gradient(135deg, #1a1a0a 0%, #0a1a10 100%)', 
+        bgColor: '#1a1a0a', text: '#ffffff', muted: 'rgba(251,191,36,0.6)',
+        fontHeading: 'Outfit', fontBody: 'Space Grotesk'
+      };
     case 'premium':
-      return { primary: '#d4af37', accent: '#c0c0c0', bgGradient: 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%)' };
+      return { 
+        primary: '#d4af37', accent: '#c0c0c0', 
+        bgGradient: 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%)', 
+        bgColor: '#1a1a1a', text: '#ffffff', muted: 'rgba(212,175,55,0.6)',
+        fontHeading: 'Playfair Display', fontBody: 'Cormorant Garamond'
+      };
     default:
-      return { primary: '#00d4ff', accent: '#22c55e', bgGradient: 'linear-gradient(135deg, #0a0f1a 0%, #0d1520 100%)' };
+      return { 
+        primary: '#00d4ff', accent: '#22c55e', 
+        bgGradient: 'linear-gradient(135deg, #0a0f1a 0%, #0d1520 100%)', 
+        bgColor: '#0a0f1a', text: '#ffffff', muted: 'rgba(255,255,255,0.6)',
+        fontHeading: 'Outfit', fontBody: 'Space Grotesk'
+      };
   }
 }
 
 export function generatePreviewHtml(project: ProjectData, config: TemplateConfig): string {
-  const { layout, personality } = config;
-  const styles = getPersonalityStyles(personality);
+  const { layout, personality, templateId } = config;
+  const styles = getTemplateStyles(templateId, personality);
   
   // Sanitize all user inputs
   const safeCoinName = escapeHtml(project.coinName) || 'Your Coin';
@@ -254,6 +409,14 @@ export function generatePreviewHtml(project: ProjectData, config: TemplateConfig
     </section>
   ` : '';
 
+  // Generate font URL
+  const fontFamilies = new Set([styles.fontHeading, styles.fontBody]);
+  const fontParams = Array.from(fontFamilies).map(font => {
+    const formatted = font.replace(/ /g, '+');
+    return `family=${formatted}:wght@400;500;600;700;800`;
+  }).join('&');
+  const fontsUrl = `https://fonts.googleapis.com/css2?${fontParams}&display=swap`;
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -262,14 +425,15 @@ export function generatePreviewHtml(project: ProjectData, config: TemplateConfig
   <title>${safeCoinName} (${safeTicker}) - Official Website</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="${fontsUrl}" rel="stylesheet">
   <style>
     :root {
       --primary: ${styles.primary};
       --accent: ${styles.accent};
       --bg-gradient: ${styles.bgGradient};
-      --text: #ffffff;
-      --text-muted: rgba(255,255,255,0.6);
+      --bg-color: ${styles.bgColor};
+      --text: ${styles.text};
+      --text-muted: ${styles.muted};
       --card-bg: rgba(255,255,255,0.05);
       --card-border: rgba(255,255,255,0.1);
     }
@@ -277,14 +441,14 @@ export function generatePreviewHtml(project: ProjectData, config: TemplateConfig
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: '${styles.fontBody}', sans-serif;
       background: var(--bg-gradient);
       color: var(--text);
       min-height: 100vh;
       overflow-x: hidden;
     }
-
-    h1, h2, h3, h4, h5, h6 { font-family: 'Outfit', sans-serif; font-weight: 700; }
+    
+    h1, h2, h3, h4, h5, h6 { font-family: '${styles.fontHeading}', sans-serif; font-weight: 700; }
     .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
 
     /* Header */
