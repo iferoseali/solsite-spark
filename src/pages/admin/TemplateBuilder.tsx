@@ -114,22 +114,24 @@ const TemplateBuilder = () => {
 
     setIsSaving(true);
     try {
-      const blueprint = {
-        name: templateName,
-        reference_url: referenceUrl || null,
-        sections: JSON.parse(JSON.stringify(sections)),
-        styles: JSON.parse(JSON.stringify(styles)),
-        animations: JSON.parse(JSON.stringify(animations)),
-        layout_category: layoutCategory,
-        personality: personality,
-        is_active: true,
-      };
-
-      const { error } = await supabase
-        .from('template_blueprints')
-        .insert(blueprint);
+      const { data, error } = await supabase.functions.invoke('manage-template', {
+        body: {
+          action: 'create',
+          template: {
+            name: templateName,
+            reference_url: referenceUrl || null,
+            sections: sections,
+            styles: styles,
+            animations: animations,
+            layout_category: layoutCategory,
+            personality: personality,
+            is_active: true,
+          },
+        },
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       toast.success("Template saved successfully!");
       navigate('/templates');
