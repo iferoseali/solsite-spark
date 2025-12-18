@@ -31,8 +31,8 @@ export const Hero = () => {
             <br />
             <span className="inline-block animate-slide-in-left" style={{ animationDelay: '0.2s' }}>in less than</span>{" "}
             <span className="relative inline-block animate-slide-in-right" style={{ animationDelay: '0.3s' }}>
-              <span className="text-primary">60 Seconds</span>
-              <Zap className="absolute -top-2 -right-8 w-8 h-8 text-primary animate-bounce" />
+              <span className="text-primary typewriter" style={{ animationDelay: '0.8s' }}>60 Seconds</span>
+              <Zap className="absolute -top-2 -right-8 w-8 h-8 text-primary zap-glow" style={{ animationDelay: '1.2s' }} />
             </span>
           </h1>
           

@@ -313,3 +313,55 @@
 .animate-slide-in-right {
   animation: slide-in-right 0.8s ease-out forwards;
 }
+
+/* Typewriter animation */
+@keyframes typewriter {
+  0% {
+    width: 0;
+    opacity: 1;
+  }
+  100% {
+    width: 100%;
+    opacity: 1;
+  }
+}
+
+@keyframes blink-caret {
+  0%, 50% {
+    border-color: hsl(var(--primary));
+  }
+  51%, 100% {
+    border-color: transparent;
+  }
+}
+
+.typewriter {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  width: 0;
+  opacity: 0;
+  border-right: 3px solid hsl(var(--primary));
+  animation: 
+    typewriter 0.8s steps(10) forwards,
+    blink-caret 0.6s step-end infinite;
+}
+
+/* Zap glow animation */
+@keyframes zap-glow-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px hsl(var(--primary) / 0.8)) drop-shadow(0 0 20px hsl(var(--primary) / 0.4));
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 16px hsl(var(--primary) / 1)) drop-shadow(0 0 40px hsl(var(--primary) / 0.6));
+    transform: scale(1.15);
+  }
+}
+
+.zap-glow {
+  opacity: 0;
+  animation: 
+    fade-in 0.3s ease-out forwards,
+    zap-glow-pulse 1.5s ease-in-out infinite;
+}
