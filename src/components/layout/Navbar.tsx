@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { WalletButton } from "@/components/wallet/WalletButton";
+import logo from "@/assets/logo.png";
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,11 +23,8 @@ export const Navbar = () => {
       <div className="container px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">S</span>
-            </div>
-            <span className="text-xl font-display font-bold">Solsite</span>
+          <Link to="/" className="flex items-center">
+            <img src={logo} alt="Solsite" className="h-10 w-auto" />
           </Link>
 
           {/* Desktop Navigation */}
