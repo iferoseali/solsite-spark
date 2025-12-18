@@ -316,7 +316,7 @@ const Builder = () => {
     : 'yourcoin';
 
   const previewUrl = generatedProject 
-    ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?subdomain=${generatedProject.subdomain}`
+    ? `/site/${generatedProject.subdomain}`
     : null;
 
   useEffect(() => {

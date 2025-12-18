@@ -54,20 +54,41 @@ const TemplatePreviewCard = ({
   const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
   const previewUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?preview=true&layout=${layout.id}&personality=${personality.id}`;
 
-  // Load thumbnail preview on mount
+  // Load thumbnail preview on mount (cached in localStorage)
   useEffect(() => {
+    const key = `tplthumb:v1:${layout.id}:${personality.id}`;
+
+    const fromCache = (() => {
+      try {
+        return localStorage.getItem(key);
+      } catch {
+        return null;
+      }
+    })();
+
+    if (fromCache) {
+      setThumbnailHtml(fromCache);
+      setThumbnailLoaded(true);
+      return;
+    }
+
     const loadThumbnail = async () => {
       try {
         const response = await fetch(previewUrl);
         const html = await response.text();
         setThumbnailHtml(html);
         setThumbnailLoaded(true);
+        try {
+          localStorage.setItem(key, html);
+        } catch {
+          // ignore quota / private mode
+        }
       } catch (error) {
         console.error('Error loading thumbnail:', error);
       }
     };
     loadThumbnail();
-  }, [previewUrl]);
+  }, [previewUrl, layout.id, personality.id]);
 
   const loadPreview = async () => {
     setIsLoading(true);
