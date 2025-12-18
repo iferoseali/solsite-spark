@@ -52,10 +52,9 @@ export const useWalletAuth = () => {
         .from('users')
         .select('*')
         .eq('wallet_address', walletAddress)
-        .single();
+        .maybeSingle();
 
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        // PGRST116 is "no rows returned" which is expected for new users
+      if (fetchError) {
         console.error('Error fetching user:', fetchError);
       }
 
@@ -117,7 +116,7 @@ export const useWalletAuth = () => {
           .from('users')
           .select('*')
           .eq('wallet_address', walletAddress)
-          .single();
+          .maybeSingle();
 
         if (existingUser) {
           setUser(existingUser);
