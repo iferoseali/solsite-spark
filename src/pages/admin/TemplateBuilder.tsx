@@ -11,6 +11,7 @@ import { SectionMapper } from "@/components/admin/SectionMapper";
 import { StyleEditor } from "@/components/admin/StyleEditor";
 import { AnimationConfig } from "@/components/admin/AnimationConfig";
 import { TemplatePreview } from "@/components/admin/TemplatePreview";
+import { WalletButton } from "@/components/wallet/WalletButton";
 import { useWalletAuth } from "@/hooks/useWalletAuth";
 import {
   TemplateBlueprint,
@@ -162,11 +163,12 @@ const TemplateBuilder = () => {
             <h1 className="text-xl font-bold">Template Builder</h1>
           </div>
           <div className="flex items-center gap-2">
+            <WalletButton />
             <Button variant="outline" onClick={() => setShowPreview(!showPreview)}>
               <Eye className="w-4 h-4 mr-2" />
               {showPreview ? 'Hide Preview' : 'Preview'}
             </Button>
-            <Button onClick={handleSave} disabled={isSaving}>
+            <Button onClick={handleSave} disabled={isSaving || !walletAddress}>
               {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
               Save Template
             </Button>
