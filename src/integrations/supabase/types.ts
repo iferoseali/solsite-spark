@@ -55,35 +55,44 @@ export type Database = {
       payments: {
         Row: {
           created_at: string
+          currency: string | null
           id: string
           payment_type: string
           project_id: string | null
           sol_amount: number
           status: string | null
           transaction_signature: string | null
+          usd_amount: number | null
           user_id: string | null
+          verified_at: string | null
           wallet_address: string
         }
         Insert: {
           created_at?: string
+          currency?: string | null
           id?: string
           payment_type: string
           project_id?: string | null
           sol_amount: number
           status?: string | null
           transaction_signature?: string | null
+          usd_amount?: number | null
           user_id?: string | null
+          verified_at?: string | null
           wallet_address: string
         }
         Update: {
           created_at?: string
+          currency?: string | null
           id?: string
           payment_type?: string
           project_id?: string | null
           sol_amount?: number
           status?: string | null
           transaction_signature?: string | null
+          usd_amount?: number | null
           user_id?: string | null
+          verified_at?: string | null
           wallet_address?: string
         }
         Relationships: [

@@ -27,6 +27,8 @@ import { useWalletAuth } from "@/hooks/useWalletAuth";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { generatePreviewHtml } from "@/lib/generatePreviewHtml";
+import { PaymentModal } from "@/components/payment/PaymentModal";
+import { usePayment } from "@/hooks/usePayment";
 
 // Template ID map for render-site edge function
 const templateIdMap: Record<string, string> = {
@@ -99,6 +101,11 @@ const Builder = () => {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  
+  // Payment state
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [hasPaid, setHasPaid] = useState(false);
+  const { checkExistingPayment } = usePayment();
 
   // Load existing project for editing
   useEffect(() => {
@@ -409,6 +416,22 @@ const Builder = () => {
       return;
     }
 
+    // Check if user has already paid for website generation
+    const alreadyPaid = await checkExistingPayment(user.id, 'website');
+    
+    if (!alreadyPaid && !hasPaid) {
+      // Show payment modal
+      setShowPaymentModal(true);
+      return;
+    }
+
+    // Proceed with generation
+    await createProject();
+  };
+
+  const createProject = async () => {
+    if (!user) return;
+    
     setIsGenerating(true);
 
     try {
@@ -999,6 +1022,22 @@ const Builder = () => {
           </div>
         </div>
       </main>
+
+      {/* Payment Modal */}
+      {user && (
+        <PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          onSuccess={() => {
+            setHasPaid(true);
+            setShowPaymentModal(false);
+            createProject();
+          }}
+          paymentType="website"
+          userId={user.id}
+          walletAddress={user.wallet_address}
+        />
+      )}
     </div>
   );
 };
