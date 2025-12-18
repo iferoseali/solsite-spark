@@ -28,9 +28,30 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { generatePreviewHtml } from "@/lib/generatePreviewHtml";
 
+// Template ID map for render-site edge function
+const templateIdMap: Record<string, string> = {
+  "Cult Minimal": "cult_minimal",
+  "VC Grade Pro": "vc_pro",
+  "Degenerate Meme": "degen_meme",
+  "Dark Cult Narrative": "dark_cult",
+  "Luxury Token": "luxury_token",
+  "Builder Utility": "builder_utility",
+  "Neo Grid": "neo_grid",
+  "Scroll Story": "scroll_story",
+  "Web3 Gaming": "web3_gaming",
+  "AI Crypto": "ai_crypto",
+  "DAO Portal": "dao_portal",
+  "Ultra Brutalist": "ultra_brutalist",
+  "Infra Terminal": "infra_terminal",
+  "Social First": "social_first",
+  "Futuristic 3D": "futuristic_3d",
+};
+
 const Builder = () => {
   const [searchParams] = useSearchParams();
   const editProjectId = searchParams.get('edit');
+  const urlTemplateId = searchParams.get('templateId'); // e.g., "infra_terminal"
+  const urlBlueprintId = searchParams.get('blueprintId'); // UUID of template_blueprint
   const preselectedLayout = searchParams.get('layout') || 'minimal';
   const preselectedPersonality = searchParams.get('personality') || 'degen';
 
@@ -39,6 +60,9 @@ const Builder = () => {
   const { user, isVerified } = useWalletAuth();
 
   const [templateId, setTemplateId] = useState<string | null>(null);
+  const [blueprintId, setBlueprintId] = useState<string | null>(urlBlueprintId);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(urlTemplateId);
+  const [blueprintName, setBlueprintName] = useState<string>("");
   const [currentLayout, setCurrentLayout] = useState(preselectedLayout);
   const [currentPersonality, setCurrentPersonality] = useState(preselectedPersonality);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -52,6 +76,8 @@ const Builder = () => {
   const [previewKey, setPreviewKey] = useState(0);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [isRefreshingPreview, setIsRefreshingPreview] = useState(false);
+  const [templatePreviewHtml, setTemplatePreviewHtml] = useState<string | null>(null);
+  const [isLoadingTemplatePreview, setIsLoadingTemplatePreview] = useState(false);
 
   const [formData, setFormData] = useState({
     coinName: "",
@@ -173,9 +199,47 @@ const Builder = () => {
     );
   }, [formData, logoPreview, currentLayout, currentPersonality]);
 
-  // Fetch template ID on mount (only for new projects)
+  // Load template blueprint preview when blueprintId is provided
   useEffect(() => {
-    if (editProjectId) return; // Skip for edit mode
+    const loadTemplatePreview = async () => {
+      if (!urlTemplateId) return;
+      
+      setIsLoadingTemplatePreview(true);
+      try {
+        // Fetch the preview HTML from render-site edge function
+        const previewUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?preview=true&templateId=${urlTemplateId}`;
+        const response = await fetch(previewUrl);
+        const html = await response.text();
+        setTemplatePreviewHtml(html);
+        setSelectedTemplateId(urlTemplateId);
+
+        // Also fetch blueprint name
+        if (urlBlueprintId) {
+          const { data: blueprint } = await supabase
+            .from('template_blueprints')
+            .select('name, personality, layout_category')
+            .eq('id', urlBlueprintId)
+            .single();
+          
+          if (blueprint) {
+            setBlueprintName(blueprint.name);
+            if (blueprint.personality) setCurrentPersonality(blueprint.personality);
+            if (blueprint.layout_category) setCurrentLayout(blueprint.layout_category);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading template preview:', error);
+      } finally {
+        setIsLoadingTemplatePreview(false);
+      }
+    };
+
+    loadTemplatePreview();
+  }, [urlTemplateId, urlBlueprintId]);
+
+  // Fetch template ID on mount (only for new projects without blueprintId)
+  useEffect(() => {
+    if (editProjectId || urlBlueprintId) return; // Skip for edit mode or when blueprintId is provided
     
     const fetchTemplate = async () => {
       const { data } = await supabase
@@ -190,8 +254,7 @@ const Builder = () => {
       }
     };
     fetchTemplate();
-  }, [preselectedLayout, preselectedPersonality, editProjectId]);
-
+  }, [preselectedLayout, preselectedPersonality, editProjectId, urlBlueprintId]);
 
   // Refresh preview (fetch HTML and update srcDoc)
   const refreshPreview = async () => {
@@ -364,10 +427,21 @@ const Builder = () => {
         finalSubdomain = `${subdomain}-${Math.random().toString(36).substring(2, 6)}`;
       }
 
+      // Create project with blueprint/template config
+      const projectConfig = {
+        tokenomics: {
+          totalSupply: formData.totalSupply || null,
+          circulatingSupply: formData.circulatingSupply || null,
+          contractAddress: formData.contractAddress || null,
+        },
+        templateId: selectedTemplateId || null,
+        blueprintId: blueprintId || null,
+      };
+
       // Create project first (without logo)
       const { data: project, error } = await supabase
         .from('projects')
-        .insert({
+        .insert([{
           user_id: user.id,
           template_id: templateId,
           coin_name: formData.coinName,
@@ -383,8 +457,9 @@ const Builder = () => {
           show_faq: formData.showFaq,
           subdomain: finalSubdomain,
           status: 'published',
-          generated_url: `https://${finalSubdomain}.solsite.xyz`
-        })
+          generated_url: `https://${finalSubdomain}.solsite.xyz`,
+          config: projectConfig
+        }])
         .select()
         .single();
 
@@ -455,7 +530,7 @@ const Builder = () => {
                   {editProjectId ? 'Edit Your Site' : 'Build Your Site'}
                 </h1>
                 <p className="text-muted-foreground text-sm">
-                  Template: <span className="text-primary capitalize">{currentLayout.replace('-', ' ')}</span> × <span className="text-primary capitalize">{currentPersonality.replace('-', ' ')}</span>
+                  Template: <span className="text-primary">{blueprintName || `${currentLayout.replace('-', ' ')} × ${currentPersonality.replace('-', ' ')}`}</span>
                 </p>
               </div>
 
@@ -899,6 +974,17 @@ const Builder = () => {
                         sandbox="allow-scripts"
                       />
                     ) : null
+                  ) : isLoadingTemplatePreview ? (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    </div>
+                  ) : templatePreviewHtml ? (
+                    <iframe
+                      srcDoc={templatePreviewHtml}
+                      className="w-full h-full border-0"
+                      title="Template Preview"
+                      sandbox="allow-scripts"
+                    />
                   ) : (
                     <iframe
                       srcDoc={livePreviewHtml}
