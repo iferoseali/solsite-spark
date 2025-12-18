@@ -1,6 +1,4 @@
-// Jupiter Price API for real-time SOL price
-const JUPITER_PRICE_API = 'https://api.jup.ag/price/v2';
-const SOL_MINT = 'So11111111111111111111111111111111111111112';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface PriceData {
   solPrice: number;
@@ -13,27 +11,20 @@ export interface PriceData {
 export const WEBSITE_PRICE_USD = 60;
 export const DOMAIN_PRICE_USD = 10;
 
-export async function fetchSOLPrice(): Promise<number> {
-  try {
-    const response = await fetch(`${JUPITER_PRICE_API}?ids=${SOL_MINT}`);
-    const data = await response.json();
-    return parseFloat(data.data[SOL_MINT].price);
-  } catch (error) {
-    console.error('Error fetching SOL price:', error);
-    throw new Error('Failed to fetch SOL price');
-  }
-}
-
 export async function getPrices(): Promise<PriceData> {
-  const solPrice = await fetchSOLPrice();
+  const { data, error } = await supabase.functions.invoke('get-prices');
   
-  return {
-    solPrice,
-    websitePriceSOL: WEBSITE_PRICE_USD / solPrice,
-    domainPriceSOL: DOMAIN_PRICE_USD / solPrice,
-    websitePriceUSDC: WEBSITE_PRICE_USD,
-    domainPriceUSDC: DOMAIN_PRICE_USD,
-  };
+  if (error) {
+    console.error('Error fetching prices:', error);
+    throw new Error('Failed to fetch prices');
+  }
+  
+  if (data?.error) {
+    console.error('Price API error:', data.error);
+    throw new Error(data.error);
+  }
+  
+  return data as PriceData;
 }
 
 export function formatSOL(amount: number): string {

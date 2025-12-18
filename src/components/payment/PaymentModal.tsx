@@ -163,8 +163,12 @@ export const PaymentModal: FC<PaymentModalProps> = ({
               </button>
             </div>
           ) : (
-            <div className="text-center py-4 text-destructive">
-              Failed to load prices. Please try again.
+            <div className="text-center py-4 space-y-3">
+              <p className="text-destructive">Failed to load prices.</p>
+              <Button variant="outline" onClick={loadPrices} className="gap-2">
+                <RefreshCw className="w-4 h-4" />
+                Try Again
+              </Button>
             </div>
           )}
 
