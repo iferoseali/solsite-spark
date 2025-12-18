@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Sparkles, ArrowRight, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
+import logo from "@/assets/logo.png";
+
 export const Hero = () => {
   return <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background effects */}
@@ -18,14 +20,19 @@ export const Hero = () => {
       
       <div className="container relative z-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
+          {/* Logo */}
+          <div className="flex justify-center mb-8 fade-in-up fade-in-delay-1">
+            <img src={logo} alt="Solsite" className="h-20 md:h-28 w-auto drop-shadow-lg" />
+          </div>
+          
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-8 fade-in-up fade-in-delay-1">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-8 fade-in-up fade-in-delay-2">
             <Sparkles className="w-4 h-4 text-primary" />
             <span className="text-sm font-medium text-muted-foreground">The fastest way to launch your Website</span>
           </div>
           
           {/* Main heading */}
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-display font-bold leading-tight mb-6 fade-in-up fade-in-delay-2">
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-display font-bold leading-tight mb-6 fade-in-up fade-in-delay-3">
             <span className="inline-block animate-slide-in-left">Build Your</span>{" "}
             <span className="inline-block animate-slide-in-right text-primary">Website</span>
             <br />
@@ -37,13 +44,13 @@ export const Hero = () => {
           </h1>
           
           {/* Subtitle */}
-          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 fade-in-up fade-in-delay-3">
+          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 fade-in-up fade-in-delay-4">
             Professional, animated, mobile-ready websites for Solana meme coins. 
             No code. No design skills. Just pure degen energy.
           </p>
           
           {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 fade-in-up fade-in-delay-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 fade-in-up" style={{ animationDelay: '0.4s' }}>
             <Link to="/builder">
               <Button variant="hero" size="xl" className="group">
                 Start Building
