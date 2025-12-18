@@ -64,6 +64,10 @@ const Builder = () => {
     dexLink: "",
     showRoadmap: true,
     showFaq: true,
+    // Tokenomics
+    totalSupply: "",
+    circulatingSupply: "",
+    contractAddress: "",
   });
 
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -92,6 +96,9 @@ const Builder = () => {
         if (error) throw error;
 
         if (project) {
+          // Parse config for tokenomics
+          const config = project.config as { tokenomics?: { totalSupply?: string; circulatingSupply?: string; contractAddress?: string } } | null;
+          
           // Set form data from project
           setFormData({
             coinName: project.coin_name || "",
@@ -104,6 +111,10 @@ const Builder = () => {
             dexLink: project.dex_link || "",
             showRoadmap: project.show_roadmap ?? true,
             showFaq: project.show_faq ?? true,
+            // Tokenomics from config
+            totalSupply: config?.tokenomics?.totalSupply || "",
+            circulatingSupply: config?.tokenomics?.circulatingSupply || "",
+            contractAddress: config?.tokenomics?.contractAddress || "",
           });
 
           // Set logo preview
@@ -152,6 +163,11 @@ const Builder = () => {
         dexLink: formData.dexLink,
         showRoadmap: formData.showRoadmap,
         showFaq: formData.showFaq,
+        tokenomics: {
+          totalSupply: formData.totalSupply,
+          circulatingSupply: formData.circulatingSupply,
+          contractAddress: formData.contractAddress,
+        },
       },
       { layout: currentLayout, personality: currentPersonality }
     );
@@ -221,6 +237,13 @@ const Builder = () => {
         dex_link: formData.dexLink || null,
         show_roadmap: formData.showRoadmap,
         show_faq: formData.showFaq,
+        config: {
+          tokenomics: {
+            totalSupply: formData.totalSupply || null,
+            circulatingSupply: formData.circulatingSupply || null,
+            contractAddress: formData.contractAddress || null,
+          },
+        },
       };
 
       if (logoUrl) {
@@ -649,6 +672,47 @@ const Builder = () => {
                   />
                 </div>
 
+                {/* Tokenomics */}
+                <div className="space-y-4">
+                  <h2 className="text-lg font-semibold flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                    Tokenomics
+                  </h2>
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="totalSupply">Total Supply</Label>
+                      <Input
+                        id="totalSupply"
+                        name="totalSupply"
+                        placeholder="1,000,000,000"
+                        value={formData.totalSupply}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="circulatingSupply">Circulating Supply</Label>
+                      <Input
+                        id="circulatingSupply"
+                        name="circulatingSupply"
+                        placeholder="850,000,000"
+                        value={formData.circulatingSupply}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="contractAddress">Contract Address (CA)</Label>
+                      <Input
+                        id="contractAddress"
+                        name="contractAddress"
+                        placeholder="0x..."
+                        value={formData.contractAddress}
+                        onChange={handleInputChange}
+                        className="font-mono text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 {/* Sections Toggle */}
                 <div className="space-y-4">
                   <h2 className="text-lg font-semibold">Optional Sections</h2>
@@ -744,6 +808,9 @@ const Builder = () => {
                             dexLink: "",
                             showRoadmap: true,
                             showFaq: true,
+                            totalSupply: "",
+                            circulatingSupply: "",
+                            contractAddress: "",
                           });
                           setLogoPreview(null);
                           setLogoFile(null);
