@@ -1,4 +1,5 @@
 // Client-side HTML generator that matches the edge function output
+import { escapeHtml, sanitizeUrl } from './htmlSanitize';
 
 interface TokenomicsInput {
   totalSupply?: string;
@@ -47,18 +48,32 @@ export function generatePreviewHtml(project: ProjectData, config: TemplateConfig
   const { layout, personality } = config;
   const styles = getPersonalityStyles(personality);
   
-  const logoHtml = project.logoUrl 
-    ? `<img src="${project.logoUrl}" alt="${project.coinName}" class="logo-image" />`
-    : `<div class="logo-placeholder">${project.ticker?.[1] || '?'}</div>`;
+  // Sanitize all user inputs
+  const safeCoinName = escapeHtml(project.coinName) || 'Your Coin';
+  const safeTicker = escapeHtml(project.ticker) || '$TICKER';
+  const safeTagline = escapeHtml(project.tagline);
+  const safeDescription = escapeHtml(project.description);
+  const safeLogoUrl = sanitizeUrl(project.logoUrl);
+  const safeTwitter = sanitizeUrl(project.twitter);
+  const safeDiscord = sanitizeUrl(project.discord);
+  const safeTelegram = sanitizeUrl(project.telegram);
+  const safeDexLink = sanitizeUrl(project.dexLink);
+  const safeTotalSupply = escapeHtml(project.tokenomics?.totalSupply);
+  const safeCirculatingSupply = escapeHtml(project.tokenomics?.circulatingSupply);
+  const safeContractAddress = escapeHtml(project.tokenomics?.contractAddress);
+  
+  const logoHtml = safeLogoUrl 
+    ? `<img src="${safeLogoUrl}" alt="${safeCoinName}" class="logo-image" />`
+    : `<div class="logo-placeholder">${safeTicker?.[1] || '?'}</div>`;
 
   const socialLinks = `
-    ${project.twitter ? `<a href="${project.twitter}" target="_blank" rel="noopener" class="social-link" aria-label="Twitter">
+    ${safeTwitter ? `<a href="${safeTwitter}" target="_blank" rel="noopener" class="social-link" aria-label="Twitter">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
     </a>` : ''}
-    ${project.discord ? `<a href="${project.discord}" target="_blank" rel="noopener" class="social-link" aria-label="Discord">
+    ${safeDiscord ? `<a href="${safeDiscord}" target="_blank" rel="noopener" class="social-link" aria-label="Discord">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M7.5 7.5c3.5-1 5.5-1 9 0"/><path d="M7 16.5c3.5 1 6.5 1 10 0"/><path d="M15.5 17c0 1 1.5 3 2 3 1.5 0 2.833-1.667 3.5-3 .667-1.667.5-5.833-1.5-11.5-1.457-1.015-3-1.34-4.5-1.5l-1 2.5"/><path d="M8.5 17c0 1-1.356 3-1.832 3-1.429 0-2.698-1.667-3.333-3-.635-1.667-.476-5.833 1.428-11.5C6.151 4.485 7.545 4.16 9 4l1 2.5"/></svg>
     </a>` : ''}
-    ${project.telegram ? `<a href="${project.telegram}" target="_blank" rel="noopener" class="social-link" aria-label="Telegram">
+    ${safeTelegram ? `<a href="${safeTelegram}" target="_blank" rel="noopener" class="social-link" aria-label="Telegram">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
     </a>` : ''}
   `;
@@ -73,16 +88,16 @@ export function generatePreviewHtml(project: ProjectData, config: TemplateConfig
         <h2 class="section-title">Tokenomics</h2>
         <div class="stats-grid">
           <div class="stat-card">
-            <div class="stat-value">${tokenomics.totalSupply || '1B+'}</div>
+            <div class="stat-value">${safeTotalSupply || '1B+'}</div>
             <div class="stat-label">Total Supply</div>
           </div>
           <div class="stat-card">
-            <div class="stat-value">${tokenomics.circulatingSupply || 'TBA'}</div>
+            <div class="stat-value">${safeCirculatingSupply || 'TBA'}</div>
             <div class="stat-label">Circulating</div>
           </div>
-          ${tokenomics.contractAddress ? `
+          ${safeContractAddress ? `
           <div class="stat-card contract-card">
-            <div class="stat-value contract-address" title="${tokenomics.contractAddress}">${tokenomics.contractAddress.slice(0, 6)}...${tokenomics.contractAddress.slice(-4)}</div>
+            <div class="stat-value contract-address" title="${safeContractAddress}">${safeContractAddress.slice(0, 6)}...${safeContractAddress.slice(-4)}</div>
             <div class="stat-label">Contract</div>
           </div>
           ` : ''}
@@ -95,10 +110,10 @@ export function generatePreviewHtml(project: ProjectData, config: TemplateConfig
     <section class="community-section fade-in-section">
       <div class="container">
         <h2 class="section-title">Join the Community</h2>
-        <p class="community-subtitle">Connect with fellow ${project.coinName || 'token'} enthusiasts</p>
+        <p class="community-subtitle">Connect with fellow ${safeCoinName} enthusiasts</p>
         <div class="community-grid">
-          ${project.twitter ? `
-          <a href="${project.twitter}" target="_blank" rel="noopener" class="community-card twitter">
+          ${safeTwitter ? `
+          <a href="${safeTwitter}" target="_blank" rel="noopener" class="community-card twitter">
             <div class="community-icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
             </div>
@@ -106,8 +121,8 @@ export function generatePreviewHtml(project: ProjectData, config: TemplateConfig
             <div class="community-action">Follow Us</div>
           </a>
           ` : ''}
-          ${project.discord ? `
-          <a href="${project.discord}" target="_blank" rel="noopener" class="community-card discord">
+          ${safeDiscord ? `
+          <a href="${safeDiscord}" target="_blank" rel="noopener" class="community-card discord">
             <div class="community-icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M7.5 7.5c3.5-1 5.5-1 9 0"/><path d="M7 16.5c3.5 1 6.5 1 10 0"/></svg>
             </div>
@@ -115,8 +130,8 @@ export function generatePreviewHtml(project: ProjectData, config: TemplateConfig
             <div class="community-action">Join Server</div>
           </a>
           ` : ''}
-          ${project.telegram ? `
-          <a href="${project.telegram}" target="_blank" rel="noopener" class="community-card telegram">
+          ${safeTelegram ? `
+          <a href="${safeTelegram}" target="_blank" rel="noopener" class="community-card telegram">
             <div class="community-icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
             </div>
@@ -132,12 +147,12 @@ export function generatePreviewHtml(project: ProjectData, config: TemplateConfig
   const storySection = (layout === 'story-lore') ? `
     <section class="story-section fade-in-section">
       <div class="container">
-        <h2 class="section-title">The Legend of ${project.coinName || 'Your Coin'}</h2>
+        <h2 class="section-title">The Legend of ${safeCoinName}</h2>
         <div class="story-content">
           <div class="story-chapter">
             <div class="chapter-number">Chapter I</div>
             <h3 class="chapter-title">The Beginning</h3>
-            <p class="chapter-text">${project.description || `In the vast digital cosmos of Solana, a new force emerged. ${project.coinName || 'This coin'} was born from the collective dreams of degens and visionaries alike.`}</p>
+            <p class="chapter-text">${safeDescription || `In the vast digital cosmos of Solana, a new force emerged. ${safeCoinName} was born from the collective dreams of degens and visionaries alike.`}</p>
           </div>
           <div class="story-chapter">
             <div class="chapter-number">Chapter II</div>
@@ -162,7 +177,7 @@ export function generatePreviewHtml(project: ProjectData, config: TemplateConfig
           <div class="utility-card">
             <div class="utility-icon">🔒</div>
             <h3 class="utility-title">Staking Rewards</h3>
-            <p class="utility-desc">Stake your ${project.ticker || '$TOKEN'} to earn passive rewards and participate in governance decisions.</p>
+            <p class="utility-desc">Stake your ${safeTicker} to earn passive rewards and participate in governance decisions.</p>
           </div>
           <div class="utility-card">
             <div class="utility-icon">🎮</div>
@@ -177,7 +192,7 @@ export function generatePreviewHtml(project: ProjectData, config: TemplateConfig
           <div class="utility-card">
             <div class="utility-icon">🌐</div>
             <h3 class="utility-title">Ecosystem Integration</h3>
-            <p class="utility-desc">Use ${project.ticker || '$TOKEN'} across partner platforms and upcoming DeFi integrations.</p>
+            <p class="utility-desc">Use ${safeTicker} across partner platforms and upcoming DeFi integrations.</p>
           </div>
         </div>
       </div>
@@ -224,15 +239,15 @@ export function generatePreviewHtml(project: ProjectData, config: TemplateConfig
       <h2 class="section-title">FAQ</h2>
       <div class="faq-grid">
         <div class="faq-card">
-          <div class="faq-question">What is ${project.coinName || 'this coin'}?</div>
-          <div class="faq-answer">${project.description || `${project.coinName || 'This'} is a community-driven meme coin on Solana with massive potential.`}</div>
+          <div class="faq-question">What is ${safeCoinName}?</div>
+          <div class="faq-answer">${safeDescription || `${safeCoinName} is a community-driven meme coin on Solana with massive potential.`}</div>
         </div>
         <div class="faq-card">
-          <div class="faq-question">How do I buy ${project.ticker || 'this token'}?</div>
+          <div class="faq-question">How do I buy ${safeTicker}?</div>
           <div class="faq-answer">You can buy on decentralized exchanges like Raydium or Jupiter. Connect your Solana wallet and swap SOL.</div>
         </div>
         <div class="faq-card">
-          <div class="faq-question">Is ${project.coinName || 'this coin'} safe?</div>
+          <div class="faq-question">Is ${safeCoinName} safe?</div>
           <div class="faq-answer">Always do your own research (DYOR). This is a meme coin and should be treated as a high-risk investment.</div>
         </div>
       </div>
@@ -244,7 +259,7 @@ export function generatePreviewHtml(project: ProjectData, config: TemplateConfig
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${project.coinName || 'Your Coin'} (${project.ticker || '$TICKER'}) - Official Website</title>
+  <title>${safeCoinName} (${safeTicker}) - Official Website</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -477,7 +492,7 @@ export function generatePreviewHtml(project: ProjectData, config: TemplateConfig
       <div class="header-content">
         <div class="logo-container">
           ${logoHtml}
-          <span class="logo-text">${project.coinName || 'Your Coin'}</span>
+          <span class="logo-text">${safeCoinName}</span>
         </div>
         <div class="social-links">
           ${socialLinks}
@@ -491,11 +506,11 @@ export function generatePreviewHtml(project: ProjectData, config: TemplateConfig
     <div class="hero-logo">
       ${logoHtml}
     </div>
-    <h1 class="hero-title">${project.coinName || 'Your Coin Name'}</h1>
-    <div class="hero-ticker">${project.ticker || '$TICKER'}</div>
-    <p class="hero-tagline">${project.tagline || 'Your awesome tagline goes here'}</p>
+    <h1 class="hero-title">${safeCoinName}</h1>
+    <div class="hero-ticker">${safeTicker}</div>
+    <p class="hero-tagline">${safeTagline || 'Your awesome tagline goes here'}</p>
     <div class="cta-buttons">
-      <a href="${project.dexLink || '#'}" target="_blank" rel="noopener" class="cta-btn cta-btn-primary">
+      <a href="${safeDexLink || '#'}" target="_blank" rel="noopener" class="cta-btn cta-btn-primary">
         Buy Now
       </a>
       <a href="#about" class="cta-btn cta-btn-secondary">Learn More</a>
@@ -503,11 +518,11 @@ export function generatePreviewHtml(project: ProjectData, config: TemplateConfig
   </section>
 
   <!-- About -->
-  ${project.description ? `
+  ${safeDescription ? `
   <section class="about-section fade-in-section" id="about">
     <div class="container">
-      <h2 class="section-title">About ${project.coinName || 'Us'}</h2>
-      <p class="about-text">${project.description}</p>
+      <h2 class="section-title">About ${safeCoinName}</h2>
+      <p class="about-text">${safeDescription}</p>
     </div>
   </section>
   ` : ''}
