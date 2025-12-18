@@ -29,40 +29,34 @@ const templateIdMap: Record<string, string> = {
   "Dark Cult Narrative": "dark_cult",
   "Luxury Token": "luxury_token",
   "Builder Utility": "builder_utility",
+  "Neo Grid": "neo_grid",
+  "Scroll Story": "scroll_story",
+  "Web3 Gaming": "web3_gaming",
+  "AI Crypto": "ai_crypto",
+  "DAO Portal": "dao_portal",
+  "Ultra Brutalist": "ultra_brutalist",
+  "Infra Terminal": "infra_terminal",
+  "Social First": "social_first",
+  "Futuristic 3D": "futuristic_3d",
 };
 
 // Template metadata for display
 const templateMeta: Record<string, { emoji: string; tagline: string; features: string[] }> = {
-  "cult_minimal": {
-    emoji: "⚡",
-    tagline: "Stark, glitchy, monospace aesthetic for cult followings",
-    features: ["Matrix rain effect", "Glitch text animation", "Neon green accents"],
-  },
-  "vc_pro": {
-    emoji: "💼",
-    tagline: "Clean, professional design that screams legitimacy",
-    features: ["Gradient orb backgrounds", "Glass morphism cards", "Split hero layout"],
-  },
-  "degen_meme": {
-    emoji: "🚀",
-    tagline: "Wild, chaotic energy for maximum degen appeal",
-    features: ["Floating emoji particles", "Shake animations", "Giant ticker display"],
-  },
-  "dark_cult": {
-    emoji: "🌙",
-    tagline: "Mysterious, moody atmosphere for lore-heavy projects",
-    features: ["Fog particle effects", "Serif typography", "Blood red accents"],
-  },
-  "luxury_token": {
-    emoji: "👑",
-    tagline: "Elegant, refined design for premium positioning",
-    features: ["Gold dust particles", "Shimmer text effects", "Minimal layout"],
-  },
-  "builder_utility": {
-    emoji: "⚙️",
-    tagline: "Terminal-inspired design for utility-focused tokens",
-    features: ["Grid line background", "Monospace fonts", "Dev-focused aesthetic"],
-  },
+  "cult_minimal": { emoji: "⚡", tagline: "Stark, glitchy, monospace aesthetic for cult followings", features: ["Matrix rain effect", "Glitch text animation", "Neon green accents"] },
+  "vc_pro": { emoji: "💼", tagline: "Clean, professional design that screams legitimacy", features: ["Gradient orb backgrounds", "Glass morphism cards", "Split hero layout"] },
+  "degen_meme": { emoji: "🚀", tagline: "Wild, chaotic energy for maximum degen appeal", features: ["Floating emoji particles", "Shake animations", "Giant ticker display"] },
+  "dark_cult": { emoji: "🌙", tagline: "Mysterious, moody atmosphere for lore-heavy projects", features: ["Fog particle effects", "Serif typography", "Blood red accents"] },
+  "luxury_token": { emoji: "👑", tagline: "Elegant, refined design for premium positioning", features: ["Gold dust particles", "Shimmer text effects", "Minimal layout"] },
+  "builder_utility": { emoji: "⚙️", tagline: "Terminal-inspired design for utility-focused tokens", features: ["Grid line background", "Monospace fonts", "Dev-focused aesthetic"] },
+  "neo_grid": { emoji: "⬡", tagline: "Modern bento grid layout inspired by zkSync & Starknet", features: ["Cyber grid background", "Bento card layout", "Stagger animations"] },
+  "scroll_story": { emoji: "📜", tagline: "Minimal narrative scroll for story-driven launches", features: ["Full-screen text", "Scroll reveal effects", "Serif typography"] },
+  "web3_gaming": { emoji: "🎮", tagline: "Neon arcade aesthetic for gaming tokens", features: ["Scanline overlay", "Neon glow effects", "Media-left hero"] },
+  "ai_crypto": { emoji: "🤖", tagline: "Futuristic glow design for AI & tech projects", features: ["Neural network bg", "Glowing rings", "Tech-forward look"] },
+  "dao_portal": { emoji: "⬢", tagline: "Dashboard-style layout for governance tokens", features: ["Stats display", "Purple accents", "Clean governance UI"] },
+  "ultra_brutalist": { emoji: "◼", tagline: "Raw anti-design for maximum contrast", features: ["Black & white only", "No animations", "Bold typography"] },
+  "infra_terminal": { emoji: "💻", tagline: "CLI-inspired design for infrastructure projects", features: ["Terminal window", "Typing animation", "Matrix effect"] },
+  "social_first": { emoji: "💬", tagline: "Community-focused design with warm tones", features: ["Avatar focus", "Social proof", "Yellow accents"] },
+  "futuristic_3d": { emoji: "🌌", tagline: "Immersive holographic design for premium launches", features: ["3D space bg", "Floating shapes", "Hologram buttons"] },
 };
 
 const TemplateCard = ({
