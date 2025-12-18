@@ -43,8 +43,9 @@ const Builder = () => {
     id: string;
     subdomain: string;
   } | null>(null);
-  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
-  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+
+  const [previewKey, setPreviewKey] = useState(0);
+  const [isRefreshingPreview, setIsRefreshingPreview] = useState(false);
 
   const [formData, setFormData] = useState({
     coinName: "",
@@ -80,49 +81,12 @@ const Builder = () => {
     fetchTemplate();
   }, [preselectedLayout, preselectedPersonality]);
 
-  // Fetch preview HTML when project is generated
-  useEffect(() => {
-    const fetchPreviewHtml = async () => {
-      if (!generatedProject) {
-        setPreviewHtml(null);
-        return;
-      }
-      
-      setIsLoadingPreview(true);
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?subdomain=${generatedProject.subdomain}`
-        );
-        const html = await response.text();
-        setPreviewHtml(html);
-      } catch (error) {
-        console.error('Error fetching preview:', error);
-        toast.error('Failed to load preview');
-      } finally {
-        setIsLoadingPreview(false);
-      }
-    };
-    fetchPreviewHtml();
-  }, [generatedProject]);
 
-  // Refresh preview function
-  const refreshPreview = async () => {
+  // Refresh preview (reload iframe)
+  const refreshPreview = () => {
     if (!generatedProject) return;
-    
-    setIsLoadingPreview(true);
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?subdomain=${generatedProject.subdomain}&t=${Date.now()}`
-      );
-      const html = await response.text();
-      setPreviewHtml(html);
-      toast.success('Preview refreshed');
-    } catch (error) {
-      console.error('Error refreshing preview:', error);
-      toast.error('Failed to refresh preview');
-    } finally {
-      setIsLoadingPreview(false);
-    }
+    setIsRefreshingPreview(true);
+    setPreviewKey((k) => k + 1);
   };
 
   // Save changes and refresh preview
@@ -167,9 +131,7 @@ const Builder = () => {
       }
 
       toast.success('Changes saved!');
-      
-      // Refresh preview
-      await refreshPreview();
+      refreshPreview();
     } catch (error) {
       console.error('Save error:', error);
       toast.error('Failed to save changes');
@@ -342,6 +304,11 @@ const Builder = () => {
   const previewUrl = generatedProject 
     ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?subdomain=${generatedProject.subdomain}`
     : null;
+
+  useEffect(() => {
+    if (generatedProject) refreshPreview();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [generatedProject?.subdomain]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -702,9 +669,9 @@ const Builder = () => {
                           size="sm" 
                           className="gap-1"
                           onClick={refreshPreview}
-                          disabled={isLoadingPreview}
+                          disabled={isRefreshingPreview}
                         >
-                          <RefreshCw className={`w-4 h-4 ${isLoadingPreview ? 'animate-spin' : ''}`} />
+                          <RefreshCw className={`w-4 h-4 ${isRefreshingPreview ? 'animate-spin' : ''}`} />
                           Refresh
                         </Button>
                         <a href={previewUrl!} target="_blank" rel="noopener noreferrer">
@@ -725,17 +692,21 @@ const Builder = () => {
                 </div>
                 
                 {/* Preview Content */}
-                <div className="h-[calc(100%-3.5rem)] overflow-y-auto">
-                  {isLoadingPreview ? (
-                    <div className="flex items-center justify-center h-full">
-                      <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                    </div>
-                  ) : previewHtml ? (
-                    <iframe 
-                      srcDoc={previewHtml}
+                <div className="h-[calc(100%-3.5rem)] overflow-hidden">
+                  {generatedProject ? (
+                    <iframe
+                      key={previewKey}
+                      src={`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?subdomain=${generatedProject.subdomain}`}
                       className="w-full h-full border-0"
                       title="Site Preview"
-                      sandbox="allow-scripts"
+                      sandbox="allow-scripts allow-same-origin"
+                      loading="lazy"
+                      onLoad={() => {
+                        if (isRefreshingPreview) {
+                          setIsRefreshingPreview(false);
+                          toast.success('Preview refreshed');
+                        }
+                      }}
                     />
                   ) : (
                     <LivePreview 
