@@ -16,7 +16,9 @@ import {
   ExternalLink,
   Loader2,
   Wallet,
-  Check
+  Check,
+  RefreshCw,
+  Save
 } from "lucide-react";
 import { useSearchParams, Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -36,6 +38,7 @@ const Builder = () => {
 
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [generatedProject, setGeneratedProject] = useState<{
     id: string;
     subdomain: string;
@@ -101,6 +104,79 @@ const Builder = () => {
     };
     fetchPreviewHtml();
   }, [generatedProject]);
+
+  // Refresh preview function
+  const refreshPreview = async () => {
+    if (!generatedProject) return;
+    
+    setIsLoadingPreview(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?subdomain=${generatedProject.subdomain}&t=${Date.now()}`
+      );
+      const html = await response.text();
+      setPreviewHtml(html);
+      toast.success('Preview refreshed');
+    } catch (error) {
+      console.error('Error refreshing preview:', error);
+      toast.error('Failed to refresh preview');
+    } finally {
+      setIsLoadingPreview(false);
+    }
+  };
+
+  // Save changes and refresh preview
+  const saveChanges = async () => {
+    if (!generatedProject || !user) return;
+    
+    setIsSaving(true);
+    try {
+      // Upload new logo if changed
+      let logoUrl = undefined;
+      if (logoFile) {
+        logoUrl = await uploadLogo(generatedProject.id);
+      }
+
+      // Update project data
+      const updateData: Record<string, any> = {
+        coin_name: formData.coinName,
+        ticker: formData.ticker,
+        tagline: formData.tagline || null,
+        description: formData.description || null,
+        twitter_url: formData.twitter || null,
+        discord_url: formData.discord || null,
+        telegram_url: formData.telegram || null,
+        dex_link: formData.dexLink || null,
+        show_roadmap: formData.showRoadmap,
+        show_faq: formData.showFaq,
+      };
+
+      if (logoUrl) {
+        updateData.logo_url = logoUrl;
+      }
+
+      const { error } = await supabase
+        .from('projects')
+        .update(updateData)
+        .eq('id', generatedProject.id);
+
+      if (error) {
+        console.error('Error saving changes:', error);
+        toast.error('Failed to save changes');
+        return;
+      }
+
+      toast.success('Changes saved!');
+      
+      // Refresh preview
+      await refreshPreview();
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error('Failed to save changes');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -604,20 +680,48 @@ const Builder = () => {
                     </div>
                     <span className="text-xs text-muted-foreground ml-2 font-mono">{subdomain}.solsite.xyz</span>
                   </div>
-                  {generatedProject && (
-                    <a href={previewUrl!} target="_blank" rel="noopener noreferrer">
+                  <div className="flex items-center gap-2">
+                    {generatedProject && (
+                      <>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="gap-1"
+                          onClick={saveChanges}
+                          disabled={isSaving}
+                        >
+                          {isSaving ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Save className="w-4 h-4" />
+                          )}
+                          Save
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="gap-1"
+                          onClick={refreshPreview}
+                          disabled={isLoadingPreview}
+                        >
+                          <RefreshCw className={`w-4 h-4 ${isLoadingPreview ? 'animate-spin' : ''}`} />
+                          Refresh
+                        </Button>
+                        <a href={previewUrl!} target="_blank" rel="noopener noreferrer">
+                          <Button variant="ghost" size="sm" className="gap-1">
+                            <ExternalLink className="w-4 h-4" />
+                            Open
+                          </Button>
+                        </a>
+                      </>
+                    )}
+                    {!generatedProject && (
                       <Button variant="ghost" size="sm" className="gap-1">
-                        <ExternalLink className="w-4 h-4" />
-                        Open
+                        <Eye className="w-4 h-4" />
+                        Preview
                       </Button>
-                    </a>
-                  )}
-                  {!generatedProject && (
-                    <Button variant="ghost" size="sm" className="gap-1">
-                      <Eye className="w-4 h-4" />
-                      Preview
-                    </Button>
-                  )}
+                    )}
+                  </div>
                 </div>
                 
                 {/* Preview Content */}
