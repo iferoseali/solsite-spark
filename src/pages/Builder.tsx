@@ -202,9 +202,13 @@ const Builder = () => {
           contractAddress: formData.contractAddress,
         },
       },
-      { layout: currentLayout, personality: currentPersonality }
+      { 
+        layout: currentLayout, 
+        personality: currentPersonality,
+        templateId: selectedTemplateId || undefined
+      }
     );
-  }, [formData, logoPreview, currentLayout, currentPersonality]);
+  }, [formData, logoPreview, currentLayout, currentPersonality, selectedTemplateId]);
 
   // Load template blueprint preview when blueprintId is provided
   useEffect(() => {
@@ -1001,8 +1005,18 @@ const Builder = () => {
                     <div className="w-full h-full flex items-center justify-center">
                       <Loader2 className="w-8 h-8 animate-spin text-primary" />
                     </div>
-                  ) : (
+                  ) : templatePreviewHtml && !formData.coinName ? (
+                    // Show template preview when no user input yet
                     <iframe
+                      srcDoc={templatePreviewHtml}
+                      className="w-full h-full border-0"
+                      title="Template Preview"
+                      sandbox="allow-scripts"
+                    />
+                  ) : (
+                    // Show live preview with user's data
+                    <iframe
+                      key={`preview-${logoPreview}`}
                       srcDoc={livePreviewHtml}
                       className="w-full h-full border-0"
                       title="Live Preview"
