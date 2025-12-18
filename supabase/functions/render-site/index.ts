@@ -637,6 +637,46 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const subdomain = url.searchParams.get('subdomain');
     const projectId = url.searchParams.get('projectId');
+    const isPreview = url.searchParams.get('preview') === 'true';
+    const previewLayout = url.searchParams.get('layout');
+    const previewPersonality = url.searchParams.get('personality');
+
+    // Handle preview mode with demo data
+    if (isPreview && previewLayout && previewPersonality) {
+      console.log(`Generating preview for: layout=${previewLayout}, personality=${previewPersonality}`);
+      
+      const demoProject: Project = {
+        id: 'preview',
+        coin_name: 'MoonDoge',
+        ticker: '$MDOGE',
+        tagline: 'To the moon and beyond! 🚀',
+        description: 'MoonDoge is the next generation meme coin on Solana. Join our community of degens and ride the wave to the moon. We\'re not just a token, we\'re a movement.',
+        logo_url: null,
+        twitter_url: 'https://twitter.com',
+        discord_url: 'https://discord.gg',
+        telegram_url: 'https://t.me',
+        dex_link: 'https://raydium.io',
+        show_roadmap: true,
+        show_faq: true,
+        config: {},
+        template_id: null,
+      };
+
+      const demoTemplate: Template = {
+        layout_id: previewLayout,
+        personality_id: previewPersonality,
+        config: {},
+      };
+
+      const html = generateWebsiteHTML(demoProject, demoTemplate);
+      return new Response(html, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'public, max-age=3600',
+        },
+      });
+    }
 
     if (!subdomain && !projectId) {
       return new Response(
