@@ -1,1 +1,4 @@
 project_id = "bzbxdiaqpbroxhcibtpm"
+
+[functions.render-site]
+verify_jwt = false

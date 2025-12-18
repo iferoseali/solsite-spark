@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,15 +12,34 @@ import {
   Globe,
   Rocket,
   Eye,
-  Sparkles
+  Sparkles,
+  ExternalLink,
+  Loader2,
+  Wallet,
+  Check
 } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useWalletAuth } from "@/hooks/useWalletAuth";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 
 const Builder = () => {
   const [searchParams] = useSearchParams();
   const preselectedLayout = searchParams.get('layout') || 'minimal';
   const preselectedPersonality = searchParams.get('personality') || 'degen';
+
+  const { connected } = useWallet();
+  const { setVisible } = useWalletModal();
+  const { user, isVerified } = useWalletAuth();
+
+  const [templateId, setTemplateId] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedProject, setGeneratedProject] = useState<{
+    id: string;
+    subdomain: string;
+  } | null>(null);
 
   const [formData, setFormData] = useState({
     coinName: "",
@@ -36,6 +55,23 @@ const Builder = () => {
   });
 
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+
+  // Fetch template ID on mount
+  useEffect(() => {
+    const fetchTemplate = async () => {
+      const { data } = await supabase
+        .from('templates')
+        .select('id')
+        .eq('layout_id', preselectedLayout)
+        .eq('personality_id', preselectedPersonality)
+        .maybeSingle();
+      
+      if (data) {
+        setTemplateId(data.id);
+      }
+    };
+    fetchTemplate();
+  }, [preselectedLayout, preselectedPersonality]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -53,17 +89,110 @@ const Builder = () => {
     }
   };
 
-  const handleGenerate = () => {
+  const generateSubdomain = (coinName: string): string => {
+    return coinName
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .slice(0, 30);
+  };
+
+  const handleGenerate = async () => {
     if (!formData.coinName || !formData.ticker) {
       toast.error("Please fill in at least the coin name and ticker");
       return;
     }
-    toast.success("Website generated! (Demo mode - connect wallet to deploy)");
+
+    if (!connected) {
+      toast.error("Please connect your wallet first");
+      setVisible(true);
+      return;
+    }
+
+    if (!isVerified || !user) {
+      toast.error("Please verify your wallet on the dashboard first");
+      return;
+    }
+
+    setIsGenerating(true);
+
+    try {
+      const subdomain = generateSubdomain(formData.coinName);
+      
+      // Check if subdomain is taken
+      const { data: existingProject } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('subdomain', subdomain)
+        .maybeSingle();
+
+      let finalSubdomain = subdomain;
+      if (existingProject) {
+        // Add random suffix if taken
+        finalSubdomain = `${subdomain}-${Math.random().toString(36).substring(2, 6)}`;
+      }
+
+      // Create project
+      const { data: project, error } = await supabase
+        .from('projects')
+        .insert({
+          user_id: user.id,
+          template_id: templateId,
+          coin_name: formData.coinName,
+          ticker: formData.ticker,
+          tagline: formData.tagline || null,
+          description: formData.description || null,
+          logo_url: logoPreview || null, // For now, store as data URL (later use storage)
+          twitter_url: formData.twitter || null,
+          discord_url: formData.discord || null,
+          telegram_url: formData.telegram || null,
+          dex_link: formData.dexLink || null,
+          show_roadmap: formData.showRoadmap,
+          show_faq: formData.showFaq,
+          subdomain: finalSubdomain,
+          status: 'published',
+          generated_url: `https://${finalSubdomain}.solsite.xyz`
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating project:', error);
+        toast.error('Failed to create website');
+        return;
+      }
+
+      // Create domain record
+      await supabase
+        .from('domains')
+        .insert({
+          project_id: project.id,
+          subdomain: finalSubdomain,
+          status: 'active'
+        });
+
+      setGeneratedProject({
+        id: project.id,
+        subdomain: finalSubdomain
+      });
+
+      toast.success('Website generated successfully!');
+    } catch (error) {
+      console.error('Generation error:', error);
+      toast.error('Failed to generate website');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const subdomain = formData.coinName 
-    ? `${formData.coinName.toLowerCase().replace(/\s+/g, '-')}.solsite.xyz`
-    : 'yourcoin.solsite.xyz';
+    ? generateSubdomain(formData.coinName)
+    : 'yourcoin';
+
+  const previewUrl = generatedProject 
+    ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?subdomain=${generatedProject.subdomain}`
+    : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -83,6 +212,84 @@ const Builder = () => {
                 </p>
               </div>
 
+              {/* Wallet Status */}
+              {!connected && (
+                <div className="mb-6 p-4 rounded-xl glass border border-primary/30">
+                  <div className="flex items-center gap-3">
+                    <Wallet className="w-5 h-5 text-primary" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">Connect wallet to deploy</p>
+                      <p className="text-xs text-muted-foreground">Required to save your website</p>
+                    </div>
+                    <Button variant="glow" size="sm" onClick={() => setVisible(true)}>
+                      Connect
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {connected && !isVerified && (
+                <div className="mb-6 p-4 rounded-xl glass border border-yellow-500/30">
+                  <div className="flex items-center gap-3">
+                    <Wallet className="w-5 h-5 text-yellow-500" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">Verify your wallet</p>
+                      <p className="text-xs text-muted-foreground">Go to dashboard to sign & verify</p>
+                    </div>
+                    <Link to="/dashboard">
+                      <Button variant="outline" size="sm">
+                        Verify
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              {connected && isVerified && (
+                <div className="mb-6 p-4 rounded-xl glass border border-accent/30">
+                  <div className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-accent" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-accent">Wallet verified</p>
+                      <p className="text-xs text-muted-foreground">Ready to deploy your website</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Generated Success */}
+              {generatedProject && (
+                <div className="mb-6 p-6 rounded-xl bg-accent/10 border border-accent/30">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
+                      <Check className="w-5 h-5 text-accent" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-accent">Website Live!</p>
+                      <p className="text-sm text-muted-foreground">{generatedProject.subdomain}.solsite.xyz</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <a 
+                      href={previewUrl!} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex-1"
+                    >
+                      <Button variant="accent" className="w-full gap-2">
+                        <ExternalLink className="w-4 h-4" />
+                        View Live Site
+                      </Button>
+                    </a>
+                    <Link to="/dashboard">
+                      <Button variant="outline">
+                        Dashboard
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-6">
                 {/* Basic Info */}
                 <div className="space-y-4">
@@ -100,6 +307,7 @@ const Builder = () => {
                         placeholder="Moon Doge"
                         value={formData.coinName}
                         onChange={handleInputChange}
+                        disabled={!!generatedProject}
                       />
                     </div>
                     <div className="space-y-2">
@@ -110,6 +318,7 @@ const Builder = () => {
                         placeholder="$MDOGE"
                         value={formData.ticker}
                         onChange={handleInputChange}
+                        disabled={!!generatedProject}
                       />
                     </div>
                   </div>
@@ -122,6 +331,7 @@ const Builder = () => {
                       placeholder="To the moon and beyond 🚀"
                       value={formData.tagline}
                       onChange={handleInputChange}
+                      disabled={!!generatedProject}
                     />
                   </div>
 
@@ -134,13 +344,14 @@ const Builder = () => {
                       value={formData.description}
                       onChange={handleInputChange}
                       rows={4}
+                      disabled={!!generatedProject}
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label>Logo</Label>
                     <div className="flex items-center gap-4">
-                      <label className="flex-1 cursor-pointer">
+                      <label className={`flex-1 ${generatedProject ? 'pointer-events-none opacity-50' : 'cursor-pointer'}`}>
                         <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-dashed border-border hover:border-primary/50 transition-colors bg-secondary/30">
                           <Upload className="w-5 h-5 text-muted-foreground" />
                           <span className="text-sm text-muted-foreground">
@@ -152,6 +363,7 @@ const Builder = () => {
                           accept="image/*"
                           className="hidden"
                           onChange={handleLogoUpload}
+                          disabled={!!generatedProject}
                         />
                       </label>
                       {logoPreview && (
@@ -179,6 +391,7 @@ const Builder = () => {
                         value={formData.twitter}
                         onChange={handleInputChange}
                         className="pl-10"
+                        disabled={!!generatedProject}
                       />
                     </div>
                     <div className="relative">
@@ -189,6 +402,7 @@ const Builder = () => {
                         value={formData.discord}
                         onChange={handleInputChange}
                         className="pl-10"
+                        disabled={!!generatedProject}
                       />
                     </div>
                     <div className="relative">
@@ -199,6 +413,7 @@ const Builder = () => {
                         value={formData.telegram}
                         onChange={handleInputChange}
                         className="pl-10"
+                        disabled={!!generatedProject}
                       />
                     </div>
                   </div>
@@ -215,6 +430,7 @@ const Builder = () => {
                     placeholder="raydium.io/swap?outputCurrency=..."
                     value={formData.dexLink}
                     onChange={handleInputChange}
+                    disabled={!!generatedProject}
                   />
                 </div>
 
@@ -228,6 +444,7 @@ const Builder = () => {
                         id="showRoadmap"
                         checked={formData.showRoadmap}
                         onCheckedChange={(checked) => setFormData(prev => ({ ...prev, showRoadmap: checked }))}
+                        disabled={!!generatedProject}
                       />
                     </div>
                     <div className="flex items-center justify-between">
@@ -236,6 +453,7 @@ const Builder = () => {
                         id="showFaq"
                         checked={formData.showFaq}
                         onCheckedChange={(checked) => setFormData(prev => ({ ...prev, showFaq: checked }))}
+                        disabled={!!generatedProject}
                       />
                     </div>
                   </div>
@@ -244,14 +462,57 @@ const Builder = () => {
                 {/* Domain Preview */}
                 <div className="p-4 rounded-xl glass">
                   <p className="text-sm text-muted-foreground mb-1">Your site will be live at:</p>
-                  <p className="text-primary font-mono text-sm">{subdomain}</p>
+                  <p className="text-primary font-mono text-sm">{subdomain}.solsite.xyz</p>
                 </div>
 
                 {/* Generate Button */}
-                <Button variant="hero" size="xl" className="w-full" onClick={handleGenerate}>
-                  <Rocket className="w-5 h-5 mr-2" />
-                  Generate Website
-                </Button>
+                {!generatedProject && (
+                  <Button 
+                    variant="hero" 
+                    size="xl" 
+                    className="w-full" 
+                    onClick={handleGenerate}
+                    disabled={isGenerating || !formData.coinName || !formData.ticker}
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Rocket className="w-5 h-5 mr-2" />
+                        Generate Website
+                      </>
+                    )}
+                  </Button>
+                )}
+
+                {generatedProject && (
+                  <Button 
+                    variant="outline" 
+                    size="xl" 
+                    className="w-full" 
+                    onClick={() => {
+                      setGeneratedProject(null);
+                      setFormData({
+                        coinName: "",
+                        ticker: "",
+                        tagline: "",
+                        description: "",
+                        twitter: "",
+                        discord: "",
+                        telegram: "",
+                        dexLink: "",
+                        showRoadmap: true,
+                        showFaq: true,
+                      });
+                      setLogoPreview(null);
+                    }}
+                  >
+                    Create Another Site
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -268,22 +529,40 @@ const Builder = () => {
                       <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
                       <div className="w-3 h-3 rounded-full bg-accent/60" />
                     </div>
-                    <span className="text-xs text-muted-foreground ml-2 font-mono">{subdomain}</span>
+                    <span className="text-xs text-muted-foreground ml-2 font-mono">{subdomain}.solsite.xyz</span>
                   </div>
-                  <Button variant="ghost" size="sm" className="gap-1">
-                    <Eye className="w-4 h-4" />
-                    Preview
-                  </Button>
+                  {previewUrl && (
+                    <a href={previewUrl} target="_blank" rel="noopener noreferrer">
+                      <Button variant="ghost" size="sm" className="gap-1">
+                        <ExternalLink className="w-4 h-4" />
+                        Open
+                      </Button>
+                    </a>
+                  )}
+                  {!previewUrl && (
+                    <Button variant="ghost" size="sm" className="gap-1">
+                      <Eye className="w-4 h-4" />
+                      Preview
+                    </Button>
+                  )}
                 </div>
                 
                 {/* Preview Content */}
                 <div className="h-[calc(100%-3.5rem)] overflow-y-auto">
-                  <LivePreview 
-                    formData={formData} 
-                    logoPreview={logoPreview}
-                    layout={preselectedLayout}
-                    personality={preselectedPersonality}
-                  />
+                  {previewUrl ? (
+                    <iframe 
+                      src={previewUrl} 
+                      className="w-full h-full border-0"
+                      title="Site Preview"
+                    />
+                  ) : (
+                    <LivePreview 
+                      formData={formData} 
+                      logoPreview={logoPreview}
+                      layout={preselectedLayout}
+                      personality={preselectedPersonality}
+                    />
+                  )}
                 </div>
               </div>
             </div>
