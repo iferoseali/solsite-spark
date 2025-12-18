@@ -40,6 +40,8 @@ const Builder = () => {
     id: string;
     subdomain: string;
   } | null>(null);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
 
   const [formData, setFormData] = useState({
     coinName: "",
@@ -74,6 +76,31 @@ const Builder = () => {
     };
     fetchTemplate();
   }, [preselectedLayout, preselectedPersonality]);
+
+  // Fetch preview HTML when project is generated
+  useEffect(() => {
+    const fetchPreviewHtml = async () => {
+      if (!generatedProject) {
+        setPreviewHtml(null);
+        return;
+      }
+      
+      setIsLoadingPreview(true);
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?subdomain=${generatedProject.subdomain}`
+        );
+        const html = await response.text();
+        setPreviewHtml(html);
+      } catch (error) {
+        console.error('Error fetching preview:', error);
+        toast.error('Failed to load preview');
+      } finally {
+        setIsLoadingPreview(false);
+      }
+    };
+    fetchPreviewHtml();
+  }, [generatedProject]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -577,15 +604,15 @@ const Builder = () => {
                     </div>
                     <span className="text-xs text-muted-foreground ml-2 font-mono">{subdomain}.solsite.xyz</span>
                   </div>
-                  {previewUrl && (
-                    <a href={previewUrl} target="_blank" rel="noopener noreferrer">
+                  {generatedProject && (
+                    <a href={previewUrl!} target="_blank" rel="noopener noreferrer">
                       <Button variant="ghost" size="sm" className="gap-1">
                         <ExternalLink className="w-4 h-4" />
                         Open
                       </Button>
                     </a>
                   )}
-                  {!previewUrl && (
+                  {!generatedProject && (
                     <Button variant="ghost" size="sm" className="gap-1">
                       <Eye className="w-4 h-4" />
                       Preview
@@ -595,12 +622,16 @@ const Builder = () => {
                 
                 {/* Preview Content */}
                 <div className="h-[calc(100%-3.5rem)] overflow-y-auto">
-                  {previewUrl ? (
+                  {isLoadingPreview ? (
+                    <div className="flex items-center justify-center h-full">
+                      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    </div>
+                  ) : previewHtml ? (
                     <iframe 
-                      src={previewUrl} 
+                      srcDoc={previewHtml}
                       className="w-full h-full border-0"
                       title="Site Preview"
-                      sandbox="allow-scripts allow-same-origin"
+                      sandbox="allow-scripts"
                     />
                   ) : (
                     <LivePreview 
