@@ -55,6 +55,8 @@ const Builder = () => {
   });
 
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
   // Fetch template ID on mount
   useEffect(() => {
@@ -81,11 +83,44 @@ const Builder = () => {
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Store file for later upload
+      setLogoFile(file);
+      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setLogoPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadLogo = async (projectId: string): Promise<string | null> => {
+    if (!logoFile) return null;
+    
+    setIsUploadingLogo(true);
+    try {
+      const fileExt = logoFile.name.split('.').pop();
+      const fileName = `${projectId}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('project-logos')
+        .upload(fileName, logoFile, { upsert: true });
+      
+      if (uploadError) {
+        console.error('Logo upload error:', uploadError);
+        return null;
+      }
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('project-logos')
+        .getPublicUrl(fileName);
+      
+      return publicUrl;
+    } catch (error) {
+      console.error('Logo upload failed:', error);
+      return null;
+    } finally {
+      setIsUploadingLogo(false);
     }
   };
 
@@ -133,7 +168,7 @@ const Builder = () => {
         finalSubdomain = `${subdomain}-${Math.random().toString(36).substring(2, 6)}`;
       }
 
-      // Create project
+      // Create project first (without logo)
       const { data: project, error } = await supabase
         .from('projects')
         .insert({
@@ -143,7 +178,7 @@ const Builder = () => {
           ticker: formData.ticker,
           tagline: formData.tagline || null,
           description: formData.description || null,
-          logo_url: logoPreview || null, // For now, store as data URL (later use storage)
+          logo_url: null,
           twitter_url: formData.twitter || null,
           discord_url: formData.discord || null,
           telegram_url: formData.telegram || null,
@@ -161,6 +196,17 @@ const Builder = () => {
         console.error('Error creating project:', error);
         toast.error('Failed to create website');
         return;
+      }
+
+      // Upload logo if provided
+      if (logoFile) {
+        const logoUrl = await uploadLogo(project.id);
+        if (logoUrl) {
+          await supabase
+            .from('projects')
+            .update({ logo_url: logoUrl })
+            .eq('id', project.id);
+        }
       }
 
       // Create domain record
