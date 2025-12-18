@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Wallet } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { WalletButton } from "@/components/wallet/WalletButton";
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,6 +13,7 @@ export const Navbar = () => {
     { href: "/", label: "Home" },
     { href: "/templates", label: "Templates" },
     { href: "/builder", label: "Builder" },
+    { href: "/dashboard", label: "Dashboard" },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -48,10 +50,7 @@ export const Navbar = () => {
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
             <ThemeToggle />
-            <Button variant="glow" size="sm" className="gap-2">
-              <Wallet className="w-4 h-4" />
-              Connect Wallet
-            </Button>
+            <WalletButton />
           </div>
 
           {/* Mobile Menu Button */}
@@ -84,10 +83,7 @@ export const Navbar = () => {
             ))}
             <div className="flex items-center gap-3 pt-4 border-t border-border">
               <ThemeToggle />
-              <Button variant="glow" size="sm" className="gap-2 flex-1">
-                <Wallet className="w-4 h-4" />
-                Connect Wallet
-              </Button>
+              <WalletButton className="flex-1" />
             </div>
           </div>
         </div>
