@@ -37,8 +37,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Validate signature format (base58)
-    if (!base58Regex.test(signature)) {
+    // Validate signature format (base58, 64-byte Ed25519 signature = ~87-88 chars)
+    const signatureBase58Regex = /^[1-9A-HJ-NP-Za-km-z]{80,90}$/;
+    if (!signatureBase58Regex.test(signature)) {
       return new Response(
         JSON.stringify({ error: 'Invalid signature format' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
