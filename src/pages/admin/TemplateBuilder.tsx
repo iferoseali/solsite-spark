@@ -11,6 +11,7 @@ import { SectionMapper } from "@/components/admin/SectionMapper";
 import { StyleEditor } from "@/components/admin/StyleEditor";
 import { AnimationConfig } from "@/components/admin/AnimationConfig";
 import { TemplatePreview } from "@/components/admin/TemplatePreview";
+import { useWalletAuth } from "@/hooks/useWalletAuth";
 import {
   TemplateBlueprint,
   SectionDefinition,
@@ -33,6 +34,7 @@ import {
 
 const TemplateBuilder = () => {
   const navigate = useNavigate();
+  const { walletAddress, isVerified } = useWalletAuth();
   const [referenceUrl, setReferenceUrl] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -112,11 +114,17 @@ const TemplateBuilder = () => {
       return;
     }
 
+    if (!walletAddress) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
+
     setIsSaving(true);
     try {
       const { data, error } = await supabase.functions.invoke('manage-template', {
         body: {
           action: 'create',
+          wallet_address: walletAddress,
           template: {
             name: templateName,
             reference_url: referenceUrl || null,
@@ -135,9 +143,9 @@ const TemplateBuilder = () => {
 
       toast.success("Template saved successfully!");
       navigate('/templates');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Save error:', error);
-      toast.error("Failed to save template");
+      toast.error(error.message || "Failed to save template");
     } finally {
       setIsSaving(false);
     }

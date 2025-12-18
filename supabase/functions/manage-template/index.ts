@@ -7,6 +7,7 @@ const corsHeaders = {
 
 interface TemplateRequest {
   action: 'create' | 'update' | 'delete';
+  wallet_address: string;
   template?: {
     name: string;
     reference_url?: string | null;
@@ -33,9 +34,16 @@ Deno.serve(async (req) => {
 
   try {
     const body: TemplateRequest = await req.json();
-    const { action, template, id } = body;
+    const { action, wallet_address, template, id } = body;
 
-    console.log(`[manage-template] Action: ${action}, ID: ${id || 'new'}`);
+    console.log(`[manage-template] Action: ${action}, Wallet: ${wallet_address}, ID: ${id || 'new'}`);
+
+    if (!wallet_address) {
+      return new Response(
+        JSON.stringify({ error: 'Wallet address is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Create admin client with service role
     const supabaseAdmin = createClient(
@@ -43,6 +51,43 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       { auth: { persistSession: false } }
     );
+
+    // Check if user exists and get their user_id
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('wallet_address', wallet_address)
+      .single();
+
+    if (userError || !userData) {
+      console.error('[manage-template] User not found:', userError);
+      return new Response(
+        JSON.stringify({ error: 'User not found' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check if user has admin role using the has_role function
+    const { data: hasAdminRole, error: roleError } = await supabaseAdmin
+      .rpc('has_role', { _user_id: userData.id, _role: 'admin' });
+
+    if (roleError) {
+      console.error('[manage-template] Role check error:', roleError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to verify permissions' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!hasAdminRole) {
+      console.log(`[manage-template] User ${userData.id} is not an admin`);
+      return new Response(
+        JSON.stringify({ error: 'Admin access required' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`[manage-template] Admin verified for user: ${userData.id}`);
 
     if (action === 'create') {
       if (!template || !template.name) {
