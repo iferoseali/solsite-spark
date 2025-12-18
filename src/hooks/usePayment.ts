@@ -4,10 +4,14 @@ import {
   Transaction, 
   SystemProgram, 
   PublicKey,
-  LAMPORTS_PER_SOL
+  LAMPORTS_PER_SOL,
+  Connection
 } from '@solana/web3.js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+// Use Helius public RPC for reliability
+const SOLANA_RPC = 'https://mainnet.helius-rpc.com/?api-key=1d8740dc-e5f4-421c-b823-e1bad1889eff';
 
 // Treasury wallet address
 const TREASURY_WALLET = new PublicKey(import.meta.env.VITE_TREASURY_WALLET || '11111111111111111111111111111111');
@@ -63,6 +67,9 @@ export function usePayment() {
       throw new Error('Wallet not connected');
     }
 
+    // Use reliable RPC connection
+    const reliableConnection = new Connection(SOLANA_RPC, 'confirmed');
+
     const lamports = Math.ceil(amount * LAMPORTS_PER_SOL);
     
     const transaction = new Transaction().add(
@@ -73,14 +80,14 @@ export function usePayment() {
       })
     );
 
-    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+    const { blockhash, lastValidBlockHeight } = await reliableConnection.getLatestBlockhash();
     transaction.recentBlockhash = blockhash;
     transaction.feePayer = publicKey;
 
-    const signature = await sendTransaction(transaction, connection);
+    const signature = await sendTransaction(transaction, reliableConnection);
     
     // Wait for confirmation
-    await connection.confirmTransaction({
+    await reliableConnection.confirmTransaction({
       signature,
       blockhash,
       lastValidBlockHeight
