@@ -1,5 +1,11 @@
 // Client-side HTML generator that matches the edge function output
 
+interface TokenomicsInput {
+  totalSupply?: string;
+  circulatingSupply?: string;
+  contractAddress?: string;
+}
+
 interface ProjectData {
   coinName: string;
   ticker: string;
@@ -12,6 +18,7 @@ interface ProjectData {
   dexLink: string;
   showRoadmap: boolean;
   showFaq: boolean;
+  tokenomics?: TokenomicsInput;
 }
 
 interface TemplateConfig {
@@ -57,26 +64,28 @@ export function generatePreviewHtml(project: ProjectData, config: TemplateConfig
   `;
 
   // Layout-specific sections
-  const statsSection = (layout === 'stats-heavy' || layout === 'hero-roadmap') ? `
+  const tokenomics = project.tokenomics || {};
+  const hasCustomTokenomics = tokenomics.totalSupply || tokenomics.circulatingSupply || tokenomics.contractAddress;
+  
+  const statsSection = (layout === 'stats-heavy' || layout === 'hero-roadmap' || hasCustomTokenomics) ? `
     <section class="stats-section fade-in-section">
       <div class="container">
+        <h2 class="section-title">Tokenomics</h2>
         <div class="stats-grid">
           <div class="stat-card">
-            <div class="stat-value">1M+</div>
+            <div class="stat-value">${tokenomics.totalSupply || '1B+'}</div>
             <div class="stat-label">Total Supply</div>
           </div>
           <div class="stat-card">
-            <div class="stat-value">5,000+</div>
-            <div class="stat-label">Holders</div>
+            <div class="stat-value">${tokenomics.circulatingSupply || 'TBA'}</div>
+            <div class="stat-label">Circulating</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-value">$100K+</div>
-            <div class="stat-label">Market Cap</div>
+          ${tokenomics.contractAddress ? `
+          <div class="stat-card contract-card">
+            <div class="stat-value contract-address" title="${tokenomics.contractAddress}">${tokenomics.contractAddress.slice(0, 6)}...${tokenomics.contractAddress.slice(-4)}</div>
+            <div class="stat-label">Contract</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-value">0%</div>
-            <div class="stat-label">Buy/Sell Tax</div>
-          </div>
+          ` : ''}
         </div>
       </div>
     </section>
