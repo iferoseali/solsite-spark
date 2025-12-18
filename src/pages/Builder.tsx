@@ -600,6 +600,7 @@ const Builder = () => {
                       src={previewUrl} 
                       className="w-full h-full border-0"
                       title="Site Preview"
+                      sandbox="allow-scripts allow-same-origin"
                     />
                   ) : (
                     <LivePreview 
