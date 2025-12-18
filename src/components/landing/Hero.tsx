@@ -27,7 +27,7 @@ export const Hero = () => {
           {/* Main heading */}
           <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-display font-bold leading-tight mb-6 fade-in-up fade-in-delay-2">
             Build Your{" "}
-            <span className="text-gradient-primary">Meme Coin</span>
+            <span className="text-gradient-primary text-primary bg-primary">​Website</span>
             <br />
             Website in{" "}
             <span className="relative inline-block">
