@@ -6,22 +6,12 @@ import {
   PublicKey,
   LAMPORTS_PER_SOL
 } from '@solana/web3.js';
-import {
-  getAssociatedTokenAddress,
-  createTransferCheckedInstruction,
-  TOKEN_PROGRAM_ID,
-} from '@solana/spl-token';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-// USDC Mainnet mint address
-const USDC_MINT = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
-const USDC_DECIMALS = 6;
-
-// Treasury wallet address (same as in edge function)
+// Treasury wallet address
 const TREASURY_WALLET = new PublicKey(import.meta.env.VITE_TREASURY_WALLET || '11111111111111111111111111111111');
 
-export type PaymentCurrency = 'SOL' | 'USDC';
 export type PaymentType = 'website' | 'domain';
 
 interface PaymentResult {
@@ -40,9 +30,7 @@ export function usePayment() {
     userId: string,
     walletAddress: string,
     paymentType: PaymentType,
-    currency: PaymentCurrency,
     amount: number,
-    usdAmount: number,
     projectId?: string
   ): Promise<string> => {
     const { data, error } = await supabase
@@ -51,9 +39,9 @@ export function usePayment() {
         user_id: userId,
         wallet_address: walletAddress,
         payment_type: paymentType,
-        currency: currency,
+        currency: 'SOL',
         sol_amount: amount,
-        usd_amount: usdAmount,
+        usd_amount: null,
         project_id: projectId || null,
         status: 'pending'
       })
@@ -101,52 +89,9 @@ export function usePayment() {
     return signature;
   }, [publicKey, signTransaction, sendTransaction, connection]);
 
-  const sendUSDCPayment = useCallback(async (
-    amount: number
-  ): Promise<string> => {
-    if (!publicKey || !signTransaction) {
-      throw new Error('Wallet not connected');
-    }
-
-    // Get sender's USDC token account
-    const senderATA = await getAssociatedTokenAddress(USDC_MINT, publicKey);
-    
-    // Get treasury's USDC token account
-    const treasuryATA = await getAssociatedTokenAddress(USDC_MINT, TREASURY_WALLET);
-    
-    // Convert to token amount (USDC has 6 decimals)
-    const tokenAmount = BigInt(Math.ceil(amount * Math.pow(10, USDC_DECIMALS)));
-
-    const transaction = new Transaction().add(
-      createTransferCheckedInstruction(
-        senderATA,           // from
-        USDC_MINT,           // mint
-        treasuryATA,         // to
-        publicKey,           // owner
-        tokenAmount,         // amount
-        USDC_DECIMALS        // decimals
-      )
-    );
-
-    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
-    transaction.recentBlockhash = blockhash;
-    transaction.feePayer = publicKey;
-
-    const signature = await sendTransaction(transaction, connection);
-    
-    await connection.confirmTransaction({
-      signature,
-      blockhash,
-      lastValidBlockHeight
-    });
-
-    return signature;
-  }, [publicKey, signTransaction, sendTransaction, connection]);
-
   const verifyPayment = useCallback(async (
     paymentId: string,
     transactionSignature: string,
-    currency: PaymentCurrency,
     paymentType: PaymentType,
     expectedAmount: number
   ): Promise<boolean> => {
@@ -154,7 +99,7 @@ export function usePayment() {
       body: {
         paymentId,
         transactionSignature,
-        currency,
+        currency: 'SOL',
         paymentType,
         expectedAmount
       }
@@ -172,9 +117,7 @@ export function usePayment() {
     userId: string,
     walletAddress: string,
     paymentType: PaymentType,
-    currency: PaymentCurrency,
     amount: number,
-    usdAmount: number,
     projectId?: string
   ): Promise<PaymentResult> => {
     if (!publicKey) {
@@ -189,19 +132,12 @@ export function usePayment() {
         userId,
         walletAddress,
         paymentType,
-        currency,
         amount,
-        usdAmount,
         projectId
       );
 
-      // 2. Send payment transaction
-      let signature: string;
-      if (currency === 'SOL') {
-        signature = await sendSOLPayment(amount);
-      } else {
-        signature = await sendUSDCPayment(amount);
-      }
+      // 2. Send SOL payment transaction
+      const signature = await sendSOLPayment(amount);
 
       toast.success('Transaction sent! Verifying...');
 
@@ -209,7 +145,6 @@ export function usePayment() {
       const verified = await verifyPayment(
         paymentId,
         signature,
-        currency,
         paymentType,
         amount
       );
@@ -239,7 +174,7 @@ export function usePayment() {
     } finally {
       setIsProcessing(false);
     }
-  }, [publicKey, createPaymentRecord, sendSOLPayment, sendUSDCPayment, verifyPayment]);
+  }, [publicKey, createPaymentRecord, sendSOLPayment, verifyPayment]);
 
   const checkExistingPayment = useCallback(async (
     userId: string,

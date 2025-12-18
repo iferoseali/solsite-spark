@@ -17,6 +17,3 @@ verify_jwt = false
 
 [functions.verify-payment]
 verify_jwt = false
-
-[functions.get-prices]
-verify_jwt = false

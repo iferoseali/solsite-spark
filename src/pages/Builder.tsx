@@ -1001,13 +1001,6 @@ const Builder = () => {
                     <div className="w-full h-full flex items-center justify-center">
                       <Loader2 className="w-8 h-8 animate-spin text-primary" />
                     </div>
-                  ) : templatePreviewHtml ? (
-                    <iframe
-                      srcDoc={templatePreviewHtml}
-                      className="w-full h-full border-0"
-                      title="Template Preview"
-                      sandbox="allow-scripts"
-                    />
                   ) : (
                     <iframe
                       srcDoc={livePreviewHtml}
