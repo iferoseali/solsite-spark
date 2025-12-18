@@ -49,8 +49,25 @@ const TemplatePreviewCard = ({
 }) => {
   const [showPreview, setShowPreview] = useState(false);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [thumbnailHtml, setThumbnailHtml] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
   const previewUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?preview=true&layout=${layout.id}&personality=${personality.id}`;
+
+  // Load thumbnail preview on mount
+  useEffect(() => {
+    const loadThumbnail = async () => {
+      try {
+        const response = await fetch(previewUrl);
+        const html = await response.text();
+        setThumbnailHtml(html);
+        setThumbnailLoaded(true);
+      } catch (error) {
+        console.error('Error loading thumbnail:', error);
+      }
+    };
+    loadThumbnail();
+  }, [previewUrl]);
 
   const loadPreview = async () => {
     setIsLoading(true);
@@ -77,7 +94,7 @@ const TemplatePreviewCard = ({
       {/* Background gradient based on personality */}
       <div className={`absolute inset-0 ${personality.bg} opacity-90`} />
       
-      {/* Preview mockup */}
+      {/* Live preview thumbnail */}
       <div className="relative aspect-[3/4] p-3">
         <div className="w-full h-full rounded-xl bg-black/40 backdrop-blur-sm border border-white/10 overflow-hidden flex flex-col">
           {/* Mini browser header */}
@@ -90,73 +107,30 @@ const TemplatePreviewCard = ({
             </div>
           </div>
           
-          {/* Content preview - varies by layout */}
-          <div className="flex-1 p-3 flex flex-col gap-2">
-            {/* Hero section */}
-            <div className="flex flex-col items-center justify-center py-4 gap-2">
-              <div 
-                className="w-12 h-12 rounded-full"
-                style={{ background: `linear-gradient(135deg, ${template.config?.primary_color || '#ff4444'}, ${template.config?.accent_color || '#ff8800'})` }}
-              />
-              <div className="w-20 h-3 rounded bg-white/20" />
-              <div className="w-28 h-2 rounded bg-white/10" />
-              <div 
-                className="w-16 h-5 rounded-md mt-1"
-                style={{ backgroundColor: template.config?.primary_color || '#ff4444' }}
-              />
-            </div>
-
-            {/* Layout-specific content */}
-            {layout.id === 'hero-roadmap' && (
-              <div className="flex gap-1.5 px-1">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="flex-1 h-8 rounded bg-white/5 border border-white/10" />
-                ))}
+          {/* Actual website preview - scaled down */}
+          <div className="flex-1 relative overflow-hidden">
+            {thumbnailLoaded && thumbnailHtml ? (
+              <div className="absolute inset-0 origin-top-left" style={{ transform: 'scale(0.25)', width: '400%', height: '400%' }}>
+                <iframe
+                  srcDoc={thumbnailHtml}
+                  className="w-full h-full border-0 pointer-events-none"
+                  title={`Thumbnail: ${layout.name} × ${personality.name}`}
+                  sandbox="allow-scripts"
+                />
               </div>
-            )}
-            
-            {layout.id === 'story-lore' && (
-              <div className="space-y-1 px-2">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="h-1.5 rounded bg-white/10" style={{ width: `${90 - i * 15}%` }} />
-                ))}
-              </div>
-            )}
-
-            {layout.id === 'stats-heavy' && (
-              <div className="grid grid-cols-2 gap-1.5 px-1">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="h-8 rounded bg-white/5 border border-white/10 flex items-center justify-center">
-                    <div className="w-8 h-2 rounded bg-white/20" />
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {layout.id === 'community' && (
-              <div className="flex justify-center gap-2 py-2">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="w-6 h-6 rounded-full bg-white/10" />
-                ))}
-              </div>
-            )}
-
-            {layout.id === 'utility' && (
-              <div className="space-y-1.5 px-1">
-                <div className="h-6 rounded bg-white/5 border border-white/10" />
-                <div className="grid grid-cols-2 gap-1">
-                  <div className="h-5 rounded bg-white/5" />
-                  <div className="h-5 rounded bg-white/5" />
+            ) : (
+              // Loading skeleton
+              <div className="flex-1 p-3 flex flex-col gap-2 animate-pulse">
+                <div className="flex flex-col items-center justify-center py-4 gap-2">
+                  <div 
+                    className="w-12 h-12 rounded-full"
+                    style={{ background: `linear-gradient(135deg, ${template.config?.primary_color || '#ff4444'}, ${template.config?.accent_color || '#ff8800'})` }}
+                  />
+                  <div className="w-20 h-3 rounded bg-white/20" />
+                  <div className="w-28 h-2 rounded bg-white/10" />
                 </div>
               </div>
             )}
-
-            {/* Social links */}
-            <div className="flex justify-center gap-2 mt-auto">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="w-5 h-5 rounded-full bg-white/10" />
-              ))}
-            </div>
           </div>
         </div>
       </div>
