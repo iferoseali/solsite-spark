@@ -1,17 +1,17 @@
 import { useState, useCallback } from 'react';
-import { useWallet, useConnection } from '@solana/wallet-adapter-react';
-import { 
-  Transaction, 
-  SystemProgram, 
+import { useWallet } from '@solana/wallet-adapter-react';
+import {
+  Transaction,
+  SystemProgram,
   PublicKey,
   LAMPORTS_PER_SOL,
-  Connection
+  Connection,
 } from '@solana/web3.js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-// Use Helius public RPC for reliability
-const SOLANA_RPC = 'https://mainnet.helius-rpc.com/?api-key=1d8740dc-e5f4-421c-b823-e1bad1889eff';
+// Public RPC (no API key)
+const SOLANA_RPC = 'https://rpc.ankr.com/solana';
 
 // Treasury wallet address
 const TREASURY_WALLET = new PublicKey(import.meta.env.VITE_TREASURY_WALLET || '11111111111111111111111111111111');
@@ -27,7 +27,6 @@ interface PaymentResult {
 
 export function usePayment() {
   const { publicKey, sendTransaction, signTransaction } = useWallet();
-  const { connection } = useConnection();
   const [isProcessing, setIsProcessing] = useState(false);
 
   const createPaymentRecord = useCallback(async (
@@ -94,7 +93,7 @@ export function usePayment() {
     });
 
     return signature;
-  }, [publicKey, signTransaction, sendTransaction, connection]);
+  }, [publicKey, signTransaction, sendTransaction]);
 
   const verifyPayment = useCallback(async (
     paymentId: string,
