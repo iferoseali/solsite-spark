@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.manage-project]
 verify_jwt = false
+
+[functions.manage-template]
+verify_jwt = false
