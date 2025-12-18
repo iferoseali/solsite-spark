@@ -43,47 +43,33 @@ export const useWalletAuth = () => {
       // Convert signature to base58 for verification
       const signatureBase58 = bs58.encode(signature);
       
-      console.log('Wallet verified with signature:', signatureBase58.slice(0, 20) + '...');
-      
-      // Check if user exists in database
+      // Send to edge function for server-side verification
       const walletAddress = publicKey.toBase58();
       
-      const { data: existingUser, error: fetchError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('wallet_address', walletAddress)
-        .maybeSingle();
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/wallet-auth`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            wallet_address: walletAddress,
+            signature: signatureBase58,
+            message: message
+          })
+        }
+      );
 
-      if (fetchError) {
-        console.error('Error fetching user:', fetchError);
-      }
-
-      if (existingUser) {
-        setUser(existingUser);
-        setIsVerified(true);
-        toast.success('Wallet verified successfully!');
-        return true;
-      }
-
-      // Create new user if doesn't exist
-      const { data: newUser, error: insertError } = await supabase
-        .from('users')
-        .insert({
-          wallet_address: walletAddress,
-          subscription_status: 'free'
-        })
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error('Error creating user:', insertError);
-        toast.error('Failed to create user account');
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        console.error('Auth failed:', result.error);
+        toast.error(result.error || 'Failed to verify wallet');
         return false;
       }
 
-      setUser(newUser);
+      setUser(result.user);
       setIsVerified(true);
-      toast.success('Wallet verified! Welcome to Solsite!');
+      toast.success(result.message || 'Wallet verified successfully!');
       return true;
     } catch (error: any) {
       console.error('Verification error:', error);
