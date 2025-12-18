@@ -30,6 +30,7 @@ import { generatePreviewHtml } from "@/lib/generatePreviewHtml";
 
 const Builder = () => {
   const [searchParams] = useSearchParams();
+  const editProjectId = searchParams.get('edit');
   const preselectedLayout = searchParams.get('layout') || 'minimal';
   const preselectedPersonality = searchParams.get('personality') || 'degen';
 
@@ -38,8 +39,11 @@ const Builder = () => {
   const { user, isVerified } = useWalletAuth();
 
   const [templateId, setTemplateId] = useState<string | null>(null);
+  const [currentLayout, setCurrentLayout] = useState(preselectedLayout);
+  const [currentPersonality, setCurrentPersonality] = useState(preselectedPersonality);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingProject, setIsLoadingProject] = useState(!!editProjectId);
   const [generatedProject, setGeneratedProject] = useState<{
     id: string;
     subdomain: string;
@@ -66,6 +70,73 @@ const Builder = () => {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
+  // Load existing project for editing
+  useEffect(() => {
+    const loadProject = async () => {
+      if (!editProjectId) return;
+      
+      setIsLoadingProject(true);
+      try {
+        const { data: project, error } = await supabase
+          .from('projects')
+          .select(`
+            *,
+            templates (
+              layout_id,
+              personality_id
+            )
+          `)
+          .eq('id', editProjectId)
+          .single();
+
+        if (error) throw error;
+
+        if (project) {
+          // Set form data from project
+          setFormData({
+            coinName: project.coin_name || "",
+            ticker: project.ticker || "",
+            tagline: project.tagline || "",
+            description: project.description || "",
+            twitter: project.twitter_url || "",
+            discord: project.discord_url || "",
+            telegram: project.telegram_url || "",
+            dexLink: project.dex_link || "",
+            showRoadmap: project.show_roadmap ?? true,
+            showFaq: project.show_faq ?? true,
+          });
+
+          // Set logo preview
+          if (project.logo_url) {
+            setLogoPreview(project.logo_url);
+          }
+
+          // Set template info
+          const template = project.templates as { layout_id: string; personality_id: string } | null;
+          if (template) {
+            setCurrentLayout(template.layout_id);
+            setCurrentPersonality(template.personality_id);
+          }
+
+          // Set as existing project
+          setGeneratedProject({
+            id: project.id,
+            subdomain: project.subdomain || ''
+          });
+
+          setTemplateId(project.template_id || null);
+        }
+      } catch (error) {
+        console.error('Error loading project:', error);
+        toast.error('Failed to load project');
+      } finally {
+        setIsLoadingProject(false);
+      }
+    };
+
+    loadProject();
+  }, [editProjectId]);
+
   // Generate real-time preview HTML
   const livePreviewHtml = useMemo(() => {
     return generatePreviewHtml(
@@ -82,12 +153,14 @@ const Builder = () => {
         showRoadmap: formData.showRoadmap,
         showFaq: formData.showFaq,
       },
-      { layout: preselectedLayout, personality: preselectedPersonality }
+      { layout: currentLayout, personality: currentPersonality }
     );
-  }, [formData, logoPreview, preselectedLayout, preselectedPersonality]);
+  }, [formData, logoPreview, currentLayout, currentPersonality]);
 
-  // Fetch template ID on mount
+  // Fetch template ID on mount (only for new projects)
   useEffect(() => {
+    if (editProjectId) return; // Skip for edit mode
+    
     const fetchTemplate = async () => {
       const { data } = await supabase
         .from('templates')
@@ -101,7 +174,7 @@ const Builder = () => {
       }
     };
     fetchTemplate();
-  }, [preselectedLayout, preselectedPersonality]);
+  }, [preselectedLayout, preselectedPersonality, editProjectId]);
 
 
   // Refresh preview (fetch HTML and update srcDoc)
@@ -356,10 +429,10 @@ const Builder = () => {
             <div className="max-w-xl mx-auto">
               <div className="mb-8">
                 <h1 className="text-2xl lg:text-3xl font-display font-bold mb-2">
-                  Build Your Site
+                  {editProjectId ? 'Edit Your Site' : 'Build Your Site'}
                 </h1>
                 <p className="text-muted-foreground text-sm">
-                  Template: <span className="text-primary capitalize">{preselectedLayout.replace('-', ' ')}</span> × <span className="text-primary capitalize">{preselectedPersonality.replace('-', ' ')}</span>
+                  Template: <span className="text-primary capitalize">{currentLayout.replace('-', ' ')}</span> × <span className="text-primary capitalize">{currentPersonality.replace('-', ' ')}</span>
                 </p>
               </div>
 
@@ -458,7 +531,6 @@ const Builder = () => {
                         placeholder="Moon Doge"
                         value={formData.coinName}
                         onChange={handleInputChange}
-                        disabled={!!generatedProject}
                       />
                     </div>
                     <div className="space-y-2">
@@ -469,7 +541,6 @@ const Builder = () => {
                         placeholder="$MDOGE"
                         value={formData.ticker}
                         onChange={handleInputChange}
-                        disabled={!!generatedProject}
                       />
                     </div>
                   </div>
@@ -482,7 +553,6 @@ const Builder = () => {
                       placeholder="To the moon and beyond 🚀"
                       value={formData.tagline}
                       onChange={handleInputChange}
-                      disabled={!!generatedProject}
                     />
                   </div>
 
@@ -495,14 +565,13 @@ const Builder = () => {
                       value={formData.description}
                       onChange={handleInputChange}
                       rows={4}
-                      disabled={!!generatedProject}
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label>Logo</Label>
                     <div className="flex items-center gap-4">
-                      <label className={`flex-1 ${generatedProject ? 'pointer-events-none opacity-50' : 'cursor-pointer'}`}>
+                      <label className="flex-1 cursor-pointer">
                         <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-dashed border-border hover:border-primary/50 transition-colors bg-secondary/30">
                           <Upload className="w-5 h-5 text-muted-foreground" />
                           <span className="text-sm text-muted-foreground">
@@ -514,7 +583,6 @@ const Builder = () => {
                           accept="image/*"
                           className="hidden"
                           onChange={handleLogoUpload}
-                          disabled={!!generatedProject}
                         />
                       </label>
                       {logoPreview && (
@@ -542,7 +610,6 @@ const Builder = () => {
                         value={formData.twitter}
                         onChange={handleInputChange}
                         className="pl-10"
-                        disabled={!!generatedProject}
                       />
                     </div>
                     <div className="relative">
@@ -553,7 +620,6 @@ const Builder = () => {
                         value={formData.discord}
                         onChange={handleInputChange}
                         className="pl-10"
-                        disabled={!!generatedProject}
                       />
                     </div>
                     <div className="relative">
@@ -564,7 +630,6 @@ const Builder = () => {
                         value={formData.telegram}
                         onChange={handleInputChange}
                         className="pl-10"
-                        disabled={!!generatedProject}
                       />
                     </div>
                   </div>
@@ -581,7 +646,6 @@ const Builder = () => {
                     placeholder="raydium.io/swap?outputCurrency=..."
                     value={formData.dexLink}
                     onChange={handleInputChange}
-                    disabled={!!generatedProject}
                   />
                 </div>
 
@@ -595,7 +659,6 @@ const Builder = () => {
                         id="showRoadmap"
                         checked={formData.showRoadmap}
                         onCheckedChange={(checked) => setFormData(prev => ({ ...prev, showRoadmap: checked }))}
-                        disabled={!!generatedProject}
                       />
                     </div>
                     <div className="flex items-center justify-between">
@@ -604,7 +667,6 @@ const Builder = () => {
                         id="showFaq"
                         checked={formData.showFaq}
                         onCheckedChange={(checked) => setFormData(prev => ({ ...prev, showFaq: checked }))}
-                        disabled={!!generatedProject}
                       />
                     </div>
                   </div>
@@ -612,11 +674,15 @@ const Builder = () => {
 
                 {/* Domain Preview */}
                 <div className="p-4 rounded-xl glass">
-                  <p className="text-sm text-muted-foreground mb-1">Your site will be live at:</p>
-                  <p className="text-primary font-mono text-sm">{subdomain}.solsite.xyz</p>
+                  <p className="text-sm text-muted-foreground mb-1">
+                    {generatedProject ? 'Your site is live at:' : 'Your site will be live at:'}
+                  </p>
+                  <p className="text-primary font-mono text-sm">
+                    {generatedProject?.subdomain || subdomain}.solsite.xyz
+                  </p>
                 </div>
 
-                {/* Generate Button */}
+                {/* Generate / Save Button */}
                 {!generatedProject && (
                   <Button 
                     variant="hero" 
@@ -640,29 +706,53 @@ const Builder = () => {
                 )}
 
                 {generatedProject && (
-                  <Button 
-                    variant="outline" 
-                    size="xl" 
-                    className="w-full" 
-                    onClick={() => {
-                      setGeneratedProject(null);
-                      setFormData({
-                        coinName: "",
-                        ticker: "",
-                        tagline: "",
-                        description: "",
-                        twitter: "",
-                        discord: "",
-                        telegram: "",
-                        dexLink: "",
-                        showRoadmap: true,
-                        showFaq: true,
-                      });
-                      setLogoPreview(null);
-                    }}
-                  >
-                    Create Another Site
-                  </Button>
+                  <div className="space-y-3">
+                    <Button 
+                      variant="hero" 
+                      size="xl" 
+                      className="w-full" 
+                      onClick={saveChanges}
+                      disabled={isSaving}
+                    >
+                      {isSaving ? (
+                        <>
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-5 h-5 mr-2" />
+                          Save Changes
+                        </>
+                      )}
+                    </Button>
+                    {!editProjectId && (
+                      <Button 
+                        variant="outline" 
+                        size="xl" 
+                        className="w-full" 
+                        onClick={() => {
+                          setGeneratedProject(null);
+                          setFormData({
+                            coinName: "",
+                            ticker: "",
+                            tagline: "",
+                            description: "",
+                            twitter: "",
+                            discord: "",
+                            telegram: "",
+                            dexLink: "",
+                            showRoadmap: true,
+                            showFaq: true,
+                          });
+                          setLogoPreview(null);
+                          setLogoFile(null);
+                        }}
+                      >
+                        Create Another Site
+                      </Button>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

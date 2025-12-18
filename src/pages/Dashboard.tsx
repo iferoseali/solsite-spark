@@ -203,9 +203,11 @@ const Dashboard = () => {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1">
-                      Edit
-                    </Button>
+                    <Link to={`/builder?edit=${project.id}`} className="flex-1">
+                      <Button variant="outline" size="sm" className="w-full">
+                        Edit
+                      </Button>
+                    </Link>
                     {project.status === 'published' && project.subdomain && (
                       <Button variant="ghost" size="sm" asChild>
                         <a 
