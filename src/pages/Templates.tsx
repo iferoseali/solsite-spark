@@ -1,10 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
-import { ArrowRight, Check, Eye, Sparkles, X, Columns, Filter } from "lucide-react";
+import { 
+  ArrowRight, Check, Eye, Sparkles, X, Columns, 
+  Search, Heart, Grid3X3, List, SlidersHorizontal,
+  ArrowUpDown, ChevronDown
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useTemplateFavorites } from "@/hooks/useTemplateFavorites";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface TemplateBlueprint {
   id: string;
@@ -44,32 +57,40 @@ const templateIdMap: Record<string, string> = {
 type Category = "all" | "meme" | "professional" | "gaming" | "tech" | "minimal" | "community";
 
 const categories: { id: Category; label: string; emoji: string }[] = [
-  { id: "all", label: "All Templates", emoji: "✨" },
-  { id: "meme", label: "Meme & Degen", emoji: "🚀" },
-  { id: "professional", label: "Professional", emoji: "💼" },
+  { id: "all", label: "All", emoji: "✨" },
+  { id: "meme", label: "Meme", emoji: "🚀" },
+  { id: "professional", label: "Pro", emoji: "💼" },
   { id: "gaming", label: "Gaming", emoji: "🎮" },
-  { id: "tech", label: "Tech & AI", emoji: "🤖" },
+  { id: "tech", label: "Tech", emoji: "🤖" },
   { id: "minimal", label: "Minimal", emoji: "⚡" },
   { id: "community", label: "Community", emoji: "💬" },
 ];
 
+type SortOption = "name" | "newest" | "popular";
+
+const sortOptions: { id: SortOption; label: string }[] = [
+  { id: "name", label: "Name A-Z" },
+  { id: "newest", label: "Newest First" },
+  { id: "popular", label: "Most Popular" },
+];
+
 // Template metadata with category
-const templateMeta: Record<string, { emoji: string; tagline: string; features: string[]; category: Category }> = {
-  "cult_minimal": { emoji: "⚡", tagline: "Stark, glitchy, monospace aesthetic for cult followings", features: ["Matrix rain effect", "Glitch text animation", "Neon green accents"], category: "minimal" },
-  "vc_pro": { emoji: "💼", tagline: "Clean, professional design that screams legitimacy", features: ["Gradient orb backgrounds", "Glass morphism cards", "Split hero layout"], category: "professional" },
-  "degen_meme": { emoji: "🚀", tagline: "Wild, chaotic energy for maximum degen appeal", features: ["Floating emoji particles", "Shake animations", "Giant ticker display"], category: "meme" },
-  "dark_cult": { emoji: "🌙", tagline: "Mysterious, moody atmosphere for lore-heavy projects", features: ["Fog particle effects", "Serif typography", "Blood red accents"], category: "minimal" },
-  "luxury_token": { emoji: "👑", tagline: "Elegant, refined design for premium positioning", features: ["Gold dust particles", "Shimmer text effects", "Minimal layout"], category: "professional" },
-  "builder_utility": { emoji: "⚙️", tagline: "Terminal-inspired design for utility-focused tokens", features: ["Grid line background", "Monospace fonts", "Dev-focused aesthetic"], category: "tech" },
-  "neo_grid": { emoji: "⬡", tagline: "Modern bento grid layout inspired by zkSync & Starknet", features: ["Cyber grid background", "Bento card layout", "Stagger animations"], category: "tech" },
-  "scroll_story": { emoji: "📜", tagline: "Minimal narrative scroll for story-driven launches", features: ["Full-screen text", "Scroll reveal effects", "Serif typography"], category: "minimal" },
-  "web3_gaming": { emoji: "🎮", tagline: "Neon arcade aesthetic for gaming tokens", features: ["Scanline overlay", "Neon glow effects", "Media-left hero"], category: "gaming" },
-  "ai_crypto": { emoji: "🤖", tagline: "Futuristic glow design for AI & tech projects", features: ["Neural network bg", "Glowing rings", "Tech-forward look"], category: "tech" },
-  "dao_portal": { emoji: "⬢", tagline: "Dashboard-style layout for governance tokens", features: ["Stats display", "Purple accents", "Clean governance UI"], category: "community" },
-  "ultra_brutalist": { emoji: "◼", tagline: "Raw anti-design for maximum contrast", features: ["Black & white only", "No animations", "Bold typography"], category: "minimal" },
-  "infra_terminal": { emoji: "💻", tagline: "CLI-inspired design for infrastructure projects", features: ["Terminal window", "Typing animation", "Matrix effect"], category: "tech" },
-  "social_first": { emoji: "💬", tagline: "Community-focused design with warm tones", features: ["Avatar focus", "Social proof", "Yellow accents"], category: "community" },
-  "futuristic_3d": { emoji: "🌌", tagline: "Immersive holographic design for premium launches", features: ["3D space bg", "Floating shapes", "Hologram buttons"], category: "professional" },
+const templateMeta: Record<string, { emoji: string; tagline: string; features: string[]; category: Category; popularity: number }> = {
+  "cult_minimal": { emoji: "⚡", tagline: "Stark, glitchy, monospace aesthetic for cult followings", features: ["Matrix rain effect", "Glitch text animation", "Neon green accents"], category: "minimal", popularity: 85 },
+  "vc_pro": { emoji: "💼", tagline: "Clean, professional design that screams legitimacy", features: ["Gradient orb backgrounds", "Glass morphism cards", "Split hero layout"], category: "professional", popularity: 92 },
+  "degen_meme": { emoji: "🚀", tagline: "Wild, chaotic energy for maximum degen appeal", features: ["Floating emoji particles", "Shake animations", "Giant ticker display"], category: "meme", popularity: 98 },
+  "dark_cult": { emoji: "🌙", tagline: "Mysterious, moody atmosphere for lore-heavy projects", features: ["Fog particle effects", "Serif typography", "Blood red accents"], category: "minimal", popularity: 78 },
+  "luxury_token": { emoji: "👑", tagline: "Elegant, refined design for premium positioning", features: ["Gold dust particles", "Shimmer text effects", "Minimal layout"], category: "professional", popularity: 88 },
+  "builder_utility": { emoji: "⚙️", tagline: "Terminal-inspired design for utility-focused tokens", features: ["Grid line background", "Monospace fonts", "Dev-focused aesthetic"], category: "tech", popularity: 72 },
+  "neo_grid": { emoji: "⬡", tagline: "Modern bento grid layout inspired by zkSync & Starknet", features: ["Cyber grid background", "Bento card layout", "Stagger animations"], category: "tech", popularity: 90 },
+  "scroll_story": { emoji: "📜", tagline: "Minimal narrative scroll for story-driven launches", features: ["Full-screen text", "Scroll reveal effects", "Serif typography"], category: "minimal", popularity: 65 },
+  "web3_gaming": { emoji: "🎮", tagline: "Neon arcade aesthetic for gaming tokens", features: ["Scanline overlay", "Neon glow effects", "Media-left hero"], category: "gaming", popularity: 82 },
+  "ai_crypto": { emoji: "🤖", tagline: "Futuristic glow design for AI & tech projects", features: ["Neural network bg", "Glowing rings", "Tech-forward look"], category: "tech", popularity: 95 },
+  "dao_portal": { emoji: "⬢", tagline: "Dashboard-style layout for governance tokens", features: ["Stats display", "Purple accents", "Clean governance UI"], category: "community", popularity: 70 },
+  "ultra_brutalist": { emoji: "◼", tagline: "Raw anti-design for maximum contrast", features: ["Black & white only", "No animations", "Bold typography"], category: "minimal", popularity: 60 },
+  "infra_terminal": { emoji: "💻", tagline: "CLI-inspired design for infrastructure projects", features: ["Terminal window", "Typing animation", "Matrix effect"], category: "tech", popularity: 75 },
+  "social_first": { emoji: "💬", tagline: "Community-focused design with warm tones", features: ["Avatar focus", "Social proof", "Yellow accents"], category: "community", popularity: 68 },
+  "futuristic_3d": { emoji: "🌌", tagline: "Immersive holographic design for premium launches", features: ["3D space bg", "Floating shapes", "Hologram buttons"], category: "professional", popularity: 87 },
 };
 
 const TemplateCard = ({
@@ -80,6 +101,10 @@ const TemplateCard = ({
   isComparing,
   onToggleCompare,
   compareCount,
+  isFavorite,
+  onToggleFavorite,
+  viewMode,
+  index,
 }: {
   template: TemplateBlueprint;
   templateId: string;
@@ -88,6 +113,10 @@ const TemplateCard = ({
   isComparing: boolean;
   onToggleCompare: () => void;
   compareCount: number;
+  isFavorite: boolean;
+  onToggleFavorite: () => void;
+  viewMode: "grid" | "list";
+  index: number;
 }) => {
   const [showPreview, setShowPreview] = useState(false);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
@@ -96,7 +125,7 @@ const TemplateCard = ({
   const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
 
   const previewUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?preview=true&templateId=${templateId}`;
-  const meta = templateMeta[templateId] || { emoji: "🎨", tagline: "Custom template", features: [], category: "all" as Category };
+  const meta = templateMeta[templateId] || { emoji: "🎨", tagline: "Custom template", features: [], category: "all" as Category, popularity: 50 };
 
   useEffect(() => {
     const key = `tplthumb:v4:${templateId}`;
@@ -137,8 +166,120 @@ const TemplateCard = ({
     }
   };
 
+  if (viewMode === "list") {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.05, duration: 0.3 }}
+        onClick={onSelect}
+        className={`group relative flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-all duration-300 bg-card border ${
+          isSelected
+            ? "border-primary shadow-lg shadow-primary/20"
+            : isComparing
+            ? "border-accent shadow-md shadow-accent/10"
+            : "border-border hover:border-primary/50 hover:shadow-md"
+        }`}
+      >
+        {/* Thumbnail */}
+        <div className="w-32 h-24 rounded-lg overflow-hidden bg-muted flex-shrink-0 border border-border/50">
+          {thumbnailLoaded && thumbnailHtml ? (
+            <div className="w-full h-full relative overflow-hidden">
+              <div className="absolute inset-0 origin-top-left" style={{ transform: "scale(0.15)", width: "667%", height: "667%" }}>
+                <iframe srcDoc={thumbnailHtml} className="w-full h-full border-0 pointer-events-none" title={`Thumbnail: ${template.name}`} sandbox="allow-scripts" />
+              </div>
+            </div>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center animate-pulse">
+              <div className="w-8 h-8 rounded-full" style={{ background: `linear-gradient(135deg, ${template.styles?.primary || "#00d4ff"}, ${template.styles?.background || "#0a0a0a"})` }} />
+            </div>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xl">{meta.emoji}</span>
+            <h3 className="font-semibold text-foreground truncate">{template.name}</h3>
+            {isFavorite && <Heart className="w-4 h-4 fill-red-500 text-red-500" />}
+          </div>
+          <p className="text-sm text-muted-foreground line-clamp-1 mb-2">{meta.tagline}</p>
+          <div className="flex flex-wrap gap-1">
+            {meta.features.slice(0, 3).map((feature, i) => (
+              <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{feature}</span>
+            ))}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
+          >
+            <Heart className={`w-4 h-4 ${isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`h-8 w-8 ${isComparing ? "text-accent" : "text-muted-foreground"}`}
+            onClick={(e) => { e.stopPropagation(); onToggleCompare(); }}
+            disabled={compareCount >= 3 && !isComparing}
+          >
+            <Columns className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1"
+            onClick={(e) => { e.stopPropagation(); setShowPreview(true); loadPreview(); }}
+          >
+            <Eye className="w-3 h-3" />
+            Preview
+          </Button>
+          <Link to={`/builder?templateId=${templateId}&blueprintId=${template.id}`} onClick={(e) => e.stopPropagation()}>
+            <Button variant="glow" size="sm" className="gap-1">
+              <Sparkles className="w-3 h-3" />
+              Use
+            </Button>
+          </Link>
+        </div>
+
+        {/* Preview modal (same as grid) */}
+        {showPreview && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={(e) => { e.stopPropagation(); setShowPreview(false); }}>
+            <div className="relative w-full max-w-6xl h-[85vh] rounded-2xl overflow-hidden bg-background border border-border shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <div className="absolute top-4 right-4 z-10 flex gap-2">
+                <Link to={`/builder?templateId=${templateId}&blueprintId=${template.id}`}>
+                  <Button variant="glow" size="sm" className="gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    Use This Template
+                  </Button>
+                </Link>
+                <Button variant="outline" size="sm" onClick={() => setShowPreview(false)}>Close</Button>
+              </div>
+              {isLoading ? (
+                <div className="w-full h-full flex items-center justify-center">
+                  <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : previewHtml ? (
+                <iframe srcDoc={previewHtml} className="w-full h-full border-0" title={`Preview: ${template.name}`} sandbox="allow-scripts" />
+              ) : null}
+            </div>
+          </div>
+        )}
+      </motion.div>
+    );
+  }
+
+  // Grid view
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: index * 0.05, duration: 0.3 }}
       onClick={onSelect}
       className={`group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-500 ${
         isSelected
@@ -156,22 +297,27 @@ const TemplateCard = ({
         }}
       />
 
-      {/* Compare checkbox */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleCompare();
-        }}
-        className={`absolute top-4 left-4 z-10 w-8 h-8 rounded-lg border-2 flex items-center justify-center transition-all ${
-          isComparing
-            ? "bg-accent border-accent text-accent-foreground"
-            : "bg-black/40 border-white/30 text-white/60 hover:border-white/60"
-        } ${compareCount >= 3 && !isComparing ? "opacity-50 cursor-not-allowed" : ""}`}
-        disabled={compareCount >= 3 && !isComparing}
-        title={isComparing ? "Remove from comparison" : compareCount >= 3 ? "Max 3 templates" : "Add to comparison"}
-      >
-        {isComparing ? <Check className="w-4 h-4" /> : <Columns className="w-4 h-4" />}
-      </button>
+      {/* Top actions */}
+      <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleCompare(); }}
+          className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center transition-all ${
+            isComparing
+              ? "bg-accent border-accent text-accent-foreground"
+              : "bg-black/40 border-white/30 text-white/60 hover:border-white/60"
+          } ${compareCount >= 3 && !isComparing ? "opacity-50 cursor-not-allowed" : ""}`}
+          disabled={compareCount >= 3 && !isComparing}
+        >
+          {isComparing ? <Check className="w-4 h-4" /> : <Columns className="w-4 h-4" />}
+        </button>
+        
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
+          className="w-8 h-8 rounded-lg bg-black/40 border-2 border-white/30 flex items-center justify-center transition-all hover:border-white/60"
+        >
+          <Heart className={`w-4 h-4 transition-all ${isFavorite ? "fill-red-500 text-red-500" : "text-white/60"}`} />
+        </button>
+      </div>
 
       {/* Preview thumbnail */}
       <div className="relative aspect-[4/5] p-4">
@@ -201,7 +347,7 @@ const TemplateCard = ({
 
       {/* Selection indicator */}
       {isSelected && (
-        <div className="absolute top-5 right-5 w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-lg">
+        <div className="absolute top-14 right-5 w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-lg">
           <Check className="w-5 h-5 text-primary-foreground" />
         </div>
       )}
@@ -260,7 +406,7 @@ const TemplateCard = ({
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };
 
@@ -279,7 +425,12 @@ const ComparisonView = ({
   const compareTemplates = templates.filter((t) => compareIds.includes(t.id));
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex flex-col">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex flex-col"
+    >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border">
         <h2 className="text-xl font-bold flex items-center gap-2">
@@ -297,11 +448,16 @@ const ComparisonView = ({
         <div className={`grid h-full gap-4 ${compareTemplates.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
           {compareTemplates.map((template) => {
             const templateId = templateIdMap[template.name] || "cult_minimal";
-            const meta = templateMeta[templateId] || { emoji: "🎨", tagline: "", features: [], category: "all" as Category };
+            const meta = templateMeta[templateId] || { emoji: "🎨", tagline: "", features: [], category: "all" as Category, popularity: 50 };
             const previewUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?preview=true&templateId=${templateId}`;
 
             return (
-              <div key={template.id} className="flex flex-col rounded-xl overflow-hidden border border-border bg-card">
+              <motion.div 
+                key={template.id} 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col rounded-xl overflow-hidden border border-border bg-card"
+              >
                 {/* Template header */}
                 <div className="flex items-center justify-between p-3 border-b border-border bg-muted/30">
                   <div className="flex items-center gap-2">
@@ -340,12 +496,12 @@ const ComparisonView = ({
                     ))}
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
@@ -353,9 +509,15 @@ const Templates = () => {
   const [templates, setTemplates] = useState<TemplateBlueprint[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState<Category>("all");
+  const [activeCategories, setActiveCategories] = useState<Category[]>(["all"]);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [showComparison, setShowComparison] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("popular");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+
+  const { favorites, toggleFavorite, isFavorite } = useTemplateFavorites();
 
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -374,12 +536,85 @@ const Templates = () => {
     fetchTemplates();
   }, []);
 
-  const filteredTemplates = templates.filter((t) => {
-    if (activeCategory === "all") return true;
-    const templateId = templateIdMap[t.name] || "cult_minimal";
-    const meta = templateMeta[templateId];
-    return meta?.category === activeCategory;
-  });
+  // Keyboard shortcut for search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        document.getElementById("template-search")?.focus();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const toggleCategory = (cat: Category) => {
+    if (cat === "all") {
+      setActiveCategories(["all"]);
+    } else {
+      setActiveCategories((prev) => {
+        const withoutAll = prev.filter((c) => c !== "all");
+        if (withoutAll.includes(cat)) {
+          const newCats = withoutAll.filter((c) => c !== cat);
+          return newCats.length === 0 ? ["all"] : newCats;
+        }
+        return [...withoutAll, cat];
+      });
+    }
+  };
+
+  const filteredAndSortedTemplates = useMemo(() => {
+    let result = templates;
+
+    // Filter by favorites
+    if (showFavoritesOnly) {
+      result = result.filter((t) => isFavorite(t.id));
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter((t) => {
+        const templateId = templateIdMap[t.name] || "cult_minimal";
+        const meta = templateMeta[templateId];
+        return (
+          t.name.toLowerCase().includes(query) ||
+          meta?.tagline.toLowerCase().includes(query) ||
+          meta?.features.some((f) => f.toLowerCase().includes(query))
+        );
+      });
+    }
+
+    // Filter by categories
+    if (!activeCategories.includes("all")) {
+      result = result.filter((t) => {
+        const templateId = templateIdMap[t.name] || "cult_minimal";
+        const meta = templateMeta[templateId];
+        return meta && activeCategories.includes(meta.category);
+      });
+    }
+
+    // Sort
+    result = [...result].sort((a, b) => {
+      const aId = templateIdMap[a.name] || "cult_minimal";
+      const bId = templateIdMap[b.name] || "cult_minimal";
+      const aMeta = templateMeta[aId];
+      const bMeta = templateMeta[bId];
+
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "newest":
+          return b.name.localeCompare(a.name); // Simplified, ideally use created_at
+        case "popular":
+          return (bMeta?.popularity || 0) - (aMeta?.popularity || 0);
+        default:
+          return 0;
+      }
+    });
+
+    return result;
+  }, [templates, searchQuery, activeCategories, sortBy, showFavoritesOnly, isFavorite]);
 
   const toggleCompare = (id: string) => {
     setCompareIds((prev) =>
@@ -397,59 +632,179 @@ const Templates = () => {
       <main className="pt-24 pb-16">
         <div className="container px-4 sm:px-6 lg:px-8">
           {/* Header */}
-          <div className="text-center mb-8 animate-fade-in">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mb-8"
+          >
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-4">
               Choose Your <span className="text-gradient-primary">Template</span>
             </h1>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              15 unique designs with distinct personalities, animations, and visual effects.
+              {templates.length} unique designs with distinct personalities, animations, and visual effects.
             </p>
-          </div>
+          </motion.div>
 
-          {/* Category Filter */}
-          <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
-            <Filter className="w-4 h-4 text-muted-foreground mr-2" />
-            {categories.map((cat) => (
+          {/* Search & Controls */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6"
+          >
+            {/* Search */}
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                id="template-search"
+                placeholder="Search templates... (⌘K)"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4"
+              />
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center gap-2">
+              {/* Favorites toggle */}
               <Button
-                key={cat.id}
-                variant={activeCategory === cat.id ? "default" : "outline"}
+                variant={showFavoritesOnly ? "default" : "outline"}
                 size="sm"
-                onClick={() => setActiveCategory(cat.id)}
+                onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
                 className="gap-1.5"
               >
-                <span>{cat.emoji}</span>
-                <span className="hidden sm:inline">{cat.label}</span>
+                <Heart className={`w-4 h-4 ${showFavoritesOnly ? "fill-current" : ""}`} />
+                <span className="hidden sm:inline">Favorites</span>
+                {favorites.length > 0 && (
+                  <span className="ml-1 text-xs bg-primary/20 px-1.5 py-0.5 rounded-full">{favorites.length}</span>
+                )}
               </Button>
-            ))}
-          </div>
 
-          {/* Compare Bar */}
-          {compareIds.length > 0 && (
-            <div className="sticky top-20 z-30 mb-6 animate-fade-in">
-              <div className="glass rounded-xl p-3 flex items-center justify-between gap-4 border border-accent/30">
-                <div className="flex items-center gap-3">
-                  <Columns className="w-5 h-5 text-accent" />
-                  <span className="font-medium">{compareIds.length} template{compareIds.length > 1 ? "s" : ""} selected</span>
-                  <span className="text-sm text-muted-foreground">(max 3)</span>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => setCompareIds([])}>
-                    Clear
+              {/* Sort dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <ArrowUpDown className="w-4 h-4" />
+                    <span className="hidden sm:inline">Sort</span>
+                    <ChevronDown className="w-3 h-3" />
                   </Button>
-                  <Button
-                    variant="glow"
-                    size="sm"
-                    className="gap-2"
-                    onClick={() => setShowComparison(true)}
-                    disabled={compareIds.length < 2}
-                  >
-                    <Columns className="w-4 h-4" />
-                    Compare Side by Side
-                  </Button>
-                </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {sortOptions.map((opt) => (
+                    <DropdownMenuItem
+                      key={opt.id}
+                      onClick={() => setSortBy(opt.id)}
+                      className={sortBy === opt.id ? "bg-accent" : ""}
+                    >
+                      {opt.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* View toggle */}
+              <div className="flex items-center border border-border rounded-lg p-0.5">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`p-1.5 rounded transition-colors ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  <Grid3X3 className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`p-1.5 rounded transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  <List className="w-4 h-4" />
+                </button>
               </div>
             </div>
-          )}
+          </motion.div>
+
+          {/* Category Filter */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="flex flex-wrap items-center gap-2 mb-6"
+          >
+            <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
+            {categories.map((cat) => {
+              const isActive = cat.id === "all" ? activeCategories.includes("all") : activeCategories.includes(cat.id);
+              return (
+                <Button
+                  key={cat.id}
+                  variant={isActive ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => toggleCategory(cat.id)}
+                  className="gap-1.5"
+                >
+                  <span>{cat.emoji}</span>
+                  <span>{cat.label}</span>
+                </Button>
+              );
+            })}
+            {activeCategories.length > 1 || (activeCategories.length === 1 && !activeCategories.includes("all")) ? (
+              <Button variant="ghost" size="sm" onClick={() => setActiveCategories(["all"])} className="text-muted-foreground">
+                Clear filters
+              </Button>
+            ) : null}
+          </motion.div>
+
+          {/* Results count */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="flex items-center justify-between mb-4"
+          >
+            <p className="text-sm text-muted-foreground">
+              Showing {filteredAndSortedTemplates.length} of {templates.length} templates
+              {showFavoritesOnly && " (favorites only)"}
+            </p>
+          </motion.div>
+
+          {/* Compare Bar */}
+          <AnimatePresence>
+            {compareIds.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="sticky top-20 z-30 mb-6"
+              >
+                <div className="glass rounded-xl p-3 flex items-center justify-between gap-4 border border-accent/30">
+                  <div className="flex items-center gap-3">
+                    <Columns className="w-5 h-5 text-accent" />
+                    <span className="font-medium">{compareIds.length} template{compareIds.length > 1 ? "s" : ""} selected</span>
+                    <span className="text-sm text-muted-foreground">(max 3)</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => setCompareIds([])}>
+                      Clear
+                    </Button>
+                    <Button
+                      variant="glow"
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => setShowComparison(true)}
+                      disabled={compareIds.length < 2}
+                    >
+                      <Columns className="w-4 h-4" />
+                      Compare Side by Side
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Loading state */}
           {isLoading ? (
@@ -458,9 +813,12 @@ const Templates = () => {
             </div>
           ) : (
             <>
-              {/* Template Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-                {filteredTemplates.map((template) => {
+              {/* Template Grid/List */}
+              <div className={viewMode === "grid" 
+                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12"
+                : "flex flex-col gap-3 mb-12"
+              }>
+                {filteredAndSortedTemplates.map((template, index) => {
                   const templateId = templateIdMap[template.name] || "cult_minimal";
                   return (
                     <TemplateCard
@@ -472,59 +830,92 @@ const Templates = () => {
                       isComparing={compareIds.includes(template.id)}
                       onToggleCompare={() => toggleCompare(template.id)}
                       compareCount={compareIds.length}
+                      isFavorite={isFavorite(template.id)}
+                      onToggleFavorite={() => toggleFavorite(template.id)}
+                      viewMode={viewMode}
+                      index={index}
                     />
                   );
                 })}
               </div>
 
               {/* Empty state */}
-              {filteredTemplates.length === 0 && (
-                <div className="text-center py-20 text-muted-foreground">
-                  <p>No templates in this category yet.</p>
-                  <Button variant="link" onClick={() => setActiveCategory("all")}>View all templates</Button>
-                </div>
+              {filteredAndSortedTemplates.length === 0 && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-center py-20 text-muted-foreground"
+                >
+                  {showFavoritesOnly ? (
+                    <>
+                      <Heart className="w-12 h-12 mx-auto mb-4 opacity-30" />
+                      <p className="mb-2">No favorite templates yet.</p>
+                      <Button variant="link" onClick={() => setShowFavoritesOnly(false)}>View all templates</Button>
+                    </>
+                  ) : searchQuery ? (
+                    <>
+                      <Search className="w-12 h-12 mx-auto mb-4 opacity-30" />
+                      <p className="mb-2">No templates match "{searchQuery}"</p>
+                      <Button variant="link" onClick={() => setSearchQuery("")}>Clear search</Button>
+                    </>
+                  ) : (
+                    <>
+                      <p>No templates in this category yet.</p>
+                      <Button variant="link" onClick={() => setActiveCategories(["all"])}>View all templates</Button>
+                    </>
+                  )}
+                </motion.div>
               )}
             </>
           )}
 
           {/* Floating CTA */}
-          {selectedTemplate && selectedTemplateData && (
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 animate-fade-in">
-              <div className="glass rounded-2xl p-4 shadow-2xl border border-primary/30 flex items-center gap-4">
-                <div>
-                  <p className="font-semibold flex items-center gap-2">
-                    <span className="text-xl">{templateMeta[selectedTemplateId || ""]?.emoji || "🎨"}</span>
-                    {selectedTemplateData.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Click to start building your site</p>
+          <AnimatePresence>
+            {selectedTemplate && selectedTemplateData && (
+              <motion.div
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40"
+              >
+                <div className="glass rounded-2xl p-4 shadow-2xl border border-primary/30 flex items-center gap-4">
+                  <div>
+                    <p className="font-semibold flex items-center gap-2">
+                      <span className="text-xl">{templateMeta[selectedTemplateId || ""]?.emoji || "🎨"}</span>
+                      {selectedTemplateData.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Click to start building your site</p>
+                  </div>
+                  <Link to={`/builder?templateId=${selectedTemplateId}&blueprintId=${selectedTemplate}`}>
+                    <Button variant="glow" className="gap-2">
+                      Use Template
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </Link>
                 </div>
-                <Link to={`/builder?templateId=${selectedTemplateId}&blueprintId=${selectedTemplate}`}>
-                  <Button variant="glow" className="gap-2">
-                    Use Template
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </main>
 
       <Footer />
 
       {/* Comparison Modal */}
-      {showComparison && compareIds.length >= 2 && (
-        <ComparisonView
-          templates={templates}
-          compareIds={compareIds}
-          onRemove={(id) => {
-            const newIds = compareIds.filter((x) => x !== id);
-            setCompareIds(newIds);
-            if (newIds.length < 2) setShowComparison(false);
-          }}
-          onClose={() => setShowComparison(false)}
-        />
-      )}
+      <AnimatePresence>
+        {showComparison && compareIds.length >= 2 && (
+          <ComparisonView
+            templates={templates}
+            compareIds={compareIds}
+            onRemove={(id) => {
+              const newIds = compareIds.filter((x) => x !== id);
+              setCompareIds(newIds);
+              if (newIds.length < 2) setShowComparison(false);
+            }}
+            onClose={() => setShowComparison(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
