@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Twitter, MessageCircle, Github } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 export const Footer = () => {
   return (
@@ -8,10 +9,8 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
-            <Link to="/" className="inline-flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">S</span>
-              </div>
+            <Link to="/" className="inline-flex items-center gap-3 mb-4">
+              <img src={logo} alt="Solsite" className="h-10 w-auto" />
               <span className="text-xl font-display font-bold">Solsite</span>
             </Link>
             <p className="text-muted-foreground text-sm max-w-xs mb-4">
@@ -37,7 +36,7 @@ export const Footer = () => {
             <ul className="space-y-2">
               <li><Link to="/templates" className="text-muted-foreground hover:text-primary transition-colors text-sm">Templates</Link></li>
               <li><Link to="/builder" className="text-muted-foreground hover:text-primary transition-colors text-sm">Builder</Link></li>
-              <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors text-sm">Pricing</a></li>
+              <li><a href="#pricing" className="text-muted-foreground hover:text-primary transition-colors text-sm">Pricing</a></li>
             </ul>
           </div>
 

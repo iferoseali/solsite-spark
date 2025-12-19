@@ -102,6 +102,10 @@
     @apply border-border;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-background text-foreground font-body antialiased;
   }
@@ -364,4 +368,114 @@
   animation: 
     fade-in 0.3s ease-out forwards,
     zap-glow-pulse 1.5s ease-in-out infinite;
+}
+
+/* Logo 3D float animation */
+@keyframes logo-float-3d {
+  0%, 100% {
+    transform: translateY(0) rotateX(0deg) rotateY(0deg);
+  }
+  25% {
+    transform: translateY(-15px) rotateX(5deg) rotateY(5deg);
+  }
+  50% {
+    transform: translateY(-25px) rotateX(0deg) rotateY(-5deg);
+  }
+  75% {
+    transform: translateY(-15px) rotateX(-5deg) rotateY(5deg);
+  }
+}
+
+@keyframes logo-glow-pulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 30px hsl(var(--primary) / 0.4),
+      0 0 60px hsl(var(--primary) / 0.2),
+      0 0 100px hsl(var(--primary) / 0.1);
+  }
+  50% {
+    box-shadow: 
+      0 0 50px hsl(var(--primary) / 0.6),
+      0 0 100px hsl(var(--primary) / 0.3),
+      0 0 150px hsl(var(--primary) / 0.15);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-logo-float {
+  animation: logo-float-3d 6s ease-in-out infinite;
+  transform-style: preserve-3d;
+}
+
+.animate-logo-glow {
+  animation: logo-glow-pulse 3s ease-in-out infinite;
+}
+
+.logo-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(var(--primary) / 0.3) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* Horizontal scroll container */
+.scroll-container {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* Marquee animation */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Scroll reveal animation */
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.scroll-reveal {
+  opacity: 0;
+  animation: reveal-up 0.8s ease-out forwards;
 }
