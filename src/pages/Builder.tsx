@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useDeferredValue } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,25 +32,7 @@ import { generatePreviewHtml } from "@/lib/generatePreviewHtml";
 import { PaymentModal } from "@/components/payment/PaymentModal";
 import { usePayment } from "@/hooks/usePayment";
 import { SectionManager, DEFAULT_SECTIONS, type SectionConfig } from "@/components/builder/SectionManager";
-
-// Template ID map for render-site edge function
-const templateIdMap: Record<string, string> = {
-  "Cult Minimal": "cult_minimal",
-  "VC Grade Pro": "vc_pro",
-  "Degenerate Meme": "degen_meme",
-  "Dark Cult Narrative": "dark_cult",
-  "Luxury Token": "luxury_token",
-  "Builder Utility": "builder_utility",
-  "Neo Grid": "neo_grid",
-  "Scroll Story": "scroll_story",
-  "Web3 Gaming": "web3_gaming",
-  "AI Crypto": "ai_crypto",
-  "DAO Portal": "dao_portal",
-  "Ultra Brutalist": "ultra_brutalist",
-  "Infra Terminal": "infra_terminal",
-  "Social First": "social_first",
-  "Futuristic 3D": "futuristic_3d",
-};
+import { TEMPLATE_ID_MAP } from "@/lib/templateData";
 
 const Builder = () => {
   const [searchParams] = useSearchParams();
@@ -199,27 +181,32 @@ const Builder = () => {
   const showRoadmap = sections.some(s => s.type === 'roadmap' && s.visible);
   const showFaq = sections.some(s => s.type === 'faq' && s.visible);
 
-  // Generate real-time preview HTML
+  // Defer form data to prevent preview regeneration on every keystroke
+  const deferredFormData = useDeferredValue(formData);
+  const deferredLogoPreview = useDeferredValue(logoPreview);
+  const deferredSections = useDeferredValue(sections);
+
+  // Generate real-time preview HTML with deferred values
   const livePreviewHtml = useMemo(() => {
     return generatePreviewHtml(
       {
-        coinName: formData.coinName,
-        ticker: formData.ticker,
-        tagline: formData.tagline,
-        description: formData.description,
-        logoUrl: logoPreview,
-        twitter: formData.twitter,
-        discord: formData.discord,
-        telegram: formData.telegram,
-        dexLink: formData.dexLink,
+        coinName: deferredFormData.coinName,
+        ticker: deferredFormData.ticker,
+        tagline: deferredFormData.tagline,
+        description: deferredFormData.description,
+        logoUrl: deferredLogoPreview,
+        twitter: deferredFormData.twitter,
+        discord: deferredFormData.discord,
+        telegram: deferredFormData.telegram,
+        dexLink: deferredFormData.dexLink,
         showRoadmap,
         showFaq,
         tokenomics: {
-          totalSupply: formData.totalSupply,
-          circulatingSupply: formData.circulatingSupply,
-          contractAddress: formData.contractAddress,
+          totalSupply: deferredFormData.totalSupply,
+          circulatingSupply: deferredFormData.circulatingSupply,
+          contractAddress: deferredFormData.contractAddress,
         },
-        sections,
+        sections: deferredSections,
       },
       { 
         layout: currentLayout, 
@@ -227,7 +214,7 @@ const Builder = () => {
         templateId: selectedTemplateId || undefined
       }
     );
-  }, [formData, logoPreview, currentLayout, currentPersonality, selectedTemplateId, showRoadmap, showFaq, sections]);
+  }, [deferredFormData, deferredLogoPreview, currentLayout, currentPersonality, selectedTemplateId, showRoadmap, showFaq, deferredSections]);
 
   // Load template blueprint preview when blueprintId is provided
   useEffect(() => {
