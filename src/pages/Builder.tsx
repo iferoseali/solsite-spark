@@ -18,7 +18,8 @@ import {
   Wallet,
   Check,
   RefreshCw,
-  Save
+  Save,
+  LayoutGrid
 } from "lucide-react";
 import { useSearchParams, Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -29,6 +30,7 @@ import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { generatePreviewHtml } from "@/lib/generatePreviewHtml";
 import { PaymentModal } from "@/components/payment/PaymentModal";
 import { usePayment } from "@/hooks/usePayment";
+import { SectionManager, DEFAULT_SECTIONS, type SectionConfig } from "@/components/builder/SectionManager";
 
 // Template ID map for render-site edge function
 const templateIdMap: Record<string, string> = {
@@ -101,6 +103,9 @@ const Builder = () => {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  
+  // Section customization state
+  const [sections, setSections] = useState<SectionConfig[]>(DEFAULT_SECTIONS);
   
   // Payment state
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -181,6 +186,10 @@ const Builder = () => {
     loadProject();
   }, [editProjectId]);
 
+  // Derive showRoadmap and showFaq from sections
+  const showRoadmap = sections.some(s => s.type === 'roadmap' && s.visible);
+  const showFaq = sections.some(s => s.type === 'faq' && s.visible);
+
   // Generate real-time preview HTML
   const livePreviewHtml = useMemo(() => {
     return generatePreviewHtml(
@@ -194,8 +203,8 @@ const Builder = () => {
         discord: formData.discord,
         telegram: formData.telegram,
         dexLink: formData.dexLink,
-        showRoadmap: formData.showRoadmap,
-        showFaq: formData.showFaq,
+        showRoadmap,
+        showFaq,
         tokenomics: {
           totalSupply: formData.totalSupply,
           circulatingSupply: formData.circulatingSupply,
@@ -815,26 +824,20 @@ const Builder = () => {
                   </div>
                 </div>
 
-                {/* Sections Toggle */}
+                {/* Section Customization */}
                 <div className="space-y-4">
-                  <h2 className="text-lg font-semibold">Optional Sections</h2>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="showRoadmap">Show Roadmap</Label>
-                      <Switch
-                        id="showRoadmap"
-                        checked={formData.showRoadmap}
-                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, showRoadmap: checked }))}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="showFaq">Show FAQ</Label>
-                      <Switch
-                        id="showFaq"
-                        checked={formData.showFaq}
-                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, showFaq: checked }))}
-                      />
-                    </div>
+                  <h2 className="text-lg font-semibold flex items-center gap-2">
+                    <LayoutGrid className="w-5 h-5 text-primary" />
+                    Customize Sections
+                  </h2>
+                  <p className="text-xs text-muted-foreground -mt-2">
+                    Drag to reorder, click eye to hide, expand for layout variants
+                  </p>
+                  <div className="p-4 rounded-xl glass border border-border">
+                    <SectionManager 
+                      sections={sections} 
+                      onChange={setSections} 
+                    />
                   </div>
                 </div>
 
