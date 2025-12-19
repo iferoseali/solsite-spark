@@ -5,21 +5,24 @@ import logo from "@/assets/logo.png";
 
 export const Hero = () => {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background effects */}
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24">
+      {/* Full-page background effects */}
       <div className="absolute inset-0 bg-grid opacity-30" />
-      <div className="absolute top-1/4 -left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[120px] animate-pulse-soft" />
-      <div
-        className="absolute bottom-1/4 -right-1/4 w-96 h-96 bg-accent/20 rounded-full blur-[120px] animate-pulse-soft"
-        style={{ animationDelay: "2s" }}
-      />
+      
+      {/* Animated gradient orbs spread across the page */}
+      <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[150px] animate-pulse-soft" />
+      <div className="absolute top-1/3 right-0 w-[500px] h-[500px] bg-accent/25 rounded-full blur-[140px] animate-pulse-soft" style={{ animationDelay: "1s" }} />
+      <div className="absolute bottom-0 left-1/4 w-[700px] h-[700px] bg-primary/15 rounded-full blur-[160px] animate-pulse-soft" style={{ animationDelay: "2s" }} />
+      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-accent/20 rounded-full blur-[120px] animate-pulse-soft" style={{ animationDelay: "3s" }} />
 
-      {/* Floating elements */}
-      <div className="absolute top-20 right-20 w-20 h-20 border border-primary/30 rounded-full animate-float opacity-40" />
-      <div
-        className="absolute bottom-40 left-20 w-16 h-16 border border-accent/30 rounded-lg rotate-45 animate-float opacity-40"
-        style={{ animationDelay: "1s" }}
-      />
+      {/* Floating elements spread across the entire viewport */}
+      <div className="absolute top-32 right-20 w-24 h-24 border border-primary/30 rounded-full animate-float opacity-40" />
+      <div className="absolute top-1/4 left-16 w-16 h-16 border border-accent/20 rounded-full animate-float opacity-30" style={{ animationDelay: "0.5s" }} />
+      <div className="absolute top-1/2 right-1/4 w-12 h-12 border border-primary/25 rounded-lg rotate-45 animate-float opacity-35" style={{ animationDelay: "1.5s" }} />
+      <div className="absolute bottom-40 left-20 w-20 h-20 border border-accent/30 rounded-lg rotate-45 animate-float opacity-40" style={{ animationDelay: "1s" }} />
+      <div className="absolute bottom-1/3 right-16 w-14 h-14 border border-primary/20 rounded-full animate-float opacity-25" style={{ animationDelay: "2s" }} />
+      <div className="absolute top-40 left-1/3 w-8 h-8 bg-primary/10 rounded-full animate-float opacity-50" style={{ animationDelay: "0.8s" }} />
+      <div className="absolute bottom-20 right-1/3 w-10 h-10 bg-accent/10 rounded-full animate-float opacity-40" style={{ animationDelay: "1.2s" }} />
 
       <div className="container relative z-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
