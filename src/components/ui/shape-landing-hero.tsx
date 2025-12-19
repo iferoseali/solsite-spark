@@ -1,8 +1,9 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useEffect } from "react";
 
 function ElegantShape({
   className,
@@ -11,6 +12,9 @@ function ElegantShape({
   height = 100,
   rotate = 0,
   gradient = "from-white/[0.08]",
+  mouseX,
+  mouseY,
+  parallaxStrength = 1,
 }: {
   className?: string;
   delay?: number;
@@ -18,7 +22,13 @@ function ElegantShape({
   height?: number;
   rotate?: number;
   gradient?: string;
+  mouseX: ReturnType<typeof useSpring>;
+  mouseY: ReturnType<typeof useSpring>;
+  parallaxStrength?: number;
 }) {
+  const x = useTransform(mouseX, (val) => val * parallaxStrength * 0.015);
+  const y = useTransform(mouseY, (val) => val * parallaxStrength * 0.015);
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.8, rotate: rotate - 15 }}
@@ -28,6 +38,7 @@ function ElegantShape({
         delay: delay,
         ease: [0.25, 0.4, 0.25, 1],
       }}
+      style={{ x, y }}
       className={cn("absolute", className)}
     >
       <motion.div
@@ -67,6 +78,24 @@ function HeroGeometric({
   description?: string;
   children?: React.ReactNode;
 }) {
+  const mouseXRaw = useMotionValue(0);
+  const mouseYRaw = useMotionValue(0);
+  
+  const mouseX = useSpring(mouseXRaw, { stiffness: 50, damping: 20 });
+  const mouseY = useSpring(mouseYRaw, { stiffness: 50, damping: 20 });
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      mouseXRaw.set(e.clientX - centerX);
+      mouseYRaw.set(e.clientY - centerY);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, [mouseXRaw, mouseYRaw]);
+
   const fadeUpVariants = {
     hidden: { opacity: 0, y: 30 },
     visible: (i: number) => ({
@@ -93,7 +122,7 @@ function HeroGeometric({
       <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-accent/12 rounded-full blur-[180px] animate-pulse-soft" style={{ animationDelay: "2s" }} />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-primary/8 rounded-full blur-[120px] animate-pulse-soft" style={{ animationDelay: "4s" }} />
 
-      {/* Elegant shapes - brand-matched cyan/teal theme */}
+      {/* Elegant shapes with parallax - brand-matched cyan/teal theme */}
       <div className="absolute inset-0 overflow-hidden">
         <ElegantShape
           delay={0.2}
@@ -102,6 +131,9 @@ function HeroGeometric({
           rotate={14}
           gradient="from-primary/[0.12]"
           className="left-[-15%] md:left-[-8%] top-[12%] md:top-[18%]"
+          mouseX={mouseX}
+          mouseY={mouseY}
+          parallaxStrength={1.5}
         />
         
         <ElegantShape
@@ -111,6 +143,9 @@ function HeroGeometric({
           rotate={-18}
           gradient="from-accent/[0.10]"
           className="right-[-10%] md:right-[-5%] top-[65%] md:top-[72%]"
+          mouseX={mouseX}
+          mouseY={mouseY}
+          parallaxStrength={-1.2}
         />
         
         <ElegantShape
@@ -120,6 +155,9 @@ function HeroGeometric({
           rotate={-10}
           gradient="from-primary/[0.08]"
           className="left-[8%] md:left-[12%] bottom-[8%] md:bottom-[12%]"
+          mouseX={mouseX}
+          mouseY={mouseY}
+          parallaxStrength={0.8}
         />
         
         <ElegantShape
@@ -129,6 +167,9 @@ function HeroGeometric({
           rotate={22}
           gradient="from-accent/[0.08]"
           className="right-[12%] md:right-[18%] top-[8%] md:top-[12%]"
+          mouseX={mouseX}
+          mouseY={mouseY}
+          parallaxStrength={-2}
         />
         
         <ElegantShape
@@ -138,6 +179,9 @@ function HeroGeometric({
           rotate={-28}
           gradient="from-primary/[0.06]"
           className="left-[25%] md:left-[30%] top-[3%] md:top-[6%]"
+          mouseX={mouseX}
+          mouseY={mouseY}
+          parallaxStrength={2.5}
         />
         
         <ElegantShape
@@ -147,6 +191,9 @@ function HeroGeometric({
           rotate={16}
           gradient="from-accent/[0.07]"
           className="right-[5%] top-[38%]"
+          mouseX={mouseX}
+          mouseY={mouseY}
+          parallaxStrength={-1}
         />
       </div>
 
