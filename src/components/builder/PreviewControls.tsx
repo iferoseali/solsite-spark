@@ -12,13 +12,19 @@ interface PreviewControlsProps {
   isSaving: boolean;
   isRefreshing: boolean;
   deviceSize: DeviceSize;
-  currentTemplateId: string | null;
+  currentTemplateKey: string;
+  currentBlueprintId: string | null;
   currentLayout: string;
   currentPersonality: string;
   onRefresh: () => void;
   onSave: () => void;
   onDeviceChange: (size: DeviceSize) => void;
-  onTemplateChange: (templateId: string | null, layout: string, personality: string) => void;
+  onTemplateChange: (args: {
+    templateKey: string;
+    blueprintId: string;
+    layout: string;
+    personality: string;
+  }) => void;
   onFullscreen: () => void;
 }
 
@@ -29,7 +35,8 @@ export const PreviewControls = ({
   isSaving,
   isRefreshing,
   deviceSize,
-  currentTemplateId,
+  currentTemplateKey,
+  currentBlueprintId,
   currentLayout,
   currentPersonality,
   onRefresh,
@@ -52,7 +59,8 @@ export const PreviewControls = ({
       <div className="flex items-center gap-1">
         {/* Template Switcher */}
         <TemplateSwitcher
-          currentTemplateId={currentTemplateId}
+          currentTemplateKey={currentTemplateKey}
+          currentBlueprintId={currentBlueprintId}
           currentLayout={currentLayout}
           currentPersonality={currentPersonality}
           onTemplateChange={onTemplateChange}

@@ -11,52 +11,71 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { getTemplateId } from "@/lib/templateData";
 
-interface Template {
+interface TemplateBlueprintRow {
   id: string;
   name: string;
+  personality: string | null;
+  layout_category: string | null;
+  is_active?: boolean | null;
+}
+
+interface TemplateOption {
+  blueprintId: string;
+  name: string;
+  templateKey: string; // e.g. "cult_minimal" used by preview renderer
   personality: string | null;
   layout_category: string | null;
 }
 
 interface TemplateSwitcherProps {
-  currentTemplateId: string | null;
+  currentTemplateKey: string;
+  currentBlueprintId: string | null;
   currentLayout: string;
   currentPersonality: string;
-  onTemplateChange: (templateId: string | null, layout: string, personality: string) => void;
+  onTemplateChange: (args: {
+    templateKey: string;
+    blueprintId: string;
+    layout: string;
+    personality: string;
+  }) => void;
 }
 
-// Fallback templates if no blueprints exist
-const FALLBACK_TEMPLATES = [
-  { id: null, name: 'Minimal Degen', layout: 'minimal', personality: 'degen' },
-  { id: null, name: 'Professional', layout: 'minimal', personality: 'professional' },
-  { id: null, name: 'Dark Cult', layout: 'minimal', personality: 'dark-cult' },
-  { id: null, name: 'Playful', layout: 'minimal', personality: 'playful' },
-  { id: null, name: 'Premium', layout: 'minimal', personality: 'premium' },
-];
-
 export const TemplateSwitcher = ({
-  currentTemplateId,
+  currentTemplateKey,
+  currentBlueprintId,
   currentLayout,
   currentPersonality,
   onTemplateChange,
 }: TemplateSwitcherProps) => {
-  const [templates, setTemplates] = useState<Template[]>([]);
+  const [templates, setTemplates] = useState<TemplateOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
         const { data, error } = await supabase
-          .from('template_blueprints')
-          .select('id, name, personality, layout_category')
-          .eq('is_active', true)
-          .order('name');
+          .from("template_blueprints")
+          .select("id, name, personality, layout_category, is_active")
+          // Some rows may have is_active = NULL; treat that as active for now
+          .or("is_active.is.null,is_active.eq.true")
+          .order("name");
 
         if (error) throw error;
-        setTemplates(data || []);
+
+        const rows = (data || []) as TemplateBlueprintRow[];
+        const mapped: TemplateOption[] = rows.map((t) => ({
+          blueprintId: t.id,
+          name: t.name,
+          templateKey: getTemplateId(t.name),
+          personality: t.personality,
+          layout_category: t.layout_category,
+        }));
+
+        setTemplates(mapped);
       } catch (error) {
-        console.error('Error fetching templates:', error);
+        console.error("Error fetching templates:", error);
       } finally {
         setIsLoading(false);
       }
@@ -66,12 +85,11 @@ export const TemplateSwitcher = ({
   }, []);
 
   const getCurrentTemplateName = () => {
-    if (currentTemplateId) {
-      const template = templates.find(t => t.id === currentTemplateId);
+    if (currentBlueprintId) {
+      const template = templates.find((t) => t.blueprintId === currentBlueprintId);
       if (template) return template.name;
     }
-    // Show layout/personality combo
-    return `${currentLayout.replace('-', ' ')} × ${currentPersonality.replace('-', ' ')}`;
+    return `${currentLayout.replace("-", " ")} × ${currentPersonality.replace("-", " ")}`;
   };
 
   return (
@@ -79,58 +97,39 @@ export const TemplateSwitcher = ({
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2 h-8" disabled={isLoading}>
           <Palette className="w-4 h-4" />
-          <span className="max-w-[120px] truncate capitalize">{getCurrentTemplateName()}</span>
+          <span className="max-w-[140px] truncate">{getCurrentTemplateName()}</span>
           <ChevronDown className="w-4 h-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent align="end" className="w-72">
         <DropdownMenuLabel>Switch Template</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        
+
         {templates.length > 0 ? (
-          templates.map((template) => (
-            <DropdownMenuItem
-              key={template.id}
-              onClick={() => onTemplateChange(
-                template.id,
-                template.layout_category || 'minimal',
-                template.personality || 'degen'
-              )}
-              className={cn(
-                "cursor-pointer",
-                currentTemplateId === template.id && "bg-primary/10"
-              )}
-            >
-              <span className="flex-1">{template.name}</span>
-              {currentTemplateId === template.id && (
-                <Check className="w-4 h-4 text-primary" />
-              )}
-            </DropdownMenuItem>
-          ))
-        ) : (
-          <>
-            <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-              Style Presets
-            </DropdownMenuLabel>
-            {FALLBACK_TEMPLATES.map((template, index) => (
+          templates.map((template) => {
+            const isActive = currentBlueprintId === template.blueprintId;
+            return (
               <DropdownMenuItem
-                key={index}
-                onClick={() => onTemplateChange(null, template.layout, template.personality)}
-                className={cn(
-                  "cursor-pointer",
-                  currentLayout === template.layout && 
-                  currentPersonality === template.personality && 
-                  "bg-primary/10"
-                )}
+                key={template.blueprintId}
+                onClick={() =>
+                  onTemplateChange({
+                    blueprintId: template.blueprintId,
+                    templateKey: template.templateKey,
+                    layout: template.layout_category || "minimal",
+                    personality: template.personality || "degen",
+                  })
+                }
+                className={cn("cursor-pointer", isActive && "bg-primary/10")}
               >
                 <span className="flex-1">{template.name}</span>
-                {currentLayout === template.layout && 
-                 currentPersonality === template.personality && (
-                  <Check className="w-4 h-4 text-primary" />
-                )}
+                {isActive && <Check className="w-4 h-4 text-primary" />}
               </DropdownMenuItem>
-            ))}
-          </>
+            );
+          })
+        ) : (
+          <DropdownMenuItem disabled className="text-muted-foreground">
+            No templates found
+          </DropdownMenuItem>
         )}
       </DropdownMenuContent>
     </DropdownMenu>

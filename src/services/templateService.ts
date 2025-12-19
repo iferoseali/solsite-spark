@@ -11,7 +11,8 @@ export const templateService = {
     const { data, error } = await supabase
       .from("template_blueprints")
       .select("*")
-      .eq("is_active", true)
+      // Some rows may have is_active = NULL; treat that as active for now
+      .or("is_active.is.null,is_active.eq.true")
       .order("name");
 
     if (error) {
