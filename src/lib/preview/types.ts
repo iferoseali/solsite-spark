@@ -1,5 +1,30 @@
 // Preview HTML generator types
 
+export interface FaqItemData {
+  question: string;
+  answer: string;
+}
+
+export interface RoadmapPhaseData {
+  phase: string;
+  title: string;
+  items: string[];
+  completed?: boolean;
+}
+
+export interface TeamMemberData {
+  name: string;
+  role: string;
+  avatar?: string;
+  twitter?: string;
+}
+
+export interface FeatureData {
+  title: string;
+  description: string;
+  icon?: string;
+}
+
 export interface TokenomicsInput {
   totalSupply?: string;
   circulatingSupply?: string;
@@ -28,6 +53,11 @@ export interface ProjectData {
   showFaq: boolean;
   tokenomics?: TokenomicsInput;
   sections?: SectionConfig[];
+  // Custom content
+  faqItems?: FaqItemData[];
+  roadmapPhases?: RoadmapPhaseData[];
+  teamMembers?: TeamMemberData[];
+  features?: FeatureData[];
 }
 
 export interface TemplateConfig {
@@ -60,4 +90,9 @@ export interface SanitizedData {
   totalSupply: string;
   circulatingSupply: string;
   contractAddress: string;
+  // Sanitized custom content
+  faqItems?: FaqItemData[];
+  roadmapPhases?: RoadmapPhaseData[];
+  teamMembers?: TeamMemberData[];
+  features?: FeatureData[];
 }

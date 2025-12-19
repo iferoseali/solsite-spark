@@ -200,6 +200,51 @@ export function generateCss(styles: TemplateStyles): string {
     /* Section Title */
     .section-title { font-size: clamp(32px, 5vw, 48px); margin-bottom: 24px; text-align: center; }
 
+    /* Team */
+    .team-section { padding: 80px 20px; text-align: center; }
+    .team-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; max-width: 800px; margin: 40px auto 0; }
+    .team-card {
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 20px; padding: 24px; text-align: center;
+      transition: all 0.3s ease;
+    }
+    .team-card:hover { transform: translateY(-5px); border-color: var(--primary); }
+    .team-avatar {
+      width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 16px;
+      object-fit: cover; border: 3px solid var(--primary);
+    }
+    .team-avatar-placeholder {
+      width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 16px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px; font-weight: 700; color: #000;
+    }
+    .team-info { text-align: center; }
+    .team-name { font-weight: 600; font-size: 18px; margin-bottom: 4px; }
+    .team-role { color: var(--text-muted); font-size: 14px; margin-bottom: 8px; }
+    .team-twitter {
+      display: inline-block; color: var(--primary); text-decoration: none;
+      font-weight: 600; font-size: 14px;
+    }
+    .team-twitter:hover { text-decoration: underline; }
+
+    /* Features */
+    .features-section { padding: 80px 20px; text-align: center; }
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; max-width: 1000px; margin: 40px auto 0; }
+    .feature-card {
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 20px; padding: 32px; text-align: center;
+      transition: all 0.3s ease;
+    }
+    .feature-card:hover { transform: translateY(-5px); border-color: var(--primary); }
+    .feature-icon { font-size: 48px; margin-bottom: 16px; }
+    .feature-title { font-size: 20px; font-weight: 600; margin-bottom: 12px; }
+    .feature-desc { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+
+    /* Roadmap completed state */
+    .roadmap-card.completed { border-color: var(--accent); background: rgba(34, 197, 94, 0.05); }
+    .roadmap-completed { color: var(--accent); font-size: 12px; margin-top: 16px; font-weight: 600; }
+
     /* Footer */
     .footer { padding: 40px 20px; text-align: center; border-top: 1px solid var(--card-border); margin-top: 60px; }
     .footer-link { color: var(--text-muted); text-decoration: none; transition: color 0.3s ease; }
