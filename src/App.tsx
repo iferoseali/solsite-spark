@@ -17,6 +17,7 @@ import NotFound from "./pages/NotFound";
 const Templates = lazy(() => import("./pages/Templates"));
 const Builder = lazy(() => import("./pages/Builder"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
+const DomainSettings = lazy(() => import("./pages/DomainSettings"));
 const Site = lazy(() => import("./pages/Site"));
 const WebsiteRenderer = lazy(() => import("./pages/WebsiteRenderer"));
 const TemplateBuilder = lazy(() => import("./pages/admin/TemplateBuilder"));
@@ -68,6 +69,11 @@ const App = () => {
                       <Route path="/dashboard" element={
                         <ErrorBoundary>
                           <Dashboard />
+                        </ErrorBoundary>
+                      } />
+                      <Route path="/domains" element={
+                        <ErrorBoundary>
+                          <DomainSettings />
                         </ErrorBoundary>
                       } />
                       <Route path="/site/:subdomain" element={<Site />} />
