@@ -57,7 +57,7 @@ function sanitizeProjectData(project: ProjectData): SanitizedData {
     ticker: escapeHtml(project.ticker) || '$TICKER',
     tagline: escapeHtml(project.tagline),
     description: escapeHtml(project.description),
-    logoUrl: sanitizeUrl(project.logoUrl),
+    logoUrl: sanitizeUrl(project.logoUrl, true), // Allow data URLs for preview
     twitter: sanitizeUrl(project.twitter),
     discord: sanitizeUrl(project.discord),
     telegram: sanitizeUrl(project.telegram),

@@ -479,10 +479,53 @@ const Builder = () => {
     setIsRefreshingPreview(false);
   }, [generatedProject]);
 
-  const handleTemplateChange = useCallback((newTemplateId: string | null, layout: string, personality: string) => {
+  const handleTemplateChange = useCallback(async (newTemplateId: string | null, layout: string, personality: string) => {
     setSelectedTemplateId(newTemplateId);
     setCurrentLayout(layout);
     setCurrentPersonality(personality);
+    
+    // Fetch and apply blueprint config if a template ID is provided
+    if (newTemplateId) {
+      try {
+        const { data: blueprint, error } = await supabase
+          .from('template_blueprints')
+          .select('name, sections, styles, animations')
+          .eq('id', newTemplateId)
+          .single();
+        
+        if (!error && blueprint) {
+          setBlueprintName(blueprint.name);
+          setBlueprintId(newTemplateId);
+          
+          // Apply blueprint sections if available
+          if (blueprint.sections && Array.isArray(blueprint.sections)) {
+            const blueprintSections = blueprint.sections as Array<{
+              id: string;
+              type: string;
+              variant?: string;
+              visible?: boolean;
+              order?: number;
+            }>;
+            
+            if (blueprintSections.length > 0) {
+              setSections(blueprintSections.map((s, i) => ({
+                id: s.id || `section-${i}`,
+                type: s.type as SectionConfig['type'],
+                variant: s.variant || 'default',
+                visible: s.visible ?? true,
+                order: s.order ?? i,
+              })));
+            }
+          }
+          
+          toast.success(`Switched to ${blueprint.name}`);
+          return;
+        }
+      } catch (error) {
+        console.error('Error fetching blueprint:', error);
+      }
+    }
+    
     toast.success('Template switched');
   }, []);
 
