@@ -114,6 +114,7 @@ export const projectService = {
 
   /**
    * Update an existing project
+   * If the project is published, invalidates the cache for re-rendering
    */
   async update(id: string, updateData: UpdateProjectData): Promise<Project> {
     // Convert config to Json type if present
@@ -134,7 +135,17 @@ export const projectService = {
       throw error;
     }
 
-    return data as Project;
+    const project = data as Project;
+
+    // If the project is published and we're updating content (not just status),
+    // invalidate the cache and trigger re-render
+    if (project.status === "published" && !updateData.status) {
+      this.triggerPrerender(id).catch((err) => {
+        console.error("Failed to re-render after update:", err);
+      });
+    }
+
+    return project;
   },
 
   /**
@@ -154,16 +165,70 @@ export const projectService = {
 
   /**
    * Publish a project (change status to published)
+   * Also triggers pre-rendering for faster serving
    */
   async publish(id: string): Promise<Project> {
-    return this.update(id, { status: "published" });
+    const project = await this.update(id, { status: "published" });
+    
+    // Trigger pre-rendering in the background (don't await to avoid blocking)
+    this.triggerPrerender(id).catch((err) => {
+      console.error("Failed to trigger pre-render:", err);
+    });
+    
+    return project;
   },
 
   /**
    * Unpublish a project (change status to draft)
+   * Also invalidates the pre-rendered cache
    */
   async unpublish(id: string): Promise<Project> {
-    return this.update(id, { status: "draft" });
+    const project = await this.update(id, { status: "draft" });
+    
+    // Invalidate the cache in the background
+    this.invalidateCache(id).catch((err) => {
+      console.error("Failed to invalidate cache:", err);
+    });
+    
+    return project;
+  },
+
+  /**
+   * Trigger pre-rendering for a project
+   */
+  async triggerPrerender(projectId: string): Promise<void> {
+    try {
+      const response = await supabase.functions.invoke('prerender-site', {
+        body: { projectId, action: 'prerender' },
+      });
+      
+      if (response.error) {
+        console.error("Pre-render error:", response.error);
+      } else {
+        console.log("Pre-render triggered:", response.data);
+      }
+    } catch (error) {
+      console.error("Failed to trigger pre-render:", error);
+    }
+  },
+
+  /**
+   * Invalidate cached pre-rendered content
+   */
+  async invalidateCache(projectId: string): Promise<void> {
+    try {
+      const response = await supabase.functions.invoke('prerender-site', {
+        body: { projectId, action: 'invalidate' },
+      });
+      
+      if (response.error) {
+        console.error("Cache invalidation error:", response.error);
+      } else {
+        console.log("Cache invalidated:", response.data);
+      }
+    } catch (error) {
+      console.error("Failed to invalidate cache:", error);
+    }
   },
 
   /**
