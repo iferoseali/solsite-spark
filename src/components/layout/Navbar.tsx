@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, Sparkles } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
@@ -13,31 +13,41 @@ export const Navbar = () => {
   const [activeSection, setActiveSection] = useState("");
   const location = useLocation();
   const isHomePage = location.pathname === "/";
-
-  // Scroll detection
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-      
-      // Active section detection for home page
-      if (isHomePage) {
-        const sections = ["templates", "features", "how-it-works", "pricing"];
-        for (const section of sections) {
-          const element = document.getElementById(section);
-          if (element) {
-            const rect = element.getBoundingClientRect();
-            if (rect.top <= 100 && rect.bottom >= 100) {
-              setActiveSection(section);
-              break;
-            }
+  
+  // Throttle scroll handler for performance
+  const ticking = useRef(false);
+  
+  const updateScrollState = useCallback(() => {
+    setScrolled(window.scrollY > 20);
+    
+    // Active section detection for home page
+    if (isHomePage) {
+      const sections = ["templates", "features", "how-it-works", "pricing"];
+      for (const section of sections) {
+        const element = document.getElementById(section);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          if (rect.top <= 100 && rect.bottom >= 100) {
+            setActiveSection(section);
+            break;
           }
         }
       }
+    }
+    ticking.current = false;
+  }, [isHomePage]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!ticking.current) {
+        requestAnimationFrame(updateScrollState);
+        ticking.current = true;
+      }
     };
     
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [isHomePage]);
+  }, [updateScrollState]);
 
   const navLinks = [
     { href: "/", label: "Home", section: null },
