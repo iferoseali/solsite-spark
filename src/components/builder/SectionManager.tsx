@@ -184,5 +184,6 @@ export const SectionManager = ({ sections, onChange }: SectionManagerProps) => {
   );
 };
 
-export { DEFAULT_SECTIONS };
-export type { SectionConfig };
+// Re-export for backwards compatibility
+export { DEFAULT_SECTIONS } from "./sectionTypes";
+export type { SectionConfig } from "@/types/section";

@@ -1,0 +1,195 @@
+// Project service - handles all project-related database operations
+
+import { supabase } from "@/integrations/supabase/client";
+import type { Project, CreateProjectData, UpdateProjectData, ProjectConfig } from "@/types/project";
+import type { Json } from "@/integrations/supabase/types";
+
+export const projectService = {
+  /**
+   * Get a project by ID with optional template data
+   */
+  async getById(id: string): Promise<Project | null> {
+    const { data, error } = await supabase
+      .from("projects")
+      .select(`
+        *,
+        templates (
+          layout_id,
+          personality_id
+        )
+      `)
+      .eq("id", id)
+      .single();
+
+    if (error) {
+      console.error("Error fetching project:", error);
+      throw error;
+    }
+
+    return data as Project | null;
+  },
+
+  /**
+   * Get all projects for a user
+   */
+  async getByUserId(userId: string): Promise<Project[]> {
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching user projects:", error);
+      throw error;
+    }
+
+    return (data || []) as Project[];
+  },
+
+  /**
+   * Get a project by subdomain
+   */
+  async getBySubdomain(subdomain: string): Promise<Project | null> {
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("subdomain", subdomain)
+      .single();
+
+    if (error && error.code !== "PGRST116") {
+      console.error("Error fetching project by subdomain:", error);
+      throw error;
+    }
+
+    return data as Project | null;
+  },
+
+  /**
+   * Check if a subdomain is available
+   */
+  async isSubdomainAvailable(subdomain: string): Promise<boolean> {
+    const { data } = await supabase
+      .from("projects")
+      .select("id")
+      .eq("subdomain", subdomain)
+      .maybeSingle();
+
+    return !data;
+  },
+
+  /**
+   * Create a new project
+   */
+  async create(projectData: CreateProjectData): Promise<Project> {
+    const { data, error } = await supabase
+      .from("projects")
+      .insert({
+        coin_name: projectData.coinName,
+        ticker: projectData.ticker,
+        tagline: projectData.tagline || null,
+        description: projectData.description || null,
+        twitter_url: projectData.twitter || null,
+        discord_url: projectData.discord || null,
+        telegram_url: projectData.telegram || null,
+        dex_link: projectData.dexLink || null,
+        show_roadmap: projectData.showRoadmap ?? true,
+        show_faq: projectData.showFaq ?? true,
+        template_id: projectData.templateId || null,
+        subdomain: projectData.subdomain,
+        user_id: projectData.userId,
+        config: (projectData.config || {}) as Json,
+        status: "draft",
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error creating project:", error);
+      throw error;
+    }
+
+    return data as Project;
+  },
+
+  /**
+   * Update an existing project
+   */
+  async update(id: string, updateData: UpdateProjectData): Promise<Project> {
+    // Convert config to Json type if present
+    const dataToUpdate = {
+      ...updateData,
+      config: updateData.config ? (updateData.config as Json) : undefined,
+    };
+
+    const { data, error } = await supabase
+      .from("projects")
+      .update(dataToUpdate)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error updating project:", error);
+      throw error;
+    }
+
+    return data as Project;
+  },
+
+  /**
+   * Delete a project
+   */
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from("projects")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error deleting project:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Publish a project (change status to published)
+   */
+  async publish(id: string): Promise<Project> {
+    return this.update(id, { status: "published" });
+  },
+
+  /**
+   * Unpublish a project (change status to draft)
+   */
+  async unpublish(id: string): Promise<Project> {
+    return this.update(id, { status: "draft" });
+  },
+
+  /**
+   * Generate a unique subdomain from coin name
+   */
+  generateSubdomain(coinName: string): string {
+    return coinName
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .slice(0, 30);
+  },
+
+  /**
+   * Get a unique subdomain (adds suffix if taken)
+   */
+  async getUniqueSubdomain(coinName: string): Promise<string> {
+    const baseSubdomain = this.generateSubdomain(coinName);
+    const isAvailable = await this.isSubdomainAvailable(baseSubdomain);
+    
+    if (isAvailable) {
+      return baseSubdomain;
+    }
+    
+    // Add random suffix if taken
+    return `${baseSubdomain}-${Math.random().toString(36).substring(2, 6)}`;
+  },
+};
