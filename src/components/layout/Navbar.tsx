@@ -41,7 +41,7 @@ export const Navbar = () => {
 
   const navLinks = [
     { href: "/", label: "Home", section: null },
-    { href: isHomePage ? "#templates" : "/templates", label: "Templates", section: "templates" },
+    { href: "/templates", label: "Templates", section: null },
     { href: "/builder", label: "Builder", section: null },
     { href: "/dashboard", label: "Dashboard", section: null },
   ];
