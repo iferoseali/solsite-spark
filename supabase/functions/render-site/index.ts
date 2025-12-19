@@ -2490,6 +2490,34 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // For subdomain requests, try to serve from pre-rendered storage first (fastest path)
+    if (subdomain) {
+      try {
+        const { data: cachedHtml } = await supabase
+          .storage
+          .from('pre-rendered-sites')
+          .download(`${subdomain}.html`);
+        
+        if (cachedHtml) {
+          console.log(`Serving pre-rendered site for ${subdomain}`);
+          const html = await cachedHtml.text();
+          return new Response(html, {
+            status: 200,
+            headers: {
+              ...corsHeaders,
+              'Content-Type': 'text/html; charset=utf-8',
+              'Cache-Control': 'public, max-age=3600, s-maxage=3600',
+              'CDN-Cache-Control': 'max-age=3600',
+              'X-Served-From': 'pre-rendered-cache',
+            },
+          });
+        }
+      } catch (cacheError) {
+        // Cache miss - will generate dynamically
+        console.log(`No pre-rendered cache for ${subdomain}, generating dynamically`);
+      }
+    }
+
     let query = supabase.from('projects').select('*');
     if (projectId) query = query.eq('id', projectId);
     else if (subdomain) query = query.eq('subdomain', subdomain);
@@ -2542,13 +2570,27 @@ Deno.serve(async (req) => {
     }
 
     const html = generateWebsiteHTML(project, null, selectedTemplateId);
+    
+    // For published sites, enable CDN caching (1 hour)
+    // For drafts or direct projectId requests, disable caching
+    const isPublishedSite = project.status === 'published' && subdomain;
+    
+    const responseHeaders: Record<string, string> = {
+      ...corsHeaders,
+      'Content-Type': 'text/html; charset=utf-8',
+    };
+    
+    if (isPublishedSite) {
+      responseHeaders['Cache-Control'] = 'public, max-age=3600, s-maxage=3600';
+      responseHeaders['CDN-Cache-Control'] = 'max-age=3600';
+      responseHeaders['Surrogate-Control'] = 'max-age=3600';
+    } else {
+      responseHeaders['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+    }
+
     return new Response(html, {
       status: 200,
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'text/html; charset=utf-8',
-        'Cache-Control': 'no-cache',
-      },
+      headers: responseHeaders,
     });
   } catch (error) {
     console.error('Error rendering site:', error);

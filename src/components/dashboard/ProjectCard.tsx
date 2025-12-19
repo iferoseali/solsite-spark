@@ -55,8 +55,13 @@ export function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate, o
   
   const isPublished = project.status === "published";
   const templateId = project.config?.templateId || project.template_id || "cult_minimal";
+  
+  // For published sites, link directly to the live subdomain
+  // For drafts, use the edge function preview
+  const liveUrl = isPublished && project.subdomain 
+    ? `https://${project.subdomain}.solsite.xyz` 
+    : null;
   const previewUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?preview=true&templateId=${templateId}&projectId=${project.id}`;
-  const siteRoute = project.subdomain ? `/site/${project.subdomain}` : null;
 
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
 
@@ -154,13 +159,13 @@ export function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate, o
               Edit
             </Button>
           </Link>
-          {siteRoute ? (
-            <Link to={siteRoute} target="_blank" rel="noopener noreferrer">
+          {liveUrl ? (
+            <a href={liveUrl} target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="sm" className="gap-2">
                 <ExternalLink className="w-4 h-4" />
-                Preview
+                View Live
               </Button>
-            </Link>
+            </a>
           ) : (
             <Button
               variant="outline"
@@ -247,11 +252,11 @@ export function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate, o
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
-                if (siteRoute) window.open(siteRoute, "_blank");
+                if (liveUrl) window.open(liveUrl, "_blank");
                 else window.open(previewUrl, "_blank");
               }}>
                 <ExternalLink className="w-4 h-4 mr-2" />
-                Open Preview
+                {liveUrl ? "Open Live Site" : "Open Preview"}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onDuplicate(project)}>
