@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { WalletProvider } from "@/components/wallet/WalletProvider";
 import { SplashScreen } from "@/components/SplashScreen";
 import { PageLoader } from "@/components/ui/page-loader";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Eagerly loaded (critical path)
 import Index from "./pages/Index";
@@ -27,31 +28,49 @@ const App = () => {
   const [showSplash, setShowSplash] = useState(true);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="dark">
-        <WalletProvider>
-          <TooltipProvider>
-            {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
-            <Toaster />
-            <Sonner />
-          <BrowserRouter>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/templates" element={<Templates />} />
-                <Route path="/builder" element={<Builder />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/site/:subdomain" element={<Site />} />
-                <Route path="/preview" element={<WebsiteRenderer />} />
-                <Route path="/admin/template-builder" element={<TemplateBuilder />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-          </BrowserRouter>
-        </TooltipProvider>
-      </WalletProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider defaultTheme="dark">
+          <WalletProvider>
+            <TooltipProvider>
+              {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/templates" element={
+                      <ErrorBoundary>
+                        <Templates />
+                      </ErrorBoundary>
+                    } />
+                    <Route path="/builder" element={
+                      <ErrorBoundary>
+                        <Builder />
+                      </ErrorBoundary>
+                    } />
+                    <Route path="/dashboard" element={
+                      <ErrorBoundary>
+                        <Dashboard />
+                      </ErrorBoundary>
+                    } />
+                    <Route path="/site/:subdomain" element={<Site />} />
+                    <Route path="/preview" element={<WebsiteRenderer />} />
+                    <Route path="/admin/template-builder" element={
+                      <ErrorBoundary>
+                        <TemplateBuilder />
+                      </ErrorBoundary>
+                    } />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Suspense>
+              </BrowserRouter>
+            </TooltipProvider>
+          </WalletProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 
