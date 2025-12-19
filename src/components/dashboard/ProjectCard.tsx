@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { 
   Edit, 
@@ -8,10 +8,14 @@ import {
   GlobeLock,
   Calendar,
   MoreVertical,
-  Copy
+  Copy,
+  Pencil,
+  Check,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,10 +44,14 @@ interface ProjectCardProps {
   onDelete: (project: Project) => void;
   onTogglePublish: (project: Project) => void;
   onDuplicate: (project: Project) => void;
+  onRename: (project: Project, newName: string) => void;
 }
 
-export function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate }: ProjectCardProps) {
+export function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate, onRename }: ProjectCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(project.coin_name);
+  const inputRef = useRef<HTMLInputElement>(null);
   
   const isPublished = project.status === "published";
   const templateId = project.config?.templateId || project.template_id || "cult_minimal";
@@ -54,6 +62,39 @@ export function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate }:
     day: "numeric",
     year: "numeric",
   });
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  const handleStartEdit = () => {
+    setEditName(project.coin_name);
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditName(project.coin_name);
+    setIsEditing(false);
+  };
+
+  const handleSaveEdit = () => {
+    const trimmedName = editName.trim();
+    if (trimmedName && trimmedName !== project.coin_name && trimmedName.length <= 50) {
+      onRename(project, trimmedName);
+    }
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSaveEdit();
+    } else if (e.key === "Escape") {
+      handleCancelEdit();
+    }
+  };
 
   return (
     <div className="group relative rounded-2xl overflow-hidden bg-card border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5">
@@ -115,8 +156,54 @@ export function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate }:
       {/* Card Content */}
       <div className="p-4">
         <div className="flex items-start justify-between gap-2 mb-3">
-          <div className="min-w-0">
-            <h3 className="font-semibold text-lg truncate">{project.coin_name}</h3>
+          <div className="min-w-0 flex-1">
+            {isEditing ? (
+              <div className="flex items-center gap-1">
+                <Input
+                  ref={inputRef}
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value.slice(0, 50))}
+                  onKeyDown={handleKeyDown}
+                  onBlur={handleSaveEdit}
+                  className="h-8 text-base font-semibold"
+                  maxLength={50}
+                />
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 shrink-0 text-green-500 hover:text-green-400"
+                  onClick={handleSaveEdit}
+                >
+                  <Check className="w-4 h-4" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                  onClick={handleCancelEdit}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 group/name">
+                <h3 
+                  className="font-semibold text-lg truncate cursor-pointer hover:text-primary transition-colors"
+                  onClick={handleStartEdit}
+                  title="Click to rename"
+                >
+                  {project.coin_name}
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 opacity-0 group-hover/name:opacity-100 transition-opacity"
+                  onClick={handleStartEdit}
+                >
+                  <Pencil className="w-3 h-3" />
+                </Button>
+              </div>
+            )}
             <p className="text-sm text-muted-foreground">${project.ticker}</p>
           </div>
           
@@ -127,6 +214,10 @@ export function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate }:
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleStartEdit}>
+                <Pencil className="w-4 h-4 mr-2" />
+                Rename
+              </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to={`/builder?projectId=${project.id}`} className="flex items-center gap-2">
                   <Edit className="w-4 h-4" />

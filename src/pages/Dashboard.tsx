@@ -81,13 +81,25 @@ const Dashboard = () => {
     if (!user?.id) return;
     
     try {
-      const newProject = await duplicateProjectMutation.mutateAsync({
+      await duplicateProjectMutation.mutateAsync({
         id: project.id,
         userId: user.id,
       });
       toast.success(`${project.coin_name} duplicated successfully`);
     } catch (error) {
       toast.error("Failed to duplicate project");
+    }
+  };
+
+  const handleRename = async (project: Project, newName: string) => {
+    try {
+      await updateProjectMutation.mutateAsync({
+        id: project.id,
+        data: { coin_name: newName },
+      });
+      toast.success("Project renamed");
+    } catch (error) {
+      toast.error("Failed to rename project");
     }
   };
 
@@ -195,6 +207,7 @@ const Dashboard = () => {
                   onDelete={handleDeleteClick}
                   onTogglePublish={handleTogglePublish}
                   onDuplicate={handleDuplicate}
+                  onRename={handleRename}
                 />
               ))}
             </div>
