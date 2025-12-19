@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowLeft, ExternalLink } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 
 const Site = () => {
   const { subdomain } = useParams<{ subdomain: string }>();
@@ -55,14 +55,6 @@ const Site = () => {
                 {subdomain ? `${subdomain}.solsite.xyz` : "Live Site"}
               </h1>
             </div>
-            {sourceUrl && (
-              <Button variant="outline" size="sm" asChild>
-                <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="gap-2">
-                  <ExternalLink className="w-4 h-4" />
-                  Raw HTML
-                </a>
-              </Button>
-            )}
           </header>
 
           <section className="rounded-2xl border border-border overflow-hidden bg-background shadow-2xl h-[80vh]">

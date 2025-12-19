@@ -56,12 +56,34 @@ export function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate, o
   const isPublished = project.status === "published";
   const templateId = project.config?.templateId || project.template_id || "cult_minimal";
   const previewUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?preview=true&templateId=${templateId}&projectId=${project.id}`;
-  
+  const siteRoute = project.subdomain ? `/site/${project.subdomain}` : null;
+
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+
   const formattedDate = new Date(project.created_at).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
   });
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    (async () => {
+      try {
+        const res = await fetch(previewUrl, { signal: controller.signal });
+        const text = await res.text();
+
+        // Never render raw HTML as text in the app — only set it as srcDoc if it looks like HTML.
+        const looksLikeHtml = /<html[\s>]/i.test(text) || /<!doctype html>/i.test(text);
+        if (looksLikeHtml) setPreviewHtml(text);
+      } catch {
+        // ignore
+      }
+    })();
+
+    return () => controller.abort();
+  }, [previewUrl]);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -111,23 +133,15 @@ export function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate, o
             </span>
           </div>
           
-          {/* Scaled iframe preview */}
+          {/* Thumbnail (no raw HTML rendering) */}
           <div className="relative flex-1 h-[calc(100%-28px)] overflow-hidden">
-            {!imageLoaded && (
-              <div className="absolute inset-0 bg-muted animate-pulse" />
-            )}
-            <div 
-              className="absolute inset-0 origin-top-left" 
-              style={{ transform: "scale(0.25)", width: "400%", height: "400%" }}
-            >
-              <iframe
-                src={previewUrl}
-                className="w-full h-full border-0 pointer-events-none"
-                title={`Preview: ${project.coin_name}`}
-                sandbox="allow-scripts allow-same-origin"
-                loading="lazy"
-                onLoad={() => setImageLoaded(true)}
-              />
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-accent/10 to-muted/20" />
+            <div className="absolute inset-0 p-6 flex flex-col justify-end">
+              <div className="rounded-xl bg-background/30 backdrop-blur-sm border border-border/50 p-4">
+                <p className="text-xs text-muted-foreground mb-1">Preview</p>
+                <p className="text-xl font-display font-bold truncate text-foreground">{project.coin_name}</p>
+                <p className="text-sm text-muted-foreground truncate">${project.ticker}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -140,16 +154,24 @@ export function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate, o
               Edit
             </Button>
           </Link>
-          <a 
-            href={previewUrl} 
-            target="_blank" 
-            rel="noopener noreferrer"
-          >
-            <Button variant="outline" size="sm" className="gap-2">
+          {siteRoute ? (
+            <Link to={siteRoute} target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" size="sm" className="gap-2">
+                <ExternalLink className="w-4 h-4" />
+                Preview
+              </Button>
+            </Link>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => window.open(previewUrl, "_blank")}
+            >
               <ExternalLink className="w-4 h-4" />
               Preview
             </Button>
-          </a>
+          )}
         </div>
       </div>
 
@@ -224,7 +246,10 @@ export function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate, o
                   Edit Project
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => window.open(previewUrl, "_blank")}>
+              <DropdownMenuItem onClick={() => {
+                if (siteRoute) window.open(siteRoute, "_blank");
+                else window.open(previewUrl, "_blank");
+              }}>
                 <ExternalLink className="w-4 h-4 mr-2" />
                 Open Preview
               </DropdownMenuItem>
