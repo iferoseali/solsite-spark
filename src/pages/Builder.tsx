@@ -39,6 +39,8 @@ import { generatePreviewHtml } from "@/lib/preview";
 import { PaymentModal } from "@/components/payment/PaymentModal";
 import { usePayment } from "@/hooks/usePayment";
 import { SectionManager, DEFAULT_SECTIONS, type SectionConfig } from "@/components/builder/SectionManager";
+import { mapBlueprintTypeToSectionType, generateSectionId } from "@/types/section";
+import { LogoCropper } from "@/components/builder/LogoCropper";
 import { PreviewControls, type DeviceSize } from "@/components/builder/PreviewControls";
 import { FaqEditor, RoadmapEditor, TeamEditor, FeaturesEditor } from "@/components/builder/editors";
 import { 
@@ -135,6 +137,8 @@ const Builder = () => {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [showLogoCropper, setShowLogoCropper] = useState(false);
+  const [tempLogoSrc, setTempLogoSrc] = useState<string | null>(null);
   const [sections, setSections] = useState<SectionConfig[]>(DEFAULT_SECTIONS);
   
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -499,26 +503,34 @@ const Builder = () => {
 
         if (blueprint?.name) setBlueprintName(blueprint.name);
 
-        // Apply blueprint sections if available
+        // Apply blueprint sections if available, mapping types correctly
         if (blueprint?.sections && Array.isArray(blueprint.sections)) {
           const blueprintSections = blueprint.sections as Array<{
-            id: string;
+            id?: string;
             type: string;
             variant?: string;
+            layout?: string;
             visible?: boolean;
             order?: number;
           }>;
 
-          if (blueprintSections.length > 0) {
-            setSections(
-              blueprintSections.map((s, i) => ({
-                id: s.id || `section-${i}`,
-                type: s.type as SectionConfig['type'],
-                variant: s.variant || 'default',
+          // Map and filter valid sections
+          const mappedSections: SectionConfig[] = [];
+          blueprintSections.forEach((s, i) => {
+            const mappedType = mapBlueprintTypeToSectionType(s.type);
+            if (mappedType) {
+              mappedSections.push({
+                id: s.id || generateSectionId(mappedType),
+                type: mappedType,
+                variant: s.variant || s.layout || 'default',
                 visible: s.visible ?? true,
                 order: s.order ?? i,
-              }))
-            );
+              });
+            }
+          });
+
+          if (mappedSections.length > 0) {
+            setSections(mappedSections);
           }
         }
 
@@ -578,12 +590,27 @@ const Builder = () => {
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setLogoFile(file);
       const reader = new FileReader();
-      reader.onloadend = () => setLogoPreview(reader.result as string);
+      reader.onloadend = () => {
+        setTempLogoSrc(reader.result as string);
+        setShowLogoCropper(true);
+      };
       reader.readAsDataURL(file);
+      // Keep the file reference for upload
+      setLogoFile(file);
     }
   };
+
+  const handleCropComplete = useCallback((croppedImageUrl: string) => {
+    setLogoPreview(croppedImageUrl);
+    // Convert data URL to File for upload
+    fetch(croppedImageUrl)
+      .then(res => res.blob())
+      .then(blob => {
+        const file = new File([blob], 'logo.png', { type: 'image/png' });
+        setLogoFile(file);
+      });
+  }, []);
 
   const uploadLogo = async (projectId: string): Promise<string | null> => {
     if (!logoFile) return null;
@@ -789,7 +816,24 @@ const Builder = () => {
                         </div>
                         <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
                       </label>
-                      {logoPreview && <div className="w-14 h-14 rounded-lg overflow-hidden border border-border"><img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover" /></div>}
+                      {logoPreview && (
+                        <div className="flex items-center gap-2">
+                          <div className="w-14 h-14 rounded-lg overflow-hidden border border-border">
+                            <img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover" />
+                          </div>
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => {
+                              setTempLogoSrc(logoPreview);
+                              setShowLogoCropper(true);
+                            }}
+                          >
+                            Crop
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CollapsibleContent>
@@ -936,6 +980,15 @@ const Builder = () => {
           paymentType="website"
           userId={user.id}
           walletAddress={user.wallet_address}
+        />
+      )}
+
+      {tempLogoSrc && (
+        <LogoCropper
+          open={showLogoCropper}
+          onOpenChange={setShowLogoCropper}
+          imageSrc={tempLogoSrc}
+          onCropComplete={handleCropComplete}
         />
       )}
     </div>
