@@ -8,4 +8,5 @@ export {
   SECTION_ICONS,
   DEFAULT_SECTIONS,
   generateSectionId,
+  mapBlueprintTypeToSectionType,
 } from "@/types/section";

@@ -104,3 +104,27 @@ export const DEFAULT_SECTIONS: SectionConfig[] = [
 export function generateSectionId(type: SectionType): string {
   return `${type}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
+
+// Map blueprint section types to our SectionType
+const BLUEPRINT_TYPE_MAP: Record<string, SectionType | null> = {
+  hero: 'hero',
+  about: 'about',
+  tokenomics: 'tokenomics',
+  stats: 'tokenomics', // stats -> tokenomics
+  roadmap: 'roadmap',
+  faq: 'faq',
+  community: 'community',
+  team: 'team',
+  story: 'story',
+  narrative: 'story', // narrative -> story
+  utility: 'utility',
+  features: 'utility', // features -> utility
+  rituals: 'utility', // rituals -> utility
+  // These types are not mapped (footer, cta, etc.)
+  footer: null,
+  cta: null,
+};
+
+export function mapBlueprintTypeToSectionType(blueprintType: string): SectionType | null {
+  return BLUEPRINT_TYPE_MAP[blueprintType.toLowerCase()] ?? null;
+}
