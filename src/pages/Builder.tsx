@@ -28,7 +28,7 @@ import type { Json } from "@/integrations/supabase/types";
 import { useWalletAuth } from "@/hooks/useWalletAuth";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-import { generatePreviewHtml } from "@/lib/generatePreviewHtml";
+import { generatePreviewHtml } from "@/lib/preview";
 import { PaymentModal } from "@/components/payment/PaymentModal";
 import { usePayment } from "@/hooks/usePayment";
 import { SectionManager, DEFAULT_SECTIONS, type SectionConfig } from "@/components/builder/SectionManager";
