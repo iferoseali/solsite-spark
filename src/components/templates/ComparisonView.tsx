@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Columns, Sparkles, X } from "lucide-react";
@@ -13,7 +13,7 @@ interface ComparisonViewProps {
   onClose: () => void;
 }
 
-export const ComparisonView: React.FC<ComparisonViewProps> = ({
+export const ComparisonView = memo<ComparisonViewProps>(({
   templates,
   compareIds,
   onRemove,
@@ -81,6 +81,7 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({
                     className="w-full h-full border-0"
                     title={`Compare: ${template.name}`}
                     sandbox="allow-scripts"
+                    loading="lazy"
                   />
                 </div>
 
@@ -100,4 +101,6 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({
       </div>
     </motion.div>
   );
-};
+});
+
+ComparisonView.displayName = "ComparisonView";
