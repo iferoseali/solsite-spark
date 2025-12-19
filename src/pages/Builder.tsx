@@ -72,6 +72,8 @@ const initialFormData = {
   discord: "",
   telegram: "",
   dexLink: "",
+  buyNowLink: "",
+  learnMoreLink: "",
   showRoadmap: true,
   showFaq: true,
   totalSupply: "",
@@ -336,6 +338,8 @@ const Builder = () => {
             roadmapPhases?: RoadmapPhase[];
             teamMembers?: TeamMember[];
             features?: Feature[];
+            buyNowLink?: string;
+            learnMoreLink?: string;
           } | null;
           
           setFormData({
@@ -347,6 +351,8 @@ const Builder = () => {
             discord: project.discord_url || "",
             telegram: project.telegram_url || "",
             dexLink: project.dex_link || "",
+            buyNowLink: config?.buyNowLink || "",
+            learnMoreLink: config?.learnMoreLink || "",
             showRoadmap: project.show_roadmap ?? true,
             showFaq: project.show_faq ?? true,
             totalSupply: config?.tokenomics?.totalSupply || "",
@@ -404,6 +410,8 @@ const Builder = () => {
         discord: deferredFormData.discord,
         telegram: deferredFormData.telegram,
         dexLink: deferredFormData.dexLink,
+        buyNowLink: deferredFormData.buyNowLink,
+        learnMoreLink: deferredFormData.learnMoreLink,
         showRoadmap,
         showFaq,
         tokenomics: {
@@ -567,6 +575,8 @@ const Builder = () => {
           faqItems, roadmapPhases, teamMembers, features,
           templateId: selectedTemplateId || null,
           blueprintId: blueprintId || null,
+          buyNowLink: formData.buyNowLink || null,
+          learnMoreLink: formData.learnMoreLink || null,
         },
       };
       if (logoUrl) updateData.logo_url = logoUrl;
@@ -850,6 +860,13 @@ const Builder = () => {
                   <div className="relative"><MessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input name="discord" placeholder="discord.gg/yourcoin" value={formData.discord} onChange={handleInputChange} className="pl-10" /></div>
                   <div className="relative"><MessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input name="telegram" placeholder="t.me/yourcoin" value={formData.telegram} onChange={handleInputChange} className="pl-10" /></div>
                   <div className="relative"><Rocket className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input name="dexLink" placeholder="DEX / Buy Link" value={formData.dexLink} onChange={handleInputChange} className="pl-10" /></div>
+                  <div className="pt-2 border-t border-border">
+                    <p className="text-xs text-muted-foreground mb-2">Hero Button Links</p>
+                    <div className="space-y-3">
+                      <div className="relative"><ExternalLink className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input name="buyNowLink" placeholder="Buy Now link (defaults to DEX link)" value={formData.buyNowLink} onChange={handleInputChange} className="pl-10" /></div>
+                      <div className="relative"><ExternalLink className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input name="learnMoreLink" placeholder="Learn More link (defaults to #about)" value={formData.learnMoreLink} onChange={handleInputChange} className="pl-10" /></div>
+                    </div>
+                  </div>
                 </CollapsibleContent>
               </Collapsible>
 

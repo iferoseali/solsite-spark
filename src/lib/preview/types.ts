@@ -49,6 +49,8 @@ export interface ProjectData {
   discord: string;
   telegram: string;
   dexLink: string;
+  buyNowLink?: string;
+  learnMoreLink?: string;
   showRoadmap: boolean;
   showFaq: boolean;
   tokenomics?: TokenomicsInput;
@@ -87,6 +89,8 @@ export interface SanitizedData {
   discord: string;
   telegram: string;
   dexLink: string;
+  buyNowLink: string;
+  learnMoreLink: string;
   totalSupply: string;
   circulatingSupply: string;
   contractAddress: string;

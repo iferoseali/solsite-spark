@@ -62,6 +62,8 @@ function sanitizeProjectData(project: ProjectData): SanitizedData {
     discord: sanitizeUrl(project.discord),
     telegram: sanitizeUrl(project.telegram),
     dexLink: sanitizeUrl(project.dexLink),
+    buyNowLink: sanitizeUrl(project.buyNowLink || project.dexLink),
+    learnMoreLink: sanitizeUrl(project.learnMoreLink) || '#about',
     totalSupply: escapeHtml(project.tokenomics?.totalSupply),
     circulatingSupply: escapeHtml(project.tokenomics?.circulatingSupply),
     contractAddress: escapeHtml(project.tokenomics?.contractAddress),

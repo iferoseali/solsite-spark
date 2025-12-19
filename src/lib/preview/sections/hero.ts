@@ -14,10 +14,10 @@ export function generateHero(data: SanitizedData): string {
     <div class="hero-ticker">${data.ticker}</div>
     <p class="hero-tagline">${data.tagline || 'Your awesome tagline goes here'}</p>
     <div class="cta-buttons">
-      <a href="${data.dexLink || '#'}" target="_blank" rel="noopener" class="cta-btn cta-btn-primary">
+      <a href="${data.buyNowLink || data.dexLink || '#'}" target="_blank" rel="noopener" class="cta-btn cta-btn-primary">
         Buy Now
       </a>
-      <a href="#about" class="cta-btn cta-btn-secondary">Learn More</a>
+      <a href="${data.learnMoreLink || '#about'}" ${data.learnMoreLink && !data.learnMoreLink.startsWith('#') ? 'target="_blank" rel="noopener"' : ''} class="cta-btn cta-btn-secondary">Learn More</a>
     </div>
   </section>`;
 }
