@@ -153,7 +153,8 @@ const Builder = () => {
   const [sections, setSections] = useState<SectionConfig[]>(DEFAULT_SECTIONS);
   
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [hasPaid, setHasPaid] = useState(false);
+  // TEST MODE: Set to true to bypass payment for testing
+  const [hasPaid, setHasPaid] = useState(true);
   const { checkExistingPayment } = usePayment();
 
   // Draft restore state
