@@ -7,10 +7,12 @@ import { Link } from "react-router-dom";
 import { 
   ArrowRight, Check, Eye, Sparkles, X, Columns, 
   Search, Heart, Grid3X3, List, SlidersHorizontal,
-  ArrowUpDown, ChevronDown
+  ArrowUpDown, ChevronDown, Clock, Trash2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTemplateFavorites } from "@/hooks/useTemplateFavorites";
+import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
+import { PreviewModal } from "@/components/templates/PreviewModal";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   DropdownMenu,
@@ -103,6 +105,7 @@ const TemplateCard = ({
   compareCount,
   isFavorite,
   onToggleFavorite,
+  onPreview,
   viewMode,
   index,
 }: {
@@ -115,13 +118,11 @@ const TemplateCard = ({
   compareCount: number;
   isFavorite: boolean;
   onToggleFavorite: () => void;
+  onPreview: () => void;
   viewMode: "grid" | "list";
   index: number;
 }) => {
-  const [showPreview, setShowPreview] = useState(false);
-  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [thumbnailHtml, setThumbnailHtml] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
 
   const previewUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?preview=true&templateId=${templateId}`;
@@ -152,19 +153,6 @@ const TemplateCard = ({
     };
     loadThumbnail();
   }, [previewUrl, templateId]);
-
-  const loadPreview = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(previewUrl);
-      const html = await response.text();
-      setPreviewHtml(html);
-    } catch (error) {
-      console.error("Error loading preview:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   if (viewMode === "list") {
     return (
@@ -234,7 +222,7 @@ const TemplateCard = ({
             variant="outline"
             size="sm"
             className="gap-1"
-            onClick={(e) => { e.stopPropagation(); setShowPreview(true); loadPreview(); }}
+            onClick={(e) => { e.stopPropagation(); onPreview(); }}
           >
             <Eye className="w-3 h-3" />
             Preview
@@ -246,30 +234,6 @@ const TemplateCard = ({
             </Button>
           </Link>
         </div>
-
-        {/* Preview modal (same as grid) */}
-        {showPreview && (
-          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={(e) => { e.stopPropagation(); setShowPreview(false); }}>
-            <div className="relative w-full max-w-6xl h-[85vh] rounded-2xl overflow-hidden bg-background border border-border shadow-2xl" onClick={(e) => e.stopPropagation()}>
-              <div className="absolute top-4 right-4 z-10 flex gap-2">
-                <Link to={`/builder?templateId=${templateId}&blueprintId=${template.id}`}>
-                  <Button variant="glow" size="sm" className="gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    Use This Template
-                  </Button>
-                </Link>
-                <Button variant="outline" size="sm" onClick={() => setShowPreview(false)}>Close</Button>
-              </div>
-              {isLoading ? (
-                <div className="w-full h-full flex items-center justify-center">
-                  <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                </div>
-              ) : previewHtml ? (
-                <iframe srcDoc={previewHtml} className="w-full h-full border-0" title={`Preview: ${template.name}`} sandbox="allow-scripts" />
-              ) : null}
-            </div>
-          </div>
-        )}
       </motion.div>
     );
   }
@@ -360,8 +324,7 @@ const TemplateCard = ({
           className="gap-2 bg-background/20 backdrop-blur-sm border-white/20 text-white hover:bg-white/20"
           onClick={(e) => {
             e.stopPropagation();
-            setShowPreview(true);
-            loadPreview();
+            onPreview();
           }}
         >
           <Eye className="w-4 h-4" />
@@ -382,30 +345,44 @@ const TemplateCard = ({
           ))}
         </div>
       </div>
+    </motion.div>
+  );
+};
 
-      {/* Preview modal */}
-      {showPreview && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={(e) => { e.stopPropagation(); setShowPreview(false); }}>
-          <div className="relative w-full max-w-6xl h-[85vh] rounded-2xl overflow-hidden bg-background border border-border shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="absolute top-4 right-4 z-10 flex gap-2">
-              <Link to={`/builder?templateId=${templateId}&blueprintId=${template.id}`}>
-                <Button variant="glow" size="sm" className="gap-2">
-                  <Sparkles className="w-4 h-4" />
-                  Use This Template
-                </Button>
-              </Link>
-              <Button variant="outline" size="sm" onClick={() => setShowPreview(false)}>Close</Button>
-            </div>
-            {isLoading ? (
-              <div className="w-full h-full flex items-center justify-center">
-                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              </div>
-            ) : previewHtml ? (
-              <iframe srcDoc={previewHtml} className="w-full h-full border-0" title={`Preview: ${template.name}`} sandbox="allow-scripts" />
-            ) : null}
-          </div>
+// Recently Viewed Mini Card
+const RecentlyViewedCard = ({
+  template,
+  templateId,
+  onPreview,
+}: {
+  template: TemplateBlueprint;
+  templateId: string;
+  onPreview: () => void;
+}) => {
+  const meta = templateMeta[templateId] || { emoji: "🎨", tagline: "Custom template", features: [], category: "all" as Category, popularity: 50 };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="flex-shrink-0 w-48 rounded-xl overflow-hidden bg-card border border-border hover:border-primary/50 transition-all cursor-pointer group"
+      onClick={onPreview}
+    >
+      <div className="p-3">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-lg">{meta.emoji}</span>
+          <h4 className="font-medium text-sm truncate">{template.name}</h4>
         </div>
-      )}
+        <p className="text-xs text-muted-foreground line-clamp-1">{meta.tagline}</p>
+      </div>
+      <div className="px-3 pb-3">
+        <Link to={`/builder?templateId=${templateId}&blueprintId=${template.id}`} onClick={(e) => e.stopPropagation()}>
+          <Button variant="outline" size="sm" className="w-full gap-1 text-xs group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+            <Sparkles className="w-3 h-3" />
+            Use Template
+          </Button>
+        </Link>
+      </div>
     </motion.div>
   );
 };
@@ -516,8 +493,14 @@ const Templates = () => {
   const [sortBy, setSortBy] = useState<SortOption>("popular");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  
+  // Preview modal state
+  const [previewTemplate, setPreviewTemplate] = useState<{ template: TemplateBlueprint; templateId: string } | null>(null);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const { favorites, toggleFavorite, isFavorite } = useTemplateFavorites();
+  const { recentlyViewed, addRecentlyViewed, clearRecentlyViewed } = useRecentlyViewed();
 
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -547,6 +530,28 @@ const Templates = () => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  const openPreview = async (template: TemplateBlueprint, templateId: string) => {
+    setPreviewTemplate({ template, templateId });
+    setPreviewLoading(true);
+    addRecentlyViewed(template.id);
+    
+    const previewUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?preview=true&templateId=${templateId}`;
+    try {
+      const response = await fetch(previewUrl);
+      const html = await response.text();
+      setPreviewHtml(html);
+    } catch (error) {
+      console.error("Error loading preview:", error);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const closePreview = () => {
+    setPreviewTemplate(null);
+    setPreviewHtml(null);
+  };
 
   const toggleCategory = (cat: Category) => {
     if (cat === "all") {
@@ -605,7 +610,7 @@ const Templates = () => {
         case "name":
           return a.name.localeCompare(b.name);
         case "newest":
-          return b.name.localeCompare(a.name); // Simplified, ideally use created_at
+          return b.name.localeCompare(a.name);
         case "popular":
           return (bMeta?.popularity || 0) - (aMeta?.popularity || 0);
         default:
@@ -621,6 +626,12 @@ const Templates = () => {
       prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 3 ? [...prev, id] : prev
     );
   };
+
+  const recentTemplates = useMemo(() => {
+    return recentlyViewed
+      .map((id) => templates.find((t) => t.id === id))
+      .filter((t): t is TemplateBlueprint => t !== undefined);
+  }, [recentlyViewed, templates]);
 
   const selectedTemplateData = templates.find((t) => t.id === selectedTemplate);
   const selectedTemplateId = selectedTemplateData ? templateIdMap[selectedTemplateData.name] || "cult_minimal" : null;
@@ -644,6 +655,45 @@ const Templates = () => {
               {templates.length} unique designs with distinct personalities, animations, and visual effects.
             </p>
           </motion.div>
+
+          {/* Recently Viewed Section */}
+          {recentTemplates.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
+              className="mb-8"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <h2 className="font-semibold text-sm text-muted-foreground">Recently Viewed</h2>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearRecentlyViewed}
+                  className="text-xs text-muted-foreground hover:text-foreground gap-1"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  Clear
+                </Button>
+              </div>
+              <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+                {recentTemplates.map((template) => {
+                  const templateId = templateIdMap[template.name] || "cult_minimal";
+                  return (
+                    <RecentlyViewedCard
+                      key={template.id}
+                      template={template}
+                      templateId={templateId}
+                      onPreview={() => openPreview(template, templateId)}
+                    />
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
 
           {/* Search & Controls */}
           <motion.div
@@ -832,6 +882,7 @@ const Templates = () => {
                       compareCount={compareIds.length}
                       isFavorite={isFavorite(template.id)}
                       onToggleFavorite={() => toggleFavorite(template.id)}
+                      onPreview={() => openPreview(template, templateId)}
                       viewMode={viewMode}
                       index={index}
                     />
@@ -900,6 +951,19 @@ const Templates = () => {
       </main>
 
       <Footer />
+
+      {/* Preview Modal with Device Toggles */}
+      {previewTemplate && (
+        <PreviewModal
+          isOpen={!!previewTemplate}
+          onClose={closePreview}
+          templateName={previewTemplate.template.name}
+          templateId={previewTemplate.templateId}
+          blueprintId={previewTemplate.template.id}
+          previewHtml={previewHtml}
+          isLoading={previewLoading}
+        />
+      )}
 
       {/* Comparison Modal */}
       <AnimatePresence>
