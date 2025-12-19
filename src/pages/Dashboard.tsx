@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,8 @@ import {
   Check,
   ArrowRight
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { useUserProjects } from "@/hooks/queries/useProjects";
+import { useTemplateBlueprints } from "@/hooks/queries/useTemplates";
 
 interface Project {
   id: string;
@@ -81,40 +82,26 @@ const Dashboard = () => {
   const { connected } = useWallet();
   const { setVisible } = useWalletModal();
   const { isVerified, user, isVerifying } = useWalletAuth();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [templates, setTemplates] = useState<TemplateBlueprint[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  
+  // Use React Query for data fetching with caching
+  const { data: projects = [], isLoading: projectsLoading } = useUserProjects(user?.id);
+  const { data: blueprints = [], isLoading: templatesLoading } = useTemplateBlueprints();
+  
+  // Map blueprints to templates with proper typing
+  const templates = useMemo(() => 
+    blueprints as unknown as TemplateBlueprint[], 
+    [blueprints]
+  );
+  
+  const isLoading = projectsLoading || templatesLoading;
+  
+  // Local state for template selection
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!user?.id) return;
-      
-      setIsLoading(true);
-      
-      const [projectsRes, templatesRes] = await Promise.all([
-        supabase
-          .from('projects')
-          .select('id, coin_name, ticker, subdomain, status, created_at')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('template_blueprints')
-          .select('*')
-          .eq('is_active', true)
-          .order('name')
-      ]);
-
-      if (!projectsRes.error) setProjects(projectsRes.data || []);
-      if (!templatesRes.error) setTemplates(templatesRes.data as TemplateBlueprint[] || []);
-      
-      setIsLoading(false);
-    };
-
-    if (isVerified && user) {
-      fetchData();
-    }
-  }, [isVerified, user]);
+  
+  // Memoized handler
+  const handleSelectTemplate = useCallback((templateId: string) => {
+    setSelectedTemplate(templateId);
+  }, []);
 
   if (!connected) {
     return (
@@ -224,7 +211,7 @@ const Dashboard = () => {
                 return (
                   <div
                     key={template.id}
-                    onClick={() => setSelectedTemplate(template.id)}
+                    onClick={() => handleSelectTemplate(template.id)}
                     className={`group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 ${
                       isSelected
                         ? "ring-2 ring-primary shadow-2xl shadow-primary/30 scale-[1.02]"

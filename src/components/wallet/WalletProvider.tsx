@@ -4,7 +4,6 @@ import {
   WalletProvider as SolanaWalletProvider 
 } from '@solana/wallet-adapter-react';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
-import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom';
 import { SolflareWalletAdapter } from '@solana/wallet-adapter-solflare';
 import { WalletError } from '@solana/wallet-adapter-base';
 import { clusterApiUrl } from '@solana/web3.js';
@@ -21,10 +20,9 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
   // Use mainnet-beta for production, devnet for development
   const endpoint = useMemo(() => clusterApiUrl('mainnet-beta'), []);
 
-  // Initialize wallets - Phantom and Solflare
+  // Initialize wallets - Solflare only (Phantom uses Standard Wallet API)
   const wallets = useMemo(
     () => [
-      new PhantomWalletAdapter(),
       new SolflareWalletAdapter(),
     ],
     []

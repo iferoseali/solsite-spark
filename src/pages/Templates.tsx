@@ -11,12 +11,12 @@ import {
 } from "lucide-react";
 import { useTemplateFavorites } from "@/hooks/useTemplateFavorites";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
+import { useTemplateBlueprints, useTemplatePreview } from "@/hooks/queries/useTemplates";
 import { PreviewModal } from "@/components/templates/PreviewModal";
 import { TemplateCard } from "@/components/templates/TemplateCard";
 import { RecentlyViewedCard } from "@/components/templates/RecentlyViewedCard";
 import { ComparisonView } from "@/components/templates/ComparisonView";
 import { TemplateGridSkeleton } from "@/components/skeletons";
-import { templateService } from "@/services/templateService";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   DropdownMenu,
@@ -35,9 +35,10 @@ import {
 import type { TemplateBlueprint } from "@/types/template";
 
 const Templates = () => {
-  const [templates, setTemplates] = useState<TemplateBlueprint[]>([]);
+  // Use React Query for templates (cached, auto-refetch)
+  const { data: templates = [], isLoading } = useTemplateBlueprints();
+  
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [activeCategories, setActiveCategories] = useState<Category[]>(["all"]);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [showComparison, setShowComparison] = useState(false);
@@ -48,26 +49,13 @@ const Templates = () => {
   
   // Preview modal state
   const [previewTemplate, setPreviewTemplate] = useState<{ template: TemplateBlueprint; templateId: string } | null>(null);
-  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewTemplateId, setPreviewTemplateId] = useState<string | null>(null);
+
+  // Use React Query for preview HTML (cached per template)
+  const { data: previewHtml, isLoading: previewLoading } = useTemplatePreview(previewTemplateId);
 
   const { favorites, toggleFavorite, isFavorite } = useTemplateFavorites();
   const { recentlyViewed, addRecentlyViewed, clearRecentlyViewed } = useRecentlyViewed();
-
-  useEffect(() => {
-    const fetchTemplates = async () => {
-      setIsLoading(true);
-      try {
-        const data = await templateService.getAllBlueprints();
-        setTemplates(data);
-      } catch (error) {
-        console.error("Error fetching templates:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchTemplates();
-  }, []);
 
   // Keyboard shortcut for search
   useEffect(() => {
@@ -81,27 +69,33 @@ const Templates = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const openPreview = useCallback(async (template: TemplateBlueprint, templateId: string) => {
+  const openPreview = useCallback((template: TemplateBlueprint, templateId: string) => {
     setPreviewTemplate({ template, templateId });
-    setPreviewLoading(true);
+    setPreviewTemplateId(templateId);
     addRecentlyViewed(template.id);
-    
-    try {
-      const html = await templateService.fetchPreviewHtml(templateId);
-      setPreviewHtml(html);
-    } catch (error) {
-      console.error("Error loading preview:", error);
-    } finally {
-      setPreviewLoading(false);
-    }
   }, [addRecentlyViewed]);
 
   const closePreview = useCallback(() => {
     setPreviewTemplate(null);
-    setPreviewHtml(null);
+    setPreviewTemplateId(null);
   }, []);
 
-  const toggleCategory = (cat: Category) => {
+  // Memoize handlers to prevent unnecessary re-renders
+  const handleSelect = useCallback((templateId: string) => {
+    setSelectedTemplate(templateId);
+  }, []);
+
+  const handleToggleCompare = useCallback((id: string) => {
+    setCompareIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 3 ? [...prev, id] : prev
+    );
+  }, []);
+
+  const handleToggleFavorite = useCallback((id: string) => {
+    toggleFavorite(id);
+  }, [toggleFavorite]);
+
+  const toggleCategory = useCallback((cat: Category) => {
     if (cat === "all") {
       setActiveCategories(["all"]);
     } else {
@@ -114,7 +108,7 @@ const Templates = () => {
         return [...withoutAll, cat];
       });
     }
-  };
+  }, []);
 
   const filteredAndSortedTemplates = useMemo(() => {
     let result = templates;
@@ -169,11 +163,6 @@ const Templates = () => {
     return result;
   }, [templates, searchQuery, activeCategories, sortBy, showFavoritesOnly, isFavorite]);
 
-  const toggleCompare = (id: string) => {
-    setCompareIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 3 ? [...prev, id] : prev
-    );
-  };
 
   const recentTemplates = useMemo(() => {
     return recentlyViewed
@@ -378,12 +367,12 @@ const Templates = () => {
                     template={template}
                     templateId={templateId}
                     isSelected={selectedTemplate === template.id}
-                    onSelect={() => setSelectedTemplate(template.id)}
+                    onSelect={() => handleSelect(template.id)}
                     isComparing={compareIds.includes(template.id)}
-                    onToggleCompare={() => toggleCompare(template.id)}
+                    onToggleCompare={() => handleToggleCompare(template.id)}
                     compareCount={compareIds.length}
                     isFavorite={isFavorite(template.id)}
-                    onToggleFavorite={() => toggleFavorite(template.id)}
+                    onToggleFavorite={() => handleToggleFavorite(template.id)}
                     onPreview={() => openPreview(template, templateId)}
                     viewMode={viewMode}
                     index={index}
@@ -401,12 +390,12 @@ const Templates = () => {
                     template={template}
                     templateId={templateId}
                     isSelected={selectedTemplate === template.id}
-                    onSelect={() => setSelectedTemplate(template.id)}
+                    onSelect={() => handleSelect(template.id)}
                     isComparing={compareIds.includes(template.id)}
-                    onToggleCompare={() => toggleCompare(template.id)}
+                    onToggleCompare={() => handleToggleCompare(template.id)}
                     compareCount={compareIds.length}
                     isFavorite={isFavorite(template.id)}
-                    onToggleFavorite={() => toggleFavorite(template.id)}
+                    onToggleFavorite={() => handleToggleFavorite(template.id)}
                     onPreview={() => openPreview(template, templateId)}
                     viewMode={viewMode}
                     index={index}
