@@ -163,7 +163,7 @@ export const PreviewModal = ({
                   srcDoc={previewHtml}
                   className="w-full h-full border-0"
                   title={`Preview: ${templateName}`}
-                  sandbox="allow-scripts"
+                  sandbox="allow-scripts allow-same-origin"
                   style={
                     device !== "desktop"
                       ? { paddingTop: "24px", paddingBottom: device === "mobile" ? "20px" : "0" }

@@ -80,7 +80,7 @@ export const ComparisonView = memo<ComparisonViewProps>(({
                     src={previewUrl}
                     className="w-full h-full border-0"
                     title={`Compare: ${template.name}`}
-                    sandbox="allow-scripts"
+                    sandbox="allow-scripts allow-same-origin"
                     loading="lazy"
                   />
                 </div>

@@ -124,7 +124,7 @@ export function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate, o
                 src={previewUrl}
                 className="w-full h-full border-0 pointer-events-none"
                 title={`Preview: ${project.coin_name}`}
-                sandbox="allow-scripts"
+                sandbox="allow-scripts allow-same-origin"
                 loading="lazy"
                 onLoad={() => setImageLoaded(true)}
               />
