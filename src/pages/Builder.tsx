@@ -48,6 +48,7 @@ import {
   DEFAULT_FAQ_ITEMS, DEFAULT_ROADMAP_PHASES
 } from "@/types/builder";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { useAutoSave, type AutoSaveData } from "@/hooks/useAutoSave";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -74,14 +75,19 @@ const initialFormData = {
   dexLink: "",
   buyNowLink: "",
   buyNowText: "",
+  showBuyNow: true,
   learnMoreLink: "",
   learnMoreText: "",
+  showLearnMore: true,
   showRoadmap: true,
   showFaq: true,
   totalSupply: "",
   circulatingSupply: "",
   contractAddress: "",
 };
+
+const BUY_PRESETS = ['Buy Now', 'Buy $TICKER', 'Get Started', 'Trade Now'];
+const LEARN_PRESETS = ['Learn More', 'Explore', 'Join Community', 'Read Docs'];
 
 const MAX_HISTORY = 50;
 
@@ -343,8 +349,10 @@ const Builder = () => {
             features?: Feature[];
             buyNowLink?: string;
             buyNowText?: string;
+            showBuyNow?: boolean;
             learnMoreLink?: string;
             learnMoreText?: string;
+            showLearnMore?: boolean;
           } | null;
           
           setFormData({
@@ -358,8 +366,10 @@ const Builder = () => {
             dexLink: project.dex_link || "",
             buyNowLink: config?.buyNowLink || "",
             buyNowText: config?.buyNowText || "",
+            showBuyNow: config?.showBuyNow ?? true,
             learnMoreLink: config?.learnMoreLink || "",
             learnMoreText: config?.learnMoreText || "",
+            showLearnMore: config?.showLearnMore ?? true,
             showRoadmap: project.show_roadmap ?? true,
             showFaq: project.show_faq ?? true,
             totalSupply: config?.tokenomics?.totalSupply || "",
@@ -419,8 +429,10 @@ const Builder = () => {
         dexLink: deferredFormData.dexLink,
         buyNowLink: deferredFormData.buyNowLink,
         buyNowText: deferredFormData.buyNowText,
+        showBuyNow: deferredFormData.showBuyNow,
         learnMoreLink: deferredFormData.learnMoreLink,
         learnMoreText: deferredFormData.learnMoreText,
+        showLearnMore: deferredFormData.showLearnMore,
         showRoadmap,
         showFaq,
         tokenomics: {
@@ -586,8 +598,10 @@ const Builder = () => {
           blueprintId: blueprintId || null,
           buyNowLink: formData.buyNowLink || null,
           buyNowText: formData.buyNowText || null,
+          showBuyNow: formData.showBuyNow,
           learnMoreLink: formData.learnMoreLink || null,
           learnMoreText: formData.learnMoreText || null,
+          showLearnMore: formData.showLearnMore,
         },
       };
       if (logoUrl) updateData.logo_url = logoUrl;
@@ -881,35 +895,92 @@ const Builder = () => {
                   {openSections.heroButtons ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pt-4 space-y-4">
+                  {/* Buy Now Button */}
                   <div className="space-y-3">
-                    <p className="text-xs text-muted-foreground font-medium">Buy Now Button</p>
-                    <div className="space-y-2">
-                      <Input name="buyNowText" placeholder={`Button text (default: "Buy Now")`} value={formData.buyNowText} onChange={handleInputChange} />
-                      <div className="relative"><ExternalLink className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input name="buyNowLink" placeholder="Link URL (defaults to DEX link)" value={formData.buyNowLink} onChange={handleInputChange} className="pl-10" /></div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground font-medium">Buy Now Button</p>
+                      <Switch checked={formData.showBuyNow} onCheckedChange={(checked) => setFormData(prev => ({ ...prev, showBuyNow: checked }))} />
                     </div>
+                    {formData.showBuyNow && (
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {BUY_PRESETS.map((preset) => (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() => setFormData(prev => ({ ...prev, buyNowText: preset.replace('$TICKER', formData.ticker || '$TICKER') }))}
+                              className={cn(
+                                "text-xs px-2 py-1 rounded-md border transition-colors",
+                                (formData.buyNowText || 'Buy Now') === preset.replace('$TICKER', formData.ticker || '$TICKER')
+                                  ? "bg-primary/20 border-primary text-primary"
+                                  : "border-border hover:border-primary/50"
+                              )}
+                            >
+                              {preset.replace('$TICKER', formData.ticker || '$TICKER')}
+                            </button>
+                          ))}
+                        </div>
+                        <Input name="buyNowText" placeholder={`Button text (default: "Buy Now")`} value={formData.buyNowText} onChange={handleInputChange} />
+                        <div className="relative"><ExternalLink className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input name="buyNowLink" placeholder="Link URL (defaults to DEX link)" value={formData.buyNowLink} onChange={handleInputChange} className="pl-10" /></div>
+                      </div>
+                    )}
                   </div>
+
+                  {/* Learn More Button */}
                   <div className="space-y-3 pt-3 border-t border-border">
-                    <p className="text-xs text-muted-foreground font-medium">Learn More Button</p>
-                    <div className="space-y-2">
-                      <Input name="learnMoreText" placeholder={`Button text (default: "Learn More")`} value={formData.learnMoreText} onChange={handleInputChange} />
-                      <div className="relative"><ExternalLink className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input name="learnMoreLink" placeholder="Link URL (defaults to #about)" value={formData.learnMoreLink} onChange={handleInputChange} className="pl-10" /></div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground font-medium">Learn More Button</p>
+                      <Switch checked={formData.showLearnMore} onCheckedChange={(checked) => setFormData(prev => ({ ...prev, showLearnMore: checked }))} />
                     </div>
+                    {formData.showLearnMore && (
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {LEARN_PRESETS.map((preset) => (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() => setFormData(prev => ({ ...prev, learnMoreText: preset }))}
+                              className={cn(
+                                "text-xs px-2 py-1 rounded-md border transition-colors",
+                                (formData.learnMoreText || 'Learn More') === preset
+                                  ? "bg-primary/20 border-primary text-primary"
+                                  : "border-border hover:border-primary/50"
+                              )}
+                            >
+                              {preset}
+                            </button>
+                          ))}
+                        </div>
+                        <Input name="learnMoreText" placeholder={`Button text (default: "Learn More")`} value={formData.learnMoreText} onChange={handleInputChange} />
+                        <div className="relative"><ExternalLink className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input name="learnMoreLink" placeholder="Link URL (defaults to #about)" value={formData.learnMoreLink} onChange={handleInputChange} className="pl-10" /></div>
+                      </div>
+                    )}
                   </div>
+
                   {/* Live Preview */}
                   <div className="pt-4 border-t border-border">
                     <p className="text-xs text-muted-foreground font-medium mb-3">Preview</p>
-                    <div className="p-4 rounded-lg bg-background/50 border border-border flex items-center justify-center gap-3">
-                      <Button variant="glow" size="sm" className="pointer-events-none">
-                        {formData.buyNowText || 'Buy Now'}
-                      </Button>
-                      <Button variant="outline" size="sm" className="pointer-events-none">
-                        {formData.learnMoreText || 'Learn More'}
-                      </Button>
+                    <div className="p-4 rounded-lg bg-background/50 border border-border flex items-center justify-center gap-3 min-h-[52px]">
+                      {formData.showBuyNow && (
+                        <Button variant="glow" size="sm" className="pointer-events-none">
+                          {formData.buyNowText || 'Buy Now'}
+                        </Button>
+                      )}
+                      {formData.showLearnMore && (
+                        <Button variant="outline" size="sm" className="pointer-events-none">
+                          {formData.learnMoreText || 'Learn More'}
+                        </Button>
+                      )}
+                      {!formData.showBuyNow && !formData.showLearnMore && (
+                        <p className="text-xs text-muted-foreground italic">No buttons visible</p>
+                      )}
                     </div>
-                    <div className="mt-2 text-xs text-muted-foreground space-y-1">
-                      <p className="truncate">Buy Now → {formData.buyNowLink || formData.dexLink || '(no link set)'}</p>
-                      <p className="truncate">Learn More → {formData.learnMoreLink || '#about'}</p>
-                    </div>
+                    {(formData.showBuyNow || formData.showLearnMore) && (
+                      <div className="mt-2 text-xs text-muted-foreground space-y-1">
+                        {formData.showBuyNow && <p className="truncate">{formData.buyNowText || 'Buy Now'} → {formData.buyNowLink || formData.dexLink || '(no link set)'}</p>}
+                        {formData.showLearnMore && <p className="truncate">{formData.learnMoreText || 'Learn More'} → {formData.learnMoreLink || '#about'}</p>}
+                      </div>
+                    )}
                   </div>
                 </CollapsibleContent>
               </Collapsible>
