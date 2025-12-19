@@ -147,6 +147,7 @@ export const SectionManager = ({ sections, onChange }: SectionManagerProps) => {
       </div>
 
       <DndContext
+        id="sections-dnd"
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}

@@ -168,7 +168,7 @@ export const TeamEditor = ({ members, onChange }: TeamEditorProps) => {
         </Button>
       </div>
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext id="team-dnd" sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={members.map(m => m.id)} strategy={verticalListSortingStrategy}>
           <AnimatePresence mode="popLayout">
             {members.map((member) => (

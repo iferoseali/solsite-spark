@@ -207,7 +207,7 @@ export const RoadmapEditor = ({ phases, onChange }: RoadmapEditorProps) => {
         </Button>
       </div>
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext id="roadmap-dnd" sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={phases.map(p => p.id)} strategy={verticalListSortingStrategy}>
           <AnimatePresence mode="popLayout">
             {phases.map((phase) => (

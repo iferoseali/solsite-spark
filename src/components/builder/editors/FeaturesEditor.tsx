@@ -161,7 +161,7 @@ export const FeaturesEditor = ({ features, onChange }: FeaturesEditorProps) => {
         </Button>
       </div>
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext id="features-dnd" sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={features.map(f => f.id)} strategy={verticalListSortingStrategy}>
           <AnimatePresence mode="popLayout">
             {features.map((feature) => (
