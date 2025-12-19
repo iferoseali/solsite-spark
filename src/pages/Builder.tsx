@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useDeferredValue, useCallback } from "react";
+import { useState, useEffect, useMemo, useDeferredValue, useCallback, useRef } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +24,9 @@ import {
   Users,
   Zap,
   RotateCcw,
-  X
+  X,
+  Undo2,
+  Redo2
 } from "lucide-react";
 import { useSearchParams, Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -46,6 +48,36 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { useAutoSave, type AutoSaveData } from "@/hooks/useAutoSave";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
+// History state type for undo/redo
+interface BuilderSnapshot {
+  formData: typeof initialFormData;
+  faqItems: FaqItem[];
+  roadmapPhases: RoadmapPhase[];
+  teamMembers: TeamMember[];
+  features: Feature[];
+  sections: SectionConfig[];
+  logoPreview: string | null;
+}
+
+const initialFormData = {
+  coinName: "",
+  ticker: "",
+  tagline: "",
+  description: "",
+  twitter: "",
+  discord: "",
+  telegram: "",
+  dexLink: "",
+  showRoadmap: true,
+  showFaq: true,
+  totalSupply: "",
+  circulatingSupply: "",
+  contractAddress: "",
+};
+
+const MAX_HISTORY = 50;
 
 const Builder = () => {
   const [searchParams] = useSearchParams();
@@ -92,21 +124,7 @@ const Builder = () => {
     sections: false,
   });
 
-  const [formData, setFormData] = useState({
-    coinName: "",
-    ticker: "",
-    tagline: "",
-    description: "",
-    twitter: "",
-    discord: "",
-    telegram: "",
-    dexLink: "",
-    showRoadmap: true,
-    showFaq: true,
-    totalSupply: "",
-    circulatingSupply: "",
-    contractAddress: "",
-  });
+  const [formData, setFormData] = useState(initialFormData);
 
   // Custom content states
   const [faqItems, setFaqItems] = useState<FaqItem[]>(DEFAULT_FAQ_ITEMS);
@@ -126,6 +144,133 @@ const Builder = () => {
   // Draft restore state
   const [showDraftBanner, setShowDraftBanner] = useState(false);
   const [savedDraft, setSavedDraft] = useState<AutoSaveData | null>(null);
+
+  // History for undo/redo
+  const [history, setHistory] = useState<BuilderSnapshot[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const historyDebounce = useRef<NodeJS.Timeout | null>(null);
+  const isRestoringHistory = useRef(false);
+
+  // Create a snapshot of current state
+  const createSnapshot = useCallback((): BuilderSnapshot => ({
+    formData: { ...formData },
+    faqItems: JSON.parse(JSON.stringify(faqItems)),
+    roadmapPhases: JSON.parse(JSON.stringify(roadmapPhases)),
+    teamMembers: JSON.parse(JSON.stringify(teamMembers)),
+    features: JSON.parse(JSON.stringify(features)),
+    sections: JSON.parse(JSON.stringify(sections)),
+    logoPreview,
+  }), [formData, faqItems, roadmapPhases, teamMembers, features, sections, logoPreview]);
+
+  // Push to history with debounce
+  const pushToHistory = useCallback(() => {
+    if (isRestoringHistory.current) return;
+    
+    if (historyDebounce.current) {
+      clearTimeout(historyDebounce.current);
+    }
+    
+    historyDebounce.current = setTimeout(() => {
+      const snapshot = createSnapshot();
+      setHistory(prev => {
+        // Remove any future states if we're not at the end
+        const newHistory = prev.slice(0, historyIndex + 1);
+        // Add new snapshot
+        newHistory.push(snapshot);
+        // Limit history size
+        if (newHistory.length > MAX_HISTORY) {
+          newHistory.shift();
+          return newHistory;
+        }
+        return newHistory;
+      });
+      setHistoryIndex(prev => Math.min(prev + 1, MAX_HISTORY - 1));
+    }, 500);
+  }, [createSnapshot, historyIndex]);
+
+  // Undo function
+  const undo = useCallback(() => {
+    if (historyIndex <= 0) return;
+    const newIndex = historyIndex - 1;
+    const snapshot = history[newIndex];
+    if (!snapshot) return;
+    
+    isRestoringHistory.current = true;
+    setFormData(snapshot.formData);
+    setFaqItems(snapshot.faqItems);
+    setRoadmapPhases(snapshot.roadmapPhases);
+    setTeamMembers(snapshot.teamMembers);
+    setFeatures(snapshot.features);
+    setSections(snapshot.sections);
+    setLogoPreview(snapshot.logoPreview);
+    setHistoryIndex(newIndex);
+    
+    setTimeout(() => {
+      isRestoringHistory.current = false;
+    }, 100);
+    
+    toast.success('Undone');
+  }, [history, historyIndex]);
+
+  // Redo function
+  const redo = useCallback(() => {
+    if (historyIndex >= history.length - 1) return;
+    const newIndex = historyIndex + 1;
+    const snapshot = history[newIndex];
+    if (!snapshot) return;
+    
+    isRestoringHistory.current = true;
+    setFormData(snapshot.formData);
+    setFaqItems(snapshot.faqItems);
+    setRoadmapPhases(snapshot.roadmapPhases);
+    setTeamMembers(snapshot.teamMembers);
+    setFeatures(snapshot.features);
+    setSections(snapshot.sections);
+    setLogoPreview(snapshot.logoPreview);
+    setHistoryIndex(newIndex);
+    
+    setTimeout(() => {
+      isRestoringHistory.current = false;
+    }, 100);
+    
+    toast.success('Redone');
+  }, [history, historyIndex]);
+
+  const canUndo = historyIndex > 0;
+  const canRedo = historyIndex < history.length - 1;
+
+  // Initialize history with first snapshot
+  useEffect(() => {
+    if (history.length === 0 && !editProjectId) {
+      const initialSnapshot = createSnapshot();
+      setHistory([initialSnapshot]);
+      setHistoryIndex(0);
+    }
+  }, []);
+
+  // Track changes for history
+  useEffect(() => {
+    if (history.length > 0) {
+      pushToHistory();
+    }
+  }, [formData, faqItems, roadmapPhases, teamMembers, features, sections, logoPreview]);
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        redo();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo]);
 
   // Auto-save hook
   const { loadDraft, clearDraft } = useAutoSave(
@@ -475,9 +620,41 @@ const Builder = () => {
           {/* Form Panel */}
           <div className="w-full lg:w-1/2 xl:w-2/5 p-6 lg:p-8 overflow-y-auto border-r border-border">
             <div className="max-w-xl mx-auto space-y-4">
-              <div className="mb-6">
-                <h1 className="text-2xl lg:text-3xl font-display font-bold mb-2">{editProjectId ? 'Edit Your Site' : 'Build Your Site'}</h1>
-                <p className="text-muted-foreground text-sm">Template: <span className="text-primary">{blueprintName || `${currentLayout} × ${currentPersonality}`}</span></p>
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <h1 className="text-2xl lg:text-3xl font-display font-bold mb-2">{editProjectId ? 'Edit Your Site' : 'Build Your Site'}</h1>
+                  <p className="text-muted-foreground text-sm">Template: <span className="text-primary">{blueprintName || `${currentLayout} × ${currentPersonality}`}</span></p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={undo}
+                        disabled={!canUndo}
+                        className="h-9 w-9"
+                      >
+                        <Undo2 className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Undo (Ctrl+Z)</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={redo}
+                        disabled={!canRedo}
+                        className="h-9 w-9"
+                      >
+                        <Redo2 className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Redo (Ctrl+Y)</TooltipContent>
+                  </Tooltip>
+                </div>
               </div>
 
               {/* Restore Draft Banner */}
