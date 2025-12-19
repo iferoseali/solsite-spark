@@ -7,6 +7,14 @@ interface TokenomicsInput {
   contractAddress?: string;
 }
 
+interface SectionConfig {
+  id: string;
+  type: string;
+  variant: string;
+  visible: boolean;
+  order: number;
+}
+
 interface ProjectData {
   coinName: string;
   ticker: string;
@@ -20,6 +28,7 @@ interface ProjectData {
   showRoadmap: boolean;
   showFaq: boolean;
   tokenomics?: TokenomicsInput;
+  sections?: SectionConfig[];
 }
 
 interface TemplateConfig {
