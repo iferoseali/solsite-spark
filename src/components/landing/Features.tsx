@@ -6,6 +6,7 @@ import {
   Lock,
   Sparkles
 } from "lucide-react";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 const features = [
   {
@@ -26,7 +27,7 @@ const features = [
   {
     icon: Globe,
     title: "Instant Deployment",
-    description: "Free subdomain included. Custom domains for the serious degens (0.25-0.5 SOL)."
+    description: "Free subdomain included. One-time 0.25 SOL generation fee."
   },
   {
     icon: Lock,
@@ -41,13 +42,23 @@ const features = [
 ];
 
 export const Features = () => {
+  const { ref: headerRef, isVisible: headerVisible } = useScrollReveal<HTMLDivElement>();
+  const { ref: gridRef, isVisible: gridVisible } = useScrollReveal<HTMLDivElement>({ threshold: 0.05 });
+
   return (
     <section className="py-24 relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-background via-secondary/20 to-background" />
       
       <div className="container relative z-10 px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
+        <div 
+          ref={headerRef}
+          className={`text-center mb-16 transition-all duration-700 ${
+            headerVisible 
+              ? 'opacity-100 translate-y-0' 
+              : 'opacity-0 translate-y-10'
+          }`}
+        >
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold mb-4">
             Everything You Need to{" "}
             <span className="text-gradient-primary">Moon</span>
@@ -57,11 +68,16 @@ export const Features = () => {
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((feature, index) => (
             <div
               key={index}
-              className="group p-6 rounded-2xl glass hover-lift hover:border-primary/30 transition-all duration-300"
+              className={`group p-6 rounded-2xl glass hover-lift hover:border-primary/30 transition-all duration-500 ${
+                gridVisible 
+                  ? 'opacity-100 translate-x-0' 
+                  : index % 2 === 0 ? 'opacity-0 -translate-x-12' : 'opacity-0 translate-x-12'
+              }`}
+              style={{ transitionDelay: gridVisible ? `${index * 100}ms` : '0ms' }}
             >
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                 <feature.icon className="w-6 h-6 text-primary" />
