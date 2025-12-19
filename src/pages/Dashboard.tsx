@@ -8,7 +8,7 @@ import { useWalletAuth } from "@/hooks/useWalletAuth";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { Plus, Wallet } from "lucide-react";
-import { useUserProjects, useDeleteProject, useUpdateProject } from "@/hooks/queries/useProjects";
+import { useUserProjects, useDeleteProject, useUpdateProject, useDuplicateProject } from "@/hooks/queries/useProjects";
 import { ProjectCard } from "@/components/dashboard/ProjectCard";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { DeleteProjectDialog } from "@/components/dashboard/DeleteProjectDialog";
@@ -36,6 +36,7 @@ const Dashboard = () => {
   const { data: projects = [], isLoading } = useUserProjects(user?.id);
   const deleteProjectMutation = useDeleteProject();
   const updateProjectMutation = useUpdateProject();
+  const duplicateProjectMutation = useDuplicateProject();
   
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -73,6 +74,20 @@ const Dashboard = () => {
       );
     } catch (error) {
       toast.error("Failed to update project status");
+    }
+  };
+
+  const handleDuplicate = async (project: Project) => {
+    if (!user?.id) return;
+    
+    try {
+      const newProject = await duplicateProjectMutation.mutateAsync({
+        id: project.id,
+        userId: user.id,
+      });
+      toast.success(`${project.coin_name} duplicated successfully`);
+    } catch (error) {
+      toast.error("Failed to duplicate project");
     }
   };
 
@@ -179,6 +194,7 @@ const Dashboard = () => {
                   project={project}
                   onDelete={handleDeleteClick}
                   onTogglePublish={handleTogglePublish}
+                  onDuplicate={handleDuplicate}
                 />
               ))}
             </div>
