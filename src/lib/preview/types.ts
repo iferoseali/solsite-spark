@@ -51,8 +51,10 @@ export interface ProjectData {
   dexLink: string;
   buyNowLink?: string;
   buyNowText?: string;
+  showBuyNow?: boolean;
   learnMoreLink?: string;
   learnMoreText?: string;
+  showLearnMore?: boolean;
   showRoadmap: boolean;
   showFaq: boolean;
   tokenomics?: TokenomicsInput;
@@ -93,8 +95,10 @@ export interface SanitizedData {
   dexLink: string;
   buyNowLink: string;
   buyNowText: string;
+  showBuyNow: boolean;
   learnMoreLink: string;
   learnMoreText: string;
+  showLearnMore: boolean;
   totalSupply: string;
   circulatingSupply: string;
   contractAddress: string;
