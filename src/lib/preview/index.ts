@@ -78,19 +78,46 @@ export function generatePreviewHtml(project: ProjectData, config: TemplateConfig
   const data = sanitizeProjectData(project);
   const fontsUrl = generateFontUrl(styles);
 
-  // Generate all sections
+  // Generate all sections (HTML strings)
   const header = generateHeader(data);
-  const hero = generateHero(data);
-  const about = generateAbout(data);
-  const stats = generateStats(data, layout);
-  const community = generateCommunity(data, layout);
-  const story = generateStory(data, layout);
-  const utility = generateUtility(data, layout);
-  const roadmap = generateRoadmap(data, project.showRoadmap);
-  const faq = generateFaq(data, project.showFaq);
-  const team = generateTeam(data);
-  const features = generateFeatures(data);
   const footer = generateFooter();
+
+  const sectionHtml: Record<string, () => string> = {
+    hero: () => generateHero(data),
+    about: () => generateAbout(data),
+    features: () => generateFeatures(data),
+    tokenomics: () => generateStats(data, layout),
+    team: () => generateTeam(data),
+    community: () => generateCommunity(data, layout),
+    story: () => generateStory(data, layout),
+    utility: () => generateUtility(data, layout),
+    roadmap: () => generateRoadmap(data, project.showRoadmap),
+    faq: () => generateFaq(data, project.showFaq),
+  };
+
+  const orderedSectionTypes = (project.sections && project.sections.length > 0)
+    ? project.sections
+        .filter((s) => s.visible)
+        .slice()
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+        .map((s) => s.type)
+    : [
+        'hero',
+        'about',
+        'features',
+        'tokenomics',
+        'team',
+        'community',
+        'story',
+        'utility',
+        'roadmap',
+        'faq',
+      ];
+
+  const bodySections = orderedSectionTypes
+    .map((type) => sectionHtml[type]?.())
+    .filter(Boolean)
+    .join('\n');
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -105,16 +132,7 @@ export function generatePreviewHtml(project: ProjectData, config: TemplateConfig
 </head>
 <body>
   ${header}
-  ${hero}
-  ${about}
-  ${features}
-  ${stats}
-  ${team}
-  ${community}
-  ${story}
-  ${utility}
-  ${roadmap}
-  ${faq}
+  ${bodySections}
   ${footer}
 </body>
 </html>`;
