@@ -22,7 +22,9 @@ import {
   HelpCircle,
   Map,
   Users,
-  Zap
+  Zap,
+  RotateCcw,
+  X
 } from "lucide-react";
 import { useSearchParams, Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -39,10 +41,11 @@ import { PreviewControls, type DeviceSize } from "@/components/builder/PreviewCo
 import { FaqEditor, RoadmapEditor, TeamEditor, FeaturesEditor } from "@/components/builder/editors";
 import { 
   FaqItem, RoadmapPhase, TeamMember, Feature,
-  DEFAULT_FAQ_ITEMS, DEFAULT_ROADMAP_PHASES, generateItemId 
+  DEFAULT_FAQ_ITEMS, DEFAULT_ROADMAP_PHASES
 } from "@/types/builder";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
+import { useAutoSave, type AutoSaveData } from "@/hooks/useAutoSave";
 
 const Builder = () => {
   const [searchParams] = useSearchParams();
@@ -119,6 +122,47 @@ const Builder = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [hasPaid, setHasPaid] = useState(false);
   const { checkExistingPayment } = usePayment();
+
+  // Draft restore state
+  const [showDraftBanner, setShowDraftBanner] = useState(false);
+  const [savedDraft, setSavedDraft] = useState<AutoSaveData | null>(null);
+
+  // Auto-save hook
+  const { loadDraft, clearDraft } = useAutoSave(
+    { formData, faqItems, roadmapPhases, teamMembers, features, sections, logoPreview },
+    !!editProjectId || !!generatedProject
+  );
+
+  // Check for saved draft on mount
+  useEffect(() => {
+    if (editProjectId) return; // Don't restore draft when editing
+    const draft = loadDraft();
+    if (draft && draft.formData && (draft.formData as { coinName?: string }).coinName) {
+      setSavedDraft(draft);
+      setShowDraftBanner(true);
+    }
+  }, [editProjectId, loadDraft]);
+
+  // Restore draft function
+  const restoreDraft = useCallback(() => {
+    if (!savedDraft) return;
+    const fd = savedDraft.formData as typeof formData;
+    setFormData(fd);
+    setFaqItems(savedDraft.faqItems as FaqItem[]);
+    setRoadmapPhases(savedDraft.roadmapPhases as RoadmapPhase[]);
+    setTeamMembers(savedDraft.teamMembers as TeamMember[]);
+    setFeatures(savedDraft.features as Feature[]);
+    setSections(savedDraft.sections as SectionConfig[]);
+    if (savedDraft.logoPreview) setLogoPreview(savedDraft.logoPreview);
+    setShowDraftBanner(false);
+    toast.success('Draft restored');
+  }, [savedDraft]);
+
+  // Dismiss draft
+  const dismissDraft = useCallback(() => {
+    setShowDraftBanner(false);
+    clearDraft();
+  }, [clearDraft]);
 
   // Load existing project for editing
   useEffect(() => {
@@ -408,6 +452,7 @@ const Builder = () => {
       if (logoFile) { const logoUrl = await uploadLogo(project.id); if (logoUrl) await supabase.from('projects').update({ logo_url: logoUrl }).eq('id', project.id); }
       await supabase.from('domains').insert({ project_id: project.id, subdomain: finalSubdomain, status: 'active' });
       setGeneratedProject({ id: project.id, subdomain: finalSubdomain });
+      clearDraft(); // Clear draft after successful generation
       toast.success('Website generated successfully!');
     } catch { toast.error('Failed to generate website'); } 
     finally { setIsGenerating(false); }
@@ -434,6 +479,28 @@ const Builder = () => {
                 <h1 className="text-2xl lg:text-3xl font-display font-bold mb-2">{editProjectId ? 'Edit Your Site' : 'Build Your Site'}</h1>
                 <p className="text-muted-foreground text-sm">Template: <span className="text-primary">{blueprintName || `${currentLayout} × ${currentPersonality}`}</span></p>
               </div>
+
+              {/* Restore Draft Banner */}
+              {showDraftBanner && savedDraft && (
+                <div className="p-4 rounded-xl glass border border-blue-500/30 bg-blue-500/5">
+                  <div className="flex items-center gap-3">
+                    <RotateCcw className="w-5 h-5 text-blue-500" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">Unsaved draft found</p>
+                      <p className="text-xs text-muted-foreground">
+                        From {new Date(savedDraft.lastSaved).toLocaleString()}
+                      </p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={restoreDraft} className="gap-1">
+                      <RotateCcw className="w-3 h-3" />
+                      Restore
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={dismissDraft} className="h-8 w-8">
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {/* Wallet Status */}
               {!connected && (
