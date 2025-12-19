@@ -8,10 +8,7 @@ import {
   TemplateConfig,
   getPersonalityStyles,
   WebsiteHeader,
-  HeroSection,
   AboutSection,
-  TokenomicsSection,
-  RoadmapSection,
   FaqSection,
   CommunitySection,
   StorySection,
@@ -19,6 +16,12 @@ import {
   TeamSection,
   WebsiteFooter,
 } from "@/components/website";
+import { getTemplateById } from "@/lib/templateRegistry";
+
+// Section variants
+import { HeroCentered, HeroSplit, HeroFullScreen, HeroMinimal, HeroAsymmetric } from "@/components/website/sections/hero";
+import { TokenomicsGrid, TokenomicsCards, TokenomicsHorizontal, TokenomicsCircular } from "@/components/website/sections/tokenomics";
+import { RoadmapTimeline, RoadmapHorizontal, RoadmapCards, RoadmapZigzag } from "@/components/website/sections/roadmap";
 
 const WebsiteRenderer = () => {
   const [searchParams] = useSearchParams();
@@ -27,23 +30,22 @@ const WebsiteRenderer = () => {
   const projectId = searchParams.get('id');
   const previewLayout = searchParams.get('layout');
   const previewPersonality = searchParams.get('personality');
-  const isPreviewMode = !projectId && previewLayout && previewPersonality;
+  const templateId = searchParams.get('template');
+  const isPreviewMode = !projectId && (previewLayout || templateId);
 
   const [project, setProject] = useState<ProjectData | null>(null);
   const [templateConfig, setTemplateConfig] = useState<TemplateConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch project data from Supabase
   useEffect(() => {
     const fetchProject = async () => {
       if (isPreviewMode) {
-        // Demo mode with sample data
         setProject({
           coinName: 'MoonDoge',
           ticker: '$MDOGE',
           tagline: 'To the moon and beyond 🚀',
-          description: 'MoonDoge is the ultimate meme coin on Solana. Born from the dreams of diamond-handed degens, we\'re building a community that believes in the power of memes.',
+          description: 'MoonDoge is the ultimate meme coin on Solana.',
           logoUrl: null,
           twitter: 'https://twitter.com/moondoge',
           discord: 'https://discord.gg/moondoge',
@@ -53,8 +55,8 @@ const WebsiteRenderer = () => {
           showFaq: true,
         });
         setTemplateConfig({
-          layout: previewLayout!,
-          personality: previewPersonality!,
+          layout: previewLayout || templateId || 'cult_minimal',
+          personality: previewPersonality || 'professional',
         });
         setIsLoading(false);
         return;
@@ -67,29 +69,15 @@ const WebsiteRenderer = () => {
       }
 
       try {
-        // Fetch project with template
         const { data: projectData, error: projectError } = await supabase
           .from('projects')
-          .select(`
-            *,
-            templates (
-              layout_id,
-              personality_id,
-              config
-            )
-          `)
+          .select(`*, templates (layout_id, personality_id, config)`)
           .eq('id', projectId)
           .single();
 
         if (projectError) throw projectError;
+        if (!projectData) { setError('Project not found'); setIsLoading(false); return; }
 
-        if (!projectData) {
-          setError('Project not found');
-          setIsLoading(false);
-          return;
-        }
-
-        // Map database fields to ProjectData
         setProject({
           id: projectData.id,
           coinName: projectData.coin_name,
@@ -105,13 +93,11 @@ const WebsiteRenderer = () => {
           showFaq: projectData.show_faq ?? true,
         });
 
-        // Get template config
-        const template = projectData.templates as { layout_id: string; personality_id: string; config: any } | null;
+        const template = projectData.templates as { layout_id: string; personality_id: string } | null;
         setTemplateConfig({
-          layout: template?.layout_id || 'minimal',
+          layout: template?.layout_id || 'cult_minimal',
           personality: template?.personality_id || 'professional',
         });
-
       } catch (err) {
         console.error('Error fetching project:', err);
         setError('Failed to load project');
@@ -121,24 +107,16 @@ const WebsiteRenderer = () => {
     };
 
     fetchProject();
-  }, [projectId, isPreviewMode, previewLayout, previewPersonality]);
+  }, [projectId, isPreviewMode, previewLayout, previewPersonality, templateId]);
 
-  const styles = useMemo(() => {
-    return getPersonalityStyles(templateConfig?.personality || 'professional');
-  }, [templateConfig?.personality]);
+  const styles = useMemo(() => getPersonalityStyles(templateConfig?.personality || 'professional'), [templateConfig?.personality]);
+  const templateDef = useMemo(() => getTemplateById(templateConfig?.layout || 'cult_minimal'), [templateConfig?.layout]);
 
-  const handleEdit = () => {
-    if (project?.id) {
-      navigate(`/builder?edit=${project.id}`);
-    }
-  };
+  const handleEdit = () => { if (project?.id) navigate(`/builder?edit=${project.id}`); };
 
   if (isLoading) {
     return (
-      <div 
-        className="min-h-screen flex items-center justify-center"
-        style={{ background: styles.bgGradient }}
-      >
+      <div className="min-h-screen flex items-center justify-center" style={{ background: styles.bgGradient }}>
         <Loader2 className="w-8 h-8 animate-spin" style={{ color: styles.primary }} />
       </div>
     );
@@ -146,82 +124,73 @@ const WebsiteRenderer = () => {
 
   if (error || !project || !templateConfig) {
     return (
-      <div 
-        className="min-h-screen flex flex-col items-center justify-center gap-4"
-        style={{ background: 'linear-gradient(135deg, #0a0f1a 0%, #0d1520 100%)' }}
-      >
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: 'linear-gradient(135deg, #0a0f1a 0%, #0d1520 100%)' }}>
         <h1 className="text-2xl font-bold text-white">Site Not Found</h1>
         <p className="text-white/60">{error || 'This website does not exist'}</p>
-        <Button onClick={() => navigate('/')} variant="outline">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Go Home
-        </Button>
+        <Button onClick={() => navigate('/')} variant="outline"><ArrowLeft className="w-4 h-4 mr-2" />Go Home</Button>
       </div>
     );
   }
 
-  // Determine which sections to show based on layout
-  const { layout } = templateConfig;
-  const showStats = layout === 'stats-heavy' || layout === 'hero-roadmap';
-  const showCommunity = layout === 'community' || layout === 'hero-roadmap';
-  const showStory = layout === 'story-lore';
-  const showUtility = layout === 'utility';
-  const showTeam = layout === 'community' || layout === 'utility';
+  // Get hero variant
+  const heroVariant = templateDef?.sections.find(s => s.type === 'hero')?.variant || 'centered';
+  const tokenomicsVariant = templateDef?.sections.find(s => s.type === 'tokenomics')?.variant || 'grid';
+  const roadmapVariant = templateDef?.sections.find(s => s.type === 'roadmap')?.variant || 'timeline';
+
+  const renderHero = () => {
+    switch (heroVariant) {
+      case 'split': return <HeroSplit project={project} styles={styles} />;
+      case 'fullscreen': return <HeroFullScreen project={project} styles={styles} />;
+      case 'minimal': return <HeroMinimal project={project} styles={styles} />;
+      case 'asymmetric': return <HeroAsymmetric project={project} styles={styles} />;
+      default: return <HeroCentered project={project} styles={styles} />;
+    }
+  };
+
+  const renderTokenomics = () => {
+    switch (tokenomicsVariant) {
+      case 'cards': return <TokenomicsCards project={project} styles={styles} />;
+      case 'horizontal': return <TokenomicsHorizontal project={project} styles={styles} />;
+      case 'circular': return <TokenomicsCircular project={project} styles={styles} />;
+      default: return <TokenomicsGrid project={project} styles={styles} />;
+    }
+  };
+
+  const renderRoadmap = () => {
+    if (!project.showRoadmap) return null;
+    switch (roadmapVariant) {
+      case 'horizontal': return <RoadmapHorizontal project={project} styles={styles} />;
+      case 'cards': return <RoadmapCards project={project} styles={styles} />;
+      case 'zigzag': return <RoadmapZigzag project={project} styles={styles} />;
+      default: return <RoadmapTimeline project={project} styles={styles} />;
+    }
+  };
+
+  const hasStory = templateDef?.sections.some(s => s.type === 'story');
+  const hasUtility = templateDef?.sections.some(s => s.type === 'utility');
+  const hasTeam = templateDef?.sections.some(s => s.type === 'team');
+  const hasCommunity = templateDef?.sections.some(s => s.type === 'community');
 
   return (
-    <div 
-      className="min-h-screen"
-      style={{ background: styles.bgGradient }}
-    >
-      {/* Edit button for preview mode */}
+    <div className="min-h-screen" style={{ background: styles.bgGradient }}>
       {isPreviewMode && (
         <div className="fixed top-4 right-4 z-50">
-          <Button 
-            onClick={() => navigate(`/builder?layout=${previewLayout}&personality=${previewPersonality}`)}
-            style={{ background: styles.primary, color: '#000' }}
-          >
-            <Edit className="w-4 h-4 mr-2" />
-            Use This Template
+          <Button onClick={() => navigate(`/builder?template=${templateConfig.layout}`)} style={{ background: styles.primary, color: '#000' }}>
+            <Edit className="w-4 h-4 mr-2" />Use This Template
           </Button>
         </div>
       )}
 
-      {/* Header */}
-      <WebsiteHeader 
-        project={project} 
-        styles={styles} 
-        isEditing={!!project.id}
-        onEdit={handleEdit}
-      />
-
-      {/* Hero */}
-      <HeroSection project={project} styles={styles} />
-
-      {/* About */}
+      <WebsiteHeader project={project} styles={styles} isEditing={!!project.id} onEdit={handleEdit} />
+      {renderHero()}
       <AboutSection project={project} styles={styles} />
-
-      {/* Stats/Tokenomics - for stats-heavy and hero-roadmap layouts */}
-      {showStats && <TokenomicsSection project={project} styles={styles} />}
-
-      {/* Community Section - for community and hero-roadmap layouts */}
-      {showCommunity && <CommunitySection project={project} styles={styles} />}
-
-      {/* Story/Lore - for story-lore layout */}
-      {showStory && <StorySection project={project} styles={styles} />}
-
-      {/* Utility - for utility layout */}
-      {showUtility && <UtilitySection project={project} styles={styles} />}
-
-      {/* Team - for community and utility layouts */}
-      {showTeam && <TeamSection project={project} styles={styles} />}
-
-      {/* Roadmap */}
-      <RoadmapSection project={project} styles={styles} />
-
-      {/* FAQ */}
+      {renderTokenomics()}
+      {hasCommunity && <CommunitySection project={project} styles={styles} />}
+      {hasStory && <StorySection project={project} styles={styles} />}
+      {hasUtility && <UtilitySection project={project} styles={styles} />}
+      {hasTeam && <TeamSection project={project} styles={styles} />}
+      {renderRoadmap()}
       <FaqSection project={project} styles={styles} />
-
-      {/* Footer */}
       <WebsiteFooter styles={styles} />
     </div>
   );
