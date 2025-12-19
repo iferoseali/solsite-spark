@@ -6,6 +6,9 @@ verify_jwt = false
 [functions.prerender-site]
 verify_jwt = false
 
+[functions.verify-domain]
+verify_jwt = false
+
 [functions.analyze-reference]
 verify_jwt = true
 

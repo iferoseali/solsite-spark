@@ -2443,6 +2443,7 @@ Deno.serve(async (req) => {
   try {
     const url = new URL(req.url);
     const subdomain = url.searchParams.get('subdomain');
+    const customDomain = url.searchParams.get('customDomain'); // Support custom domain lookup
     const projectId = url.searchParams.get('projectId');
     const isPreview = url.searchParams.get('preview') === 'true';
     const templateId = url.searchParams.get('templateId') || 'cult_minimal';
@@ -2479,9 +2480,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (!subdomain && !projectId) {
+    if (!subdomain && !projectId && !customDomain) {
       return new Response(
-        JSON.stringify({ error: 'Missing subdomain or projectId parameter' }),
+        JSON.stringify({ error: 'Missing subdomain, customDomain, or projectId parameter' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -2519,8 +2520,28 @@ Deno.serve(async (req) => {
     }
 
     let query = supabase.from('projects').select('*');
-    if (projectId) query = query.eq('id', projectId);
-    else if (subdomain) query = query.eq('subdomain', subdomain);
+    if (projectId) {
+      query = query.eq('id', projectId);
+    } else if (customDomain) {
+      // Look up project by custom domain via the domains table
+      const { data: domainData } = await supabase
+        .from('domains')
+        .select('project_id')
+        .eq('custom_domain', customDomain.toLowerCase())
+        .eq('status', 'active')
+        .single();
+      
+      if (domainData?.project_id) {
+        query = query.eq('id', domainData.project_id);
+      } else {
+        return new Response(generateNotFoundHTML(), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'text/html; charset=utf-8' },
+        });
+      }
+    } else if (subdomain) {
+      query = query.eq('subdomain', subdomain);
+    }
 
     const { data: project, error: projectError } = await query.maybeSingle();
 

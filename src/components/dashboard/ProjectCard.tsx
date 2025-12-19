@@ -11,7 +11,8 @@ import {
   Copy,
   Pencil,
   Check,
-  X
+  X,
+  Link2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -257,6 +258,12 @@ export function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate, o
               }}>
                 <ExternalLink className="w-4 h-4 mr-2" />
                 {liveUrl ? "Open Live Site" : "Open Preview"}
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to={`/domains?projectId=${project.id}`} className="flex items-center gap-2">
+                  <Link2 className="w-4 h-4" />
+                  Domain Settings
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onDuplicate(project)}>
