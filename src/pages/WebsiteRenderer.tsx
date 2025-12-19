@@ -45,7 +45,7 @@ const WebsiteRenderer = () => {
           coinName: 'MoonDoge',
           ticker: '$MDOGE',
           tagline: 'To the moon and beyond 🚀',
-          description: 'MoonDoge is the ultimate meme coin on Solana.',
+          description: 'MoonDoge is the ultimate meme coin on Solana. Built for the community, by the community.',
           logoUrl: null,
           twitter: 'https://twitter.com/moondoge',
           discord: 'https://discord.gg/moondoge',
@@ -54,9 +54,23 @@ const WebsiteRenderer = () => {
           showRoadmap: true,
           showFaq: true,
         });
+        
+        // Map template to personality
+        const personalityMap: Record<string, string> = {
+          'degen_meme': 'degen',
+          'cult_minimal': 'dark-cult',
+          'vc_pro': 'professional',
+          'dark_cult': 'dark-cult',
+          'luxury_token': 'premium',
+          'scroll_story': 'playful',
+          'neo_grid': 'playful',
+          'builder_utility': 'builder',
+        };
+        
+        const selectedTemplate = templateId || previewLayout || 'cult_minimal';
         setTemplateConfig({
-          layout: previewLayout || templateId || 'cult_minimal',
-          personality: previewPersonality || 'professional',
+          layout: selectedTemplate,
+          personality: previewPersonality || personalityMap[selectedTemplate] || 'professional',
         });
         setIsLoading(false);
         return;
@@ -111,6 +125,7 @@ const WebsiteRenderer = () => {
 
   const styles = useMemo(() => getPersonalityStyles(templateConfig?.personality || 'professional'), [templateConfig?.personality]);
   const templateDef = useMemo(() => getTemplateById(templateConfig?.layout || 'cult_minimal'), [templateConfig?.layout]);
+  const personality = templateConfig?.layout || 'professional';
 
   const handleEdit = () => { if (project?.id) navigate(`/builder?edit=${project.id}`); };
 
@@ -132,37 +147,40 @@ const WebsiteRenderer = () => {
     );
   }
 
-  // Get hero variant
+  // Get section variants from template definition
   const heroVariant = templateDef?.sections.find(s => s.type === 'hero')?.variant || 'centered';
   const tokenomicsVariant = templateDef?.sections.find(s => s.type === 'tokenomics')?.variant || 'grid';
   const roadmapVariant = templateDef?.sections.find(s => s.type === 'roadmap')?.variant || 'timeline';
 
   const renderHero = () => {
+    const props = { project, styles, personality };
     switch (heroVariant) {
-      case 'split': return <HeroSplit project={project} styles={styles} />;
-      case 'fullscreen': return <HeroFullScreen project={project} styles={styles} />;
-      case 'minimal': return <HeroMinimal project={project} styles={styles} />;
-      case 'asymmetric': return <HeroAsymmetric project={project} styles={styles} />;
-      default: return <HeroCentered project={project} styles={styles} />;
+      case 'split': return <HeroSplit {...props} />;
+      case 'fullscreen': return <HeroFullScreen {...props} />;
+      case 'minimal': return <HeroMinimal {...props} />;
+      case 'asymmetric': return <HeroAsymmetric {...props} />;
+      default: return <HeroCentered {...props} />;
     }
   };
 
   const renderTokenomics = () => {
+    const props = { project, styles, personality };
     switch (tokenomicsVariant) {
-      case 'cards': return <TokenomicsCards project={project} styles={styles} />;
-      case 'horizontal': return <TokenomicsHorizontal project={project} styles={styles} />;
-      case 'circular': return <TokenomicsCircular project={project} styles={styles} />;
-      default: return <TokenomicsGrid project={project} styles={styles} />;
+      case 'cards': return <TokenomicsCards {...props} />;
+      case 'horizontal': return <TokenomicsHorizontal {...props} />;
+      case 'circular': return <TokenomicsCircular {...props} />;
+      default: return <TokenomicsGrid {...props} />;
     }
   };
 
   const renderRoadmap = () => {
     if (!project.showRoadmap) return null;
+    const props = { project, styles, personality };
     switch (roadmapVariant) {
-      case 'horizontal': return <RoadmapHorizontal project={project} styles={styles} />;
-      case 'cards': return <RoadmapCards project={project} styles={styles} />;
-      case 'zigzag': return <RoadmapZigzag project={project} styles={styles} />;
-      default: return <RoadmapTimeline project={project} styles={styles} />;
+      case 'horizontal': return <RoadmapHorizontal {...props} />;
+      case 'cards': return <RoadmapCards {...props} />;
+      case 'zigzag': return <RoadmapZigzag {...props} />;
+      default: return <RoadmapTimeline {...props} />;
     }
   };
 
