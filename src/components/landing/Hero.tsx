@@ -1,11 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Sparkles, ArrowRight, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
-import logo from "@/assets/logo.png";
 
 export const Hero = () => {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
       {/* Full-page background effects */}
       <div className="absolute inset-0 bg-grid opacity-30" />
       
@@ -26,35 +25,6 @@ export const Hero = () => {
 
       <div className="container relative z-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
-          {/* Enhanced Logo with 3D Animation */}
-          <div className="flex justify-center mb-10 fade-in-up fade-in-delay-1">
-            <div className="relative group perspective-1000">
-              {/* Glow background */}
-              <div className="absolute -inset-8 rounded-full bg-gradient-to-r from-primary/40 via-accent/30 to-primary/40 blur-3xl animate-logo-glow opacity-60" />
-              
-              {/* Main logo container */}
-              <div className="relative animate-logo-float">
-                {/* Outer ring */}
-                <div className="absolute -inset-4 rounded-full border-2 border-primary/30 animate-spin" style={{ animationDuration: '20s' }} />
-                <div className="absolute -inset-8 rounded-full border border-accent/20 animate-spin" style={{ animationDuration: '30s', animationDirection: 'reverse' }} />
-                
-                {/* Logo image */}
-                <div className="relative logo-shimmer">
-                  <img
-                    src={logo}
-                    alt="Solsite"
-                    className="h-36 md:h-48 lg:h-56 w-auto drop-shadow-2xl transition-transform duration-500 group-hover:scale-110 rounded-3xl"
-                  />
-                </div>
-              </div>
-              
-              {/* Particle effects */}
-              <div className="absolute top-0 left-1/2 w-2 h-2 bg-primary rounded-full animate-float opacity-60" style={{ animationDelay: '0s' }} />
-              <div className="absolute top-1/4 right-0 w-1.5 h-1.5 bg-accent rounded-full animate-float opacity-50" style={{ animationDelay: '0.5s' }} />
-              <div className="absolute bottom-1/4 left-0 w-2 h-2 bg-primary rounded-full animate-float opacity-40" style={{ animationDelay: '1s' }} />
-              <div className="absolute bottom-0 right-1/4 w-1 h-1 bg-accent rounded-full animate-float opacity-60" style={{ animationDelay: '1.5s' }} />
-            </div>
-          </div>
 
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-8 fade-in-up fade-in-delay-2">
