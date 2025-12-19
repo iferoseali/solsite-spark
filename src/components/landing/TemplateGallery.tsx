@@ -1,53 +1,142 @@
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { Rocket, Flame, Sparkles, Zap, Crown, Code, Skull, Eye, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { SOLSITE_TEMPLATE_REGISTRY, TemplateDefinition } from "@/lib/templateRegistry";
 
-// Map template IDs to visual metadata
+// Map template IDs to visual metadata with brand-matched colors
 const templateMeta: Record<string, {
   icon: typeof Rocket;
   gradient: string;
+  bgGradient: string;
   personality: string;
   description: string;
+  accentColor: string;
+  mockupStyle: {
+    bg: string;
+    primary: string;
+    text: string;
+  };
 }> = {
   cult_minimal: {
     icon: Sparkles,
     gradient: "from-lime-400 via-green-500 to-emerald-600",
+    bgGradient: "from-[#0b0b0b] to-[#111]",
     personality: "Minimal & Clean",
-    description: "Sleek, focused design inspired by early Solana cult sites"
+    description: "Sleek, focused design inspired by early Solana cult sites",
+    accentColor: "#a6ff00",
+    mockupStyle: { bg: "#0b0b0b", primary: "#a6ff00", text: "#ffffff" }
   },
   vc_pro: {
     icon: Crown,
     gradient: "from-blue-400 via-indigo-500 to-purple-600",
+    bgGradient: "from-[#0e1117] to-[#1a1f2e]",
     personality: "Professional & VC-Ready",
-    description: "Enterprise-grade aesthetics for serious token projects"
+    description: "Enterprise-grade aesthetics for serious token projects",
+    accentColor: "#5da9ff",
+    mockupStyle: { bg: "#0e1117", primary: "#5da9ff", text: "#e6e6e6" }
   },
   degen_meme: {
     icon: Flame,
     gradient: "from-pink-500 via-purple-500 to-indigo-500",
+    bgGradient: "from-[#120018] to-[#1a0025]",
     personality: "Chaotic & Viral",
-    description: "Maximum meme energy for degenerate launches"
+    description: "Maximum meme energy for degenerate launches",
+    accentColor: "#ff4fd8",
+    mockupStyle: { bg: "#120018", primary: "#ff4fd8", text: "#ffffff" }
   },
   dark_cult: {
     icon: Skull,
-    gradient: "from-red-600 via-red-700 to-black",
+    gradient: "from-red-600 via-red-700 to-red-900",
+    bgGradient: "from-[#050505] to-[#0a0808]",
     personality: "Dark & Mysterious",
-    description: "Lore-heavy narrative style for cult-like communities"
+    description: "Lore-heavy narrative style for cult-like communities",
+    accentColor: "#ff0000",
+    mockupStyle: { bg: "#050505", primary: "#ff0000", text: "#f5f5f5" }
   },
   luxury_token: {
     icon: Crown,
     gradient: "from-yellow-400 via-amber-500 to-orange-600",
+    bgGradient: "from-[#0a0a0a] to-[#151510]",
     personality: "Premium & Exclusive",
-    description: "Gold-standard design for luxury token brands"
+    description: "Gold-standard design for luxury token brands",
+    accentColor: "#d4af37",
+    mockupStyle: { bg: "#0a0a0a", primary: "#d4af37", text: "#ffffff" }
   },
   builder_utility: {
     icon: Code,
     gradient: "from-emerald-400 via-teal-500 to-cyan-600",
+    bgGradient: "from-[#0d1117] to-[#0d1a1a]",
     personality: "Dev & Utility",
-    description: "Clean technical aesthetics for builder tokens"
+    description: "Clean technical aesthetics for builder tokens",
+    accentColor: "#00ffa3",
+    mockupStyle: { bg: "#0d1117", primary: "#00ffa3", text: "#c9d1d9" }
   }
+};
+
+// Mock website preview component (static visual representation)
+const MockPreview = ({ meta }: { meta: typeof templateMeta[string] }) => {
+  const { mockupStyle, accentColor } = meta;
+  
+  return (
+    <div 
+      className="w-full h-full flex flex-col"
+      style={{ background: mockupStyle.bg }}
+    >
+      {/* Mock navbar */}
+      <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: `${accentColor}20` }}>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-full" style={{ background: accentColor }} />
+          <div className="w-16 h-2 rounded" style={{ background: `${mockupStyle.text}30` }} />
+        </div>
+        <div className="flex gap-2">
+          <div className="w-12 h-2 rounded" style={{ background: `${mockupStyle.text}20` }} />
+          <div className="w-12 h-2 rounded" style={{ background: `${mockupStyle.text}20` }} />
+          <div className="w-16 h-5 rounded-full" style={{ background: accentColor }} />
+        </div>
+      </div>
+      
+      {/* Mock hero section */}
+      <div className="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+        {/* Background glow */}
+        <div 
+          className="absolute top-1/4 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full blur-3xl opacity-30"
+          style={{ background: accentColor }}
+        />
+        
+        {/* Mock logo */}
+        <div 
+          className="w-16 h-16 rounded-2xl mb-4 relative z-10"
+          style={{ background: `${accentColor}30`, border: `2px solid ${accentColor}` }}
+        />
+        
+        {/* Mock title */}
+        <div className="w-32 h-4 rounded mb-2 relative z-10" style={{ background: mockupStyle.text }} />
+        <div className="w-24 h-3 rounded mb-4 relative z-10" style={{ background: accentColor }} />
+        
+        {/* Mock description */}
+        <div className="w-40 h-2 rounded mb-1 relative z-10" style={{ background: `${mockupStyle.text}40` }} />
+        <div className="w-32 h-2 rounded mb-4 relative z-10" style={{ background: `${mockupStyle.text}30` }} />
+        
+        {/* Mock button */}
+        <div 
+          className="w-24 h-6 rounded-full relative z-10"
+          style={{ background: accentColor }}
+        />
+      </div>
+      
+      {/* Mock stats section */}
+      <div className="flex justify-center gap-4 py-4 border-t" style={{ borderColor: `${accentColor}20` }}>
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="flex flex-col items-center">
+            <div className="w-8 h-2 rounded mb-1" style={{ background: accentColor }} />
+            <div className="w-12 h-1.5 rounded" style={{ background: `${mockupStyle.text}30` }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 };
 
 const TemplateCard = ({ 
@@ -62,12 +151,13 @@ const TemplateCard = ({
   const meta = templateMeta[template.template_id] || {
     icon: Sparkles,
     gradient: "from-primary to-accent",
+    bgGradient: "from-background to-card",
     personality: "Custom",
-    description: template.inspiration
+    description: template.inspiration,
+    accentColor: "#00d4ff",
+    mockupStyle: { bg: "#0a0f1a", primary: "#00d4ff", text: "#ffffff" }
   };
   const Icon = meta.icon;
-  
-  const previewUrl = `https://bzbxdiaqpbroxhcibtpm.supabase.co/functions/v1/render-site?preview=true&templateId=${template.template_id}`;
   
   return (
     <motion.div
@@ -79,19 +169,14 @@ const TemplateCard = ({
     >
       <div className="relative h-[520px] w-[380px] overflow-hidden rounded-3xl border border-border/50 bg-card/50 backdrop-blur-sm transition-all duration-500 hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/20">
         {/* Gradient overlay */}
-        <div className={`absolute inset-0 bg-gradient-to-br ${meta.gradient} opacity-10 transition-opacity duration-500 group-hover:opacity-20`} />
+        <div className={`absolute inset-0 bg-gradient-to-br ${meta.gradient} opacity-5 transition-opacity duration-500 group-hover:opacity-15`} />
         
-        {/* Live Preview iframe */}
+        {/* Static Preview Mockup */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute inset-0 origin-top-left scale-[0.24] w-[1600px] h-[2100px]">
-            <iframe
-              src={previewUrl}
-              className="w-full h-full border-0 pointer-events-none"
-              title={`${template.name} preview`}
-              loading="lazy"
-            />
+          <div className={`absolute inset-0 bg-gradient-to-br ${meta.bgGradient}`}>
+            <MockPreview meta={meta} />
           </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
         </div>
         
         {/* Hover overlay for preview */}
@@ -101,7 +186,7 @@ const TemplateCard = ({
         >
           <div className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-primary-foreground font-medium">
             <Eye className="h-4 w-4" />
-            Preview
+            Live Preview
           </div>
         </div>
         
@@ -134,7 +219,7 @@ const TemplateCard = ({
   );
 };
 
-// Preview Modal Component
+// Preview Modal Component with live iframe
 const PreviewModal = ({ 
   template, 
   onClose 
@@ -181,11 +266,12 @@ const PreviewModal = ({
           </div>
         </div>
         
-        {/* iframe Preview */}
+        {/* iframe Preview - opens in new window on click */}
         <iframe
           src={previewUrl}
           className="w-full h-full border-0"
           title={`${template.name} full preview`}
+          sandbox="allow-scripts allow-same-origin"
         />
       </motion.div>
     </motion.div>
