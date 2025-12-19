@@ -7,7 +7,8 @@ import {
   Globe, 
   GlobeLock,
   Calendar,
-  MoreVertical
+  MoreVertical,
+  Copy
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,9 +39,10 @@ interface ProjectCardProps {
   project: Project;
   onDelete: (project: Project) => void;
   onTogglePublish: (project: Project) => void;
+  onDuplicate: (project: Project) => void;
 }
 
-export function ProjectCard({ project, onDelete, onTogglePublish }: ProjectCardProps) {
+export function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate }: ProjectCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   
   const isPublished = project.status === "published";
@@ -136,6 +138,10 @@ export function ProjectCard({ project, onDelete, onTogglePublish }: ProjectCardP
                 Open Preview
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onDuplicate(project)}>
+                <Copy className="w-4 h-4 mr-2" />
+                Duplicate
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onTogglePublish(project)}>
                 {isPublished ? (
                   <>

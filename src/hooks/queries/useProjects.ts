@@ -70,3 +70,16 @@ export function useDeleteProject() {
     },
   });
 }
+
+export function useDuplicateProject() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, userId }: { id: string; userId: string }) => 
+      projectService.duplicate(id, userId),
+    onSuccess: () => {
+      // Invalidate lists to show the new project
+      queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+    },
+  });
+}

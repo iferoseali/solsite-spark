@@ -167,6 +167,51 @@ export const projectService = {
   },
 
   /**
+   * Duplicate a project
+   */
+  async duplicate(id: string, userId: string): Promise<Project> {
+    // First fetch the original project
+    const original = await this.getById(id);
+    if (!original) {
+      throw new Error("Project not found");
+    }
+
+    // Generate a unique subdomain for the copy
+    const newSubdomain = await this.getUniqueSubdomain(`${original.coin_name}-copy`);
+
+    // Create the duplicate
+    const { data, error } = await supabase
+      .from("projects")
+      .insert({
+        coin_name: `${original.coin_name} (Copy)`,
+        ticker: original.ticker,
+        tagline: original.tagline,
+        description: original.description,
+        logo_url: original.logo_url,
+        twitter_url: original.twitter_url,
+        discord_url: original.discord_url,
+        telegram_url: original.telegram_url,
+        dex_link: original.dex_link,
+        show_roadmap: original.show_roadmap,
+        show_faq: original.show_faq,
+        template_id: original.template_id,
+        config: original.config as Json,
+        subdomain: newSubdomain,
+        user_id: userId,
+        status: "draft",
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error duplicating project:", error);
+      throw error;
+    }
+
+    return data as Project;
+  },
+
+  /**
    * Generate a unique subdomain from coin name
    */
   generateSubdomain(coinName: string): string {
