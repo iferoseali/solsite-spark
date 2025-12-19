@@ -9,3 +9,5 @@ export { generateUtility } from './utility';
 export { generateRoadmap } from './roadmap';
 export { generateFaq } from './faq';
 export { generateFooter } from './footer';
+export { generateTeam } from './team';
+export { generateFeatures } from './features';
