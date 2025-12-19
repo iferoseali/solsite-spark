@@ -141,7 +141,7 @@ export const FaqEditor = ({ items, onChange }: FaqEditorProps) => {
         </Button>
       </div>
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext id="faq-dnd" sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
           <AnimatePresence mode="popLayout">
             {items.map((item, index) => (
