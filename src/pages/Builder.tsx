@@ -387,11 +387,14 @@ const Builder = () => {
 
       const projectConfig = {
         tokenomics: { totalSupply: formData.totalSupply || null, circulatingSupply: formData.circulatingSupply || null, contractAddress: formData.contractAddress || null },
-        sections: sections.map(s => ({ id: s.id, type: s.type, variant: s.variant, visible: s.visible, order: s.order })),
-        faqItems, roadmapPhases, teamMembers, features,
+        sections: sections.map(s => ({ id: s.id, type: s.type as string, variant: s.variant, visible: s.visible, order: s.order })),
+        faqItems: faqItems.map(f => ({ id: f.id, question: f.question, answer: f.answer })),
+        roadmapPhases: roadmapPhases.map(p => ({ id: p.id, phase: p.phase, title: p.title, items: p.items, completed: p.completed })),
+        teamMembers: teamMembers.map(m => ({ id: m.id, name: m.name, role: m.role, avatar: m.avatar, twitter: m.twitter })),
+        features: features.map(f => ({ id: f.id, title: f.title, description: f.description, icon: f.icon })),
         templateId: selectedTemplateId || null,
         blueprintId: blueprintId || null,
-      } as Json;
+      } as unknown as Json;
 
       const { data: project, error } = await supabase.from('projects').insert([{
         user_id: user.id, template_id: templateId, coin_name: formData.coinName, ticker: formData.ticker,
