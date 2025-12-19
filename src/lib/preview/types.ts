@@ -50,7 +50,9 @@ export interface ProjectData {
   telegram: string;
   dexLink: string;
   buyNowLink?: string;
+  buyNowText?: string;
   learnMoreLink?: string;
+  learnMoreText?: string;
   showRoadmap: boolean;
   showFaq: boolean;
   tokenomics?: TokenomicsInput;
@@ -90,7 +92,9 @@ export interface SanitizedData {
   telegram: string;
   dexLink: string;
   buyNowLink: string;
+  buyNowText: string;
   learnMoreLink: string;
+  learnMoreText: string;
   totalSupply: string;
   circulatingSupply: string;
   contractAddress: string;

@@ -73,7 +73,9 @@ const initialFormData = {
   telegram: "",
   dexLink: "",
   buyNowLink: "",
+  buyNowText: "",
   learnMoreLink: "",
+  learnMoreText: "",
   showRoadmap: true,
   showFaq: true,
   totalSupply: "",
@@ -120,6 +122,7 @@ const Builder = () => {
   const [openSections, setOpenSections] = useState({
     basic: true,
     socials: true,
+    heroButtons: false,
     tokenomics: false,
     faq: false,
     roadmap: false,
@@ -339,7 +342,9 @@ const Builder = () => {
             teamMembers?: TeamMember[];
             features?: Feature[];
             buyNowLink?: string;
+            buyNowText?: string;
             learnMoreLink?: string;
+            learnMoreText?: string;
           } | null;
           
           setFormData({
@@ -352,7 +357,9 @@ const Builder = () => {
             telegram: project.telegram_url || "",
             dexLink: project.dex_link || "",
             buyNowLink: config?.buyNowLink || "",
+            buyNowText: config?.buyNowText || "",
             learnMoreLink: config?.learnMoreLink || "",
+            learnMoreText: config?.learnMoreText || "",
             showRoadmap: project.show_roadmap ?? true,
             showFaq: project.show_faq ?? true,
             totalSupply: config?.tokenomics?.totalSupply || "",
@@ -411,7 +418,9 @@ const Builder = () => {
         telegram: deferredFormData.telegram,
         dexLink: deferredFormData.dexLink,
         buyNowLink: deferredFormData.buyNowLink,
+        buyNowText: deferredFormData.buyNowText,
         learnMoreLink: deferredFormData.learnMoreLink,
+        learnMoreText: deferredFormData.learnMoreText,
         showRoadmap,
         showFaq,
         tokenomics: {
@@ -576,7 +585,9 @@ const Builder = () => {
           templateId: selectedTemplateId || null,
           blueprintId: blueprintId || null,
           buyNowLink: formData.buyNowLink || null,
+          buyNowText: formData.buyNowText || null,
           learnMoreLink: formData.learnMoreLink || null,
+          learnMoreText: formData.learnMoreText || null,
         },
       };
       if (logoUrl) updateData.logo_url = logoUrl;
@@ -860,11 +871,28 @@ const Builder = () => {
                   <div className="relative"><MessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input name="discord" placeholder="discord.gg/yourcoin" value={formData.discord} onChange={handleInputChange} className="pl-10" /></div>
                   <div className="relative"><MessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input name="telegram" placeholder="t.me/yourcoin" value={formData.telegram} onChange={handleInputChange} className="pl-10" /></div>
                   <div className="relative"><Rocket className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input name="dexLink" placeholder="DEX / Buy Link" value={formData.dexLink} onChange={handleInputChange} className="pl-10" /></div>
-                  <div className="pt-2 border-t border-border">
-                    <p className="text-xs text-muted-foreground mb-2">Hero Button Links</p>
-                    <div className="space-y-3">
-                      <div className="relative"><ExternalLink className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input name="buyNowLink" placeholder="Buy Now link (defaults to DEX link)" value={formData.buyNowLink} onChange={handleInputChange} className="pl-10" /></div>
-                      <div className="relative"><ExternalLink className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input name="learnMoreLink" placeholder="Learn More link (defaults to #about)" value={formData.learnMoreLink} onChange={handleInputChange} className="pl-10" /></div>
+                </CollapsibleContent>
+              </Collapsible>
+
+              {/* Hero Buttons */}
+              <Collapsible open={openSections.heroButtons} onOpenChange={() => toggleSection('heroButtons')}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full p-4 rounded-xl glass hover:bg-secondary/50 transition-colors">
+                  <div className="flex items-center gap-2"><ExternalLink className="w-5 h-5 text-primary" /><span className="font-semibold">Hero Buttons</span></div>
+                  {openSections.heroButtons ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-4 space-y-4">
+                  <div className="space-y-3">
+                    <p className="text-xs text-muted-foreground font-medium">Buy Now Button</p>
+                    <div className="space-y-2">
+                      <Input name="buyNowText" placeholder={`Button text (default: "Buy Now")`} value={formData.buyNowText} onChange={handleInputChange} />
+                      <div className="relative"><ExternalLink className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input name="buyNowLink" placeholder="Link URL (defaults to DEX link)" value={formData.buyNowLink} onChange={handleInputChange} className="pl-10" /></div>
+                    </div>
+                  </div>
+                  <div className="space-y-3 pt-3 border-t border-border">
+                    <p className="text-xs text-muted-foreground font-medium">Learn More Button</p>
+                    <div className="space-y-2">
+                      <Input name="learnMoreText" placeholder={`Button text (default: "Learn More")`} value={formData.learnMoreText} onChange={handleInputChange} />
+                      <div className="relative"><ExternalLink className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input name="learnMoreLink" placeholder="Link URL (defaults to #about)" value={formData.learnMoreLink} onChange={handleInputChange} className="pl-10" /></div>
                     </div>
                   </div>
                 </CollapsibleContent>

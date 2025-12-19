@@ -15,9 +15,9 @@ export function generateHero(data: SanitizedData): string {
     <p class="hero-tagline">${data.tagline || 'Your awesome tagline goes here'}</p>
     <div class="cta-buttons">
       <a href="${data.buyNowLink || data.dexLink || '#'}" target="_blank" rel="noopener" class="cta-btn cta-btn-primary">
-        Buy Now
+        ${data.buyNowText}
       </a>
-      <a href="${data.learnMoreLink || '#about'}" ${data.learnMoreLink && !data.learnMoreLink.startsWith('#') ? 'target="_blank" rel="noopener"' : ''} class="cta-btn cta-btn-secondary">Learn More</a>
+      <a href="${data.learnMoreLink || '#about'}" ${data.learnMoreLink && !data.learnMoreLink.startsWith('#') ? 'target="_blank" rel="noopener"' : ''} class="cta-btn cta-btn-secondary">${data.learnMoreText}</a>
     </div>
   </section>`;
 }
