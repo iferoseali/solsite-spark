@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
@@ -12,7 +12,7 @@ interface RecentlyViewedCardProps {
   onPreview: () => void;
 }
 
-export const RecentlyViewedCard: React.FC<RecentlyViewedCardProps> = ({
+export const RecentlyViewedCard = memo<RecentlyViewedCardProps>(({
   template,
   templateId,
   onPreview,
@@ -43,4 +43,6 @@ export const RecentlyViewedCard: React.FC<RecentlyViewedCardProps> = ({
       </div>
     </motion.div>
   );
-};
+});
+
+RecentlyViewedCard.displayName = "RecentlyViewedCard";

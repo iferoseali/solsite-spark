@@ -1,9 +1,9 @@
+import React, { memo, useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { motion } from "framer-motion";
 import { GripVertical, Eye, EyeOff, Trash2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -16,7 +16,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useState } from "react";
 import { SectionConfig, SECTION_LABELS, SECTION_ICONS, SECTION_VARIANTS } from "./sectionTypes";
 
 interface SortableSectionItemProps {
@@ -27,7 +26,7 @@ interface SortableSectionItemProps {
   isRemovable: boolean;
 }
 
-export const SortableSectionItem = ({
+export const SortableSectionItem = memo(({
   section,
   onToggleVisibility,
   onChangeVariant,
@@ -151,4 +150,6 @@ export const SortableSectionItem = ({
       )}
     </motion.div>
   );
-};
+});
+
+SortableSectionItem.displayName = "SortableSectionItem";

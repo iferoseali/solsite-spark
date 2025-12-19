@@ -1,4 +1,4 @@
-import React, { useState, useEffect, forwardRef } from "react";
+import React, { useState, useEffect, forwardRef, memo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Check, Columns, Eye, Heart, Sparkles } from "lucide-react";
@@ -21,7 +21,7 @@ interface TemplateCardProps {
   index: number;
 }
 
-export const TemplateCard = forwardRef<HTMLDivElement, TemplateCardProps>(({
+export const TemplateCard = memo(forwardRef<HTMLDivElement, TemplateCardProps>(({
   template,
   templateId,
   isSelected,
@@ -88,7 +88,7 @@ export const TemplateCard = forwardRef<HTMLDivElement, TemplateCardProps>(({
           {thumbnailLoaded && thumbnailHtml ? (
             <div className="w-full h-full relative overflow-hidden">
               <div className="absolute inset-0 origin-top-left" style={{ transform: "scale(0.15)", width: "667%", height: "667%" }}>
-                <iframe srcDoc={thumbnailHtml} className="w-full h-full border-0 pointer-events-none" title={`Thumbnail: ${template.name}`} sandbox="allow-scripts" />
+                <iframe srcDoc={thumbnailHtml} className="w-full h-full border-0 pointer-events-none" title={`Thumbnail: ${template.name}`} sandbox="allow-scripts" loading="lazy" />
               </div>
             </div>
           ) : (
@@ -212,7 +212,7 @@ export const TemplateCard = forwardRef<HTMLDivElement, TemplateCardProps>(({
           <div className="flex-1 relative overflow-hidden">
             {thumbnailLoaded && thumbnailHtml ? (
               <div className="absolute inset-0 origin-top-left" style={{ transform: "scale(0.22)", width: "455%", height: "455%" }}>
-                <iframe srcDoc={thumbnailHtml} className="w-full h-full border-0 pointer-events-none" title={`Thumbnail: ${template.name}`} sandbox="allow-scripts" />
+                <iframe srcDoc={thumbnailHtml} className="w-full h-full border-0 pointer-events-none" title={`Thumbnail: ${template.name}`} sandbox="allow-scripts" loading="lazy" />
               </div>
             ) : (
               <div className="flex-1 p-3 flex flex-col gap-2 animate-pulse h-full items-center justify-center">
@@ -262,6 +262,6 @@ export const TemplateCard = forwardRef<HTMLDivElement, TemplateCardProps>(({
       </div>
     </motion.div>
   );
-});
+}));
 
 TemplateCard.displayName = "TemplateCard";
