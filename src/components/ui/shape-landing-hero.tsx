@@ -84,6 +84,12 @@ function HeroGeometric({
   const mouseX = useSpring(mouseXRaw, { stiffness: 50, damping: 20 });
   const mouseY = useSpring(mouseYRaw, { stiffness: 50, damping: 20 });
 
+  // 3D tilt transforms for content
+  const rotateX = useTransform(mouseY, [-300, 300], [4, -4]);
+  const rotateY = useTransform(mouseX, [-500, 500], [-6, 6]);
+  const smoothRotateX = useSpring(rotateX, { stiffness: 100, damping: 30 });
+  const smoothRotateY = useSpring(rotateY, { stiffness: 100, damping: 30 });
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       const centerX = window.innerWidth / 2;
@@ -197,9 +203,16 @@ function HeroGeometric({
         />
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 container px-4 md:px-6 pt-20">
-        <div className="max-w-4xl mx-auto text-center">
+      {/* Content with 3D tilt effect */}
+      <div className="relative z-10 container px-4 md:px-6 pt-20" style={{ perspective: "1000px" }}>
+        <motion.div 
+          className="max-w-4xl mx-auto text-center"
+          style={{
+            rotateX: smoothRotateX,
+            rotateY: smoothRotateY,
+            transformStyle: "preserve-3d",
+          }}
+        >
           {/* Badge */}
           <motion.div
             custom={0}
@@ -254,7 +267,7 @@ function HeroGeometric({
               {children}
             </motion.div>
           )}
-        </div>
+        </motion.div>
       </div>
 
       {/* Bottom gradient fade */}
