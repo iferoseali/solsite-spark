@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
@@ -9,13 +9,14 @@ import {
   Search, Heart, Grid3X3, List, SlidersHorizontal,
   ArrowUpDown, ChevronDown, Clock, Trash2
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useTemplateFavorites } from "@/hooks/useTemplateFavorites";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import { PreviewModal } from "@/components/templates/PreviewModal";
 import { TemplateCard } from "@/components/templates/TemplateCard";
 import { RecentlyViewedCard } from "@/components/templates/RecentlyViewedCard";
 import { ComparisonView } from "@/components/templates/ComparisonView";
+import { TemplateGridSkeleton } from "@/components/skeletons";
+import { templateService } from "@/services/templateService";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   DropdownMenu,
@@ -24,12 +25,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { 
-  TEMPLATE_ID_MAP, 
   TEMPLATE_META, 
   TEMPLATE_CATEGORIES, 
   SORT_OPTIONS,
   getTemplateId,
-  getTemplateMeta,
   type Category,
   type SortOption,
 } from "@/lib/templateData";
@@ -58,16 +57,14 @@ const Templates = () => {
   useEffect(() => {
     const fetchTemplates = async () => {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from("template_blueprints")
-        .select("*")
-        .eq("is_active", true)
-        .order("name");
-
-      if (data && !error) {
-        setTemplates(data as TemplateBlueprint[]);
+      try {
+        const data = await templateService.getAllBlueprints();
+        setTemplates(data);
+      } catch (error) {
+        console.error("Error fetching templates:", error);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
     fetchTemplates();
   }, []);
@@ -84,27 +81,25 @@ const Templates = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const openPreview = async (template: TemplateBlueprint, templateId: string) => {
+  const openPreview = useCallback(async (template: TemplateBlueprint, templateId: string) => {
     setPreviewTemplate({ template, templateId });
     setPreviewLoading(true);
     addRecentlyViewed(template.id);
     
-    const previewUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?preview=true&templateId=${templateId}`;
     try {
-      const response = await fetch(previewUrl);
-      const html = await response.text();
+      const html = await templateService.fetchPreviewHtml(templateId);
       setPreviewHtml(html);
     } catch (error) {
       console.error("Error loading preview:", error);
     } finally {
       setPreviewLoading(false);
     }
-  };
+  }, [addRecentlyViewed]);
 
-  const closePreview = () => {
+  const closePreview = useCallback(() => {
     setPreviewTemplate(null);
     setPreviewHtml(null);
-  };
+  }, []);
 
   const toggleCategory = (cat: Category) => {
     if (cat === "all") {
@@ -361,9 +356,7 @@ const Templates = () => {
 
           {/* Template grid/list */}
           {isLoading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
-            </div>
+            <TemplateGridSkeleton count={8} viewMode={viewMode} />
           ) : filteredAndSortedTemplates.length === 0 ? (
             <div className="text-center py-20">
               <p className="text-muted-foreground mb-4">No templates found matching your criteria</p>
