@@ -82,7 +82,7 @@ const Site = () => {
                 srcDoc={html}
                 className="w-full h-full border-0"
                 title={subdomain ? `${subdomain} live site` : "Live site"}
-                sandbox="allow-scripts"
+                sandbox="allow-scripts allow-same-origin"
               />
             ) : null}
           </section>

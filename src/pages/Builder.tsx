@@ -1090,12 +1090,12 @@ const Builder = () => {
                       isRefreshingPreview && !previewHtml ? (
                         <div className="w-full h-full flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
                       ) : previewHtml ? (
-                        <iframe key={previewKey} srcDoc={previewHtml} className="w-full h-full border-0" title="Site Preview" sandbox="allow-scripts" />
+                        <iframe key={previewKey} srcDoc={previewHtml} className="w-full h-full border-0" title="Site Preview" sandbox="allow-scripts allow-same-origin" />
                       ) : null
                     ) : isLoadingTemplatePreview ? (
                       <div className="w-full h-full flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
                     ) : (
-                      <iframe key={`preview-${previewKey}`} srcDoc={livePreviewHtml} className="w-full h-full border-0" title="Live Preview" sandbox="allow-scripts" />
+                      <iframe key={`preview-${previewKey}`} srcDoc={livePreviewHtml} className="w-full h-full border-0" title="Live Preview" sandbox="allow-scripts allow-same-origin" />
                     )}
                   </div>
                 </div>
