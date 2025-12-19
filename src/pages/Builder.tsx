@@ -895,6 +895,22 @@ const Builder = () => {
                       <div className="relative"><ExternalLink className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input name="learnMoreLink" placeholder="Link URL (defaults to #about)" value={formData.learnMoreLink} onChange={handleInputChange} className="pl-10" /></div>
                     </div>
                   </div>
+                  {/* Live Preview */}
+                  <div className="pt-4 border-t border-border">
+                    <p className="text-xs text-muted-foreground font-medium mb-3">Preview</p>
+                    <div className="p-4 rounded-lg bg-background/50 border border-border flex items-center justify-center gap-3">
+                      <Button variant="glow" size="sm" className="pointer-events-none">
+                        {formData.buyNowText || 'Buy Now'}
+                      </Button>
+                      <Button variant="outline" size="sm" className="pointer-events-none">
+                        {formData.learnMoreText || 'Learn More'}
+                      </Button>
+                    </div>
+                    <div className="mt-2 text-xs text-muted-foreground space-y-1">
+                      <p className="truncate">Buy Now → {formData.buyNowLink || formData.dexLink || '(no link set)'}</p>
+                      <p className="truncate">Learn More → {formData.learnMoreLink || '#about'}</p>
+                    </div>
+                  </div>
                 </CollapsibleContent>
               </Collapsible>
 
