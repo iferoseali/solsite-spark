@@ -479,55 +479,57 @@ const Builder = () => {
     setIsRefreshingPreview(false);
   }, [generatedProject]);
 
-  const handleTemplateChange = useCallback(async (newTemplateId: string | null, layout: string, personality: string) => {
-    setSelectedTemplateId(newTemplateId);
-    setCurrentLayout(layout);
-    setCurrentPersonality(personality);
-    
-    // Fetch and apply blueprint config if a template ID is provided
-    if (newTemplateId) {
+  const handleTemplateChange = useCallback(
+    async (args: { templateKey: string; blueprintId: string; layout: string; personality: string }) => {
+      const { templateKey, blueprintId: nextBlueprintId, layout, personality } = args;
+
+      setSelectedTemplateId(templateKey);
+      setBlueprintId(nextBlueprintId);
+      setCurrentLayout(layout);
+      setCurrentPersonality(personality);
+
       try {
         const { data: blueprint, error } = await supabase
           .from('template_blueprints')
-          .select('name, sections, styles, animations')
-          .eq('id', newTemplateId)
-          .single();
-        
-        if (!error && blueprint) {
-          setBlueprintName(blueprint.name);
-          setBlueprintId(newTemplateId);
-          
-          // Apply blueprint sections if available
-          if (blueprint.sections && Array.isArray(blueprint.sections)) {
-            const blueprintSections = blueprint.sections as Array<{
-              id: string;
-              type: string;
-              variant?: string;
-              visible?: boolean;
-              order?: number;
-            }>;
-            
-            if (blueprintSections.length > 0) {
-              setSections(blueprintSections.map((s, i) => ({
+          .select('name, sections')
+          .eq('id', nextBlueprintId)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (blueprint?.name) setBlueprintName(blueprint.name);
+
+        // Apply blueprint sections if available
+        if (blueprint?.sections && Array.isArray(blueprint.sections)) {
+          const blueprintSections = blueprint.sections as Array<{
+            id: string;
+            type: string;
+            variant?: string;
+            visible?: boolean;
+            order?: number;
+          }>;
+
+          if (blueprintSections.length > 0) {
+            setSections(
+              blueprintSections.map((s, i) => ({
                 id: s.id || `section-${i}`,
                 type: s.type as SectionConfig['type'],
                 variant: s.variant || 'default',
                 visible: s.visible ?? true,
                 order: s.order ?? i,
-              })));
-            }
+              }))
+            );
           }
-          
-          toast.success(`Switched to ${blueprint.name}`);
-          return;
         }
+
+        toast.success(`Switched to ${blueprint?.name || 'template'}`);
       } catch (error) {
         console.error('Error fetching blueprint:', error);
+        toast.success('Template switched');
       }
-    }
-    
-    toast.success('Template switched');
-  }, []);
+    },
+    []
+  );
 
   const saveChanges = async () => {
     if (!generatedProject || !user) return;
@@ -895,7 +897,8 @@ const Builder = () => {
                   isSaving={isSaving}
                   isRefreshing={isRefreshingPreview}
                   deviceSize={deviceSize}
-                  currentTemplateId={selectedTemplateId}
+                  currentTemplateKey={selectedTemplateId || 'cult_minimal'}
+                  currentBlueprintId={blueprintId}
                   currentLayout={currentLayout}
                   currentPersonality={currentPersonality}
                   onRefresh={refreshPreview}

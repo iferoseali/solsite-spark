@@ -19,25 +19,36 @@ export function escapeHtml(str: string | null | undefined): string {
 export function sanitizeUrl(url: string | null | undefined, allowDataUrl = false): string {
   if (!url) return '';
   const trimmed = url.trim();
-  
+
   // Allow data URLs for images (safe for preview)
   if (allowDataUrl && trimmed.startsWith('data:image/')) {
     return trimmed;
   }
-  
-  // Only allow http and https protocols
-  try {
-    const parsed = new URL(trimmed);
-    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
-      return trimmed;
+
+  const tryParse = (value: string) => {
+    try {
+      const parsed = new URL(value);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? value : '';
+    } catch {
+      return '';
     }
-  } catch {
-    // If URL parsing fails, check if it's a relative URL starting with /
-    if (trimmed.startsWith('/')) {
-      return trimmed;
-    }
+  };
+
+  // Accept absolute http(s)
+  const direct = tryParse(trimmed);
+  if (direct) return direct;
+
+  // If user entered a domain/path without protocol, assume https
+  if (!trimmed.includes('://') && !trimmed.startsWith('/') && /\./.test(trimmed)) {
+    const withHttps = tryParse(`https://${trimmed}`);
+    if (withHttps) return withHttps;
   }
-  
+
+  // Allow relative URLs starting with /
+  if (trimmed.startsWith('/')) {
+    return trimmed;
+  }
+
   // Block javascript:, vbscript:, etc.
   return '';
 }
