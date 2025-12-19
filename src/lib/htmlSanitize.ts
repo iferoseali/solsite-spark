@@ -16,9 +16,14 @@ export function escapeHtml(str: string | null | undefined): string {
 /**
  * Validate and sanitize URLs - only allow http/https protocols
  */
-export function sanitizeUrl(url: string | null | undefined): string {
+export function sanitizeUrl(url: string | null | undefined, allowDataUrl = false): string {
   if (!url) return '';
   const trimmed = url.trim();
+  
+  // Allow data URLs for images (safe for preview)
+  if (allowDataUrl && trimmed.startsWith('data:image/')) {
+    return trimmed;
+  }
   
   // Only allow http and https protocols
   try {
@@ -33,7 +38,7 @@ export function sanitizeUrl(url: string | null | undefined): string {
     }
   }
   
-  // Block javascript:, data:, vbscript:, etc.
+  // Block javascript:, vbscript:, etc.
   return '';
 }
 
