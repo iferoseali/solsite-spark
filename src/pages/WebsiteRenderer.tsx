@@ -22,6 +22,18 @@ import { getTemplateById } from "@/lib/templateRegistry";
 import { HeroCentered, HeroSplit, HeroFullScreen, HeroMinimal, HeroAsymmetric } from "@/components/website/sections/hero";
 import { TokenomicsGrid, TokenomicsCards, TokenomicsHorizontal, TokenomicsCircular } from "@/components/website/sections/tokenomics";
 import { RoadmapTimeline, RoadmapHorizontal, RoadmapCards, RoadmapZigzag } from "@/components/website/sections/roadmap";
+import { AboutCentered, AboutSplit, AboutCards } from "@/components/website/sections/about";
+import { FaqAccordion, FaqGrid } from "@/components/website/sections/faq";
+import { CommunitySocials, CommunityCards } from "@/components/website/sections/community";
+import { TeamGrid, TeamCards } from "@/components/website/sections/team";
+
+interface SectionConfig {
+  id: string;
+  type: string;
+  variant: string;
+  visible: boolean;
+  order: number;
+}
 
 const WebsiteRenderer = () => {
   const [searchParams] = useSearchParams();
@@ -35,6 +47,7 @@ const WebsiteRenderer = () => {
 
   const [project, setProject] = useState<ProjectData | null>(null);
   const [templateConfig, setTemplateConfig] = useState<TemplateConfig | null>(null);
+  const [sections, setSections] = useState<SectionConfig[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -92,6 +105,16 @@ const WebsiteRenderer = () => {
         if (projectError) throw projectError;
         if (!projectData) { setError('Project not found'); setIsLoading(false); return; }
 
+        // Parse config for sections
+        const config = projectData.config as { 
+          sections?: SectionConfig[];
+          templateId?: string;
+        } | null;
+
+        if (config?.sections && Array.isArray(config.sections)) {
+          setSections(config.sections);
+        }
+
         setProject({
           id: projectData.id,
           coinName: projectData.coin_name,
@@ -109,7 +132,7 @@ const WebsiteRenderer = () => {
 
         const template = projectData.templates as { layout_id: string; personality_id: string } | null;
         setTemplateConfig({
-          layout: template?.layout_id || 'cult_minimal',
+          layout: config?.templateId || template?.layout_id || 'cult_minimal',
           personality: template?.personality_id || 'professional',
         });
       } catch (err) {
@@ -147,47 +170,74 @@ const WebsiteRenderer = () => {
     );
   }
 
-  // Get section variants from template definition
-  const heroVariant = templateDef?.sections.find(s => s.type === 'hero')?.variant || 'centered';
-  const tokenomicsVariant = templateDef?.sections.find(s => s.type === 'tokenomics')?.variant || 'grid';
-  const roadmapVariant = templateDef?.sections.find(s => s.type === 'roadmap')?.variant || 'timeline';
+  // Use sections from config if available, otherwise fall back to template definition
+  const activeSections = sections.length > 0 
+    ? sections.filter(s => s.visible).sort((a, b) => a.order - b.order)
+    : templateDef?.sections || [];
 
-  const renderHero = () => {
-    const props = { project, styles, personality };
-    switch (heroVariant) {
-      case 'split': return <HeroSplit {...props} />;
-      case 'fullscreen': return <HeroFullScreen {...props} />;
-      case 'minimal': return <HeroMinimal {...props} />;
-      case 'asymmetric': return <HeroAsymmetric {...props} />;
-      default: return <HeroCentered {...props} />;
-    }
+  const getVariant = (type: string) => {
+    const section = activeSections.find(s => s.type === type);
+    return section?.variant || templateDef?.sections.find(s => s.type === type)?.variant || 'default';
   };
 
-  const renderTokenomics = () => {
+  const renderSection = (section: { type: string; variant?: string }) => {
+    const variant = section.variant || getVariant(section.type);
     const props = { project, styles, personality };
-    switch (tokenomicsVariant) {
-      case 'cards': return <TokenomicsCards {...props} />;
-      case 'horizontal': return <TokenomicsHorizontal {...props} />;
-      case 'circular': return <TokenomicsCircular {...props} />;
-      default: return <TokenomicsGrid {...props} />;
+
+    switch (section.type) {
+      case 'hero':
+        switch (variant) {
+          case 'split': return <HeroSplit key="hero" {...props} />;
+          case 'fullscreen': return <HeroFullScreen key="hero" {...props} />;
+          case 'minimal': return <HeroMinimal key="hero" {...props} />;
+          case 'asymmetric': return <HeroAsymmetric key="hero" {...props} />;
+          default: return <HeroCentered key="hero" {...props} />;
+        }
+      case 'about':
+        switch (variant) {
+          case 'split': return <AboutSplit key="about" {...props} />;
+          case 'cards': return <AboutCards key="about" {...props} />;
+          default: return <AboutCentered key="about" {...props} />;
+        }
+      case 'tokenomics':
+        switch (variant) {
+          case 'cards': return <TokenomicsCards key="tokenomics" {...props} />;
+          case 'horizontal': return <TokenomicsHorizontal key="tokenomics" {...props} />;
+          case 'circular': return <TokenomicsCircular key="tokenomics" {...props} />;
+          default: return <TokenomicsGrid key="tokenomics" {...props} />;
+        }
+      case 'roadmap':
+        if (!project.showRoadmap) return null;
+        switch (variant) {
+          case 'horizontal': return <RoadmapHorizontal key="roadmap" {...props} />;
+          case 'cards': return <RoadmapCards key="roadmap" {...props} />;
+          case 'zigzag': return <RoadmapZigzag key="roadmap" {...props} />;
+          default: return <RoadmapTimeline key="roadmap" {...props} />;
+        }
+      case 'faq':
+        if (!project.showFaq) return null;
+        switch (variant) {
+          case 'grid': return <FaqGrid key="faq" {...props} />;
+          default: return <FaqAccordion key="faq" {...props} />;
+        }
+      case 'community':
+        switch (variant) {
+          case 'cards': return <CommunityCards key="community" {...props} />;
+          default: return <CommunitySocials key="community" {...props} />;
+        }
+      case 'team':
+        switch (variant) {
+          case 'cards': return <TeamCards key="team" {...props} />;
+          default: return <TeamGrid key="team" {...props} />;
+        }
+      case 'story':
+        return <StorySection key="story" project={project} styles={styles} />;
+      case 'utility':
+        return <UtilitySection key="utility" project={project} styles={styles} />;
+      default:
+        return null;
     }
   };
-
-  const renderRoadmap = () => {
-    if (!project.showRoadmap) return null;
-    const props = { project, styles, personality };
-    switch (roadmapVariant) {
-      case 'horizontal': return <RoadmapHorizontal {...props} />;
-      case 'cards': return <RoadmapCards {...props} />;
-      case 'zigzag': return <RoadmapZigzag {...props} />;
-      default: return <RoadmapTimeline {...props} />;
-    }
-  };
-
-  const hasStory = templateDef?.sections.some(s => s.type === 'story');
-  const hasUtility = templateDef?.sections.some(s => s.type === 'utility');
-  const hasTeam = templateDef?.sections.some(s => s.type === 'team');
-  const hasCommunity = templateDef?.sections.some(s => s.type === 'community');
 
   return (
     <div className="min-h-screen" style={{ background: styles.bgGradient }}>
@@ -200,15 +250,9 @@ const WebsiteRenderer = () => {
       )}
 
       <WebsiteHeader project={project} styles={styles} isEditing={!!project.id} onEdit={handleEdit} />
-      {renderHero()}
-      <AboutSection project={project} styles={styles} />
-      {renderTokenomics()}
-      {hasCommunity && <CommunitySection project={project} styles={styles} />}
-      {hasStory && <StorySection project={project} styles={styles} />}
-      {hasUtility && <UtilitySection project={project} styles={styles} />}
-      {hasTeam && <TeamSection project={project} styles={styles} />}
-      {renderRoadmap()}
-      <FaqSection project={project} styles={styles} />
+      
+      {activeSections.map((section) => renderSection(section))}
+
       <WebsiteFooter styles={styles} />
     </div>
   );

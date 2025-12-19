@@ -24,6 +24,7 @@ import {
 import { useSearchParams, Link } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { useWalletAuth } from "@/hooks/useWalletAuth";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
@@ -134,8 +135,11 @@ const Builder = () => {
         if (error) throw error;
 
         if (project) {
-          // Parse config for tokenomics
-          const config = project.config as { tokenomics?: { totalSupply?: string; circulatingSupply?: string; contractAddress?: string } } | null;
+          // Parse config for tokenomics and sections
+          const config = project.config as { 
+            tokenomics?: { totalSupply?: string; circulatingSupply?: string; contractAddress?: string };
+            sections?: SectionConfig[];
+          } | null;
           
           // Set form data from project
           setFormData({
@@ -154,6 +158,11 @@ const Builder = () => {
             circulatingSupply: config?.tokenomics?.circulatingSupply || "",
             contractAddress: config?.tokenomics?.contractAddress || "",
           });
+
+          // Load sections from config
+          if (config?.sections && Array.isArray(config.sections)) {
+            setSections(config.sections);
+          }
 
           // Set logo preview
           if (project.logo_url) {
@@ -210,6 +219,7 @@ const Builder = () => {
           circulatingSupply: formData.circulatingSupply,
           contractAddress: formData.contractAddress,
         },
+        sections,
       },
       { 
         layout: currentLayout, 
@@ -217,7 +227,7 @@ const Builder = () => {
         templateId: selectedTemplateId || undefined
       }
     );
-  }, [formData, logoPreview, currentLayout, currentPersonality, selectedTemplateId]);
+  }, [formData, logoPreview, currentLayout, currentPersonality, selectedTemplateId, showRoadmap, showFaq, sections]);
 
   // Load template blueprint preview when blueprintId is provided
   useEffect(() => {
@@ -309,7 +319,7 @@ const Builder = () => {
       }
 
       // Update project data
-      const updateData: Record<string, any> = {
+      const updateData: Record<string, unknown> = {
         coin_name: formData.coinName,
         ticker: formData.ticker,
         tagline: formData.tagline || null,
@@ -318,14 +328,23 @@ const Builder = () => {
         discord_url: formData.discord || null,
         telegram_url: formData.telegram || null,
         dex_link: formData.dexLink || null,
-        show_roadmap: formData.showRoadmap,
-        show_faq: formData.showFaq,
+        show_roadmap: showRoadmap,
+        show_faq: showFaq,
         config: {
           tokenomics: {
             totalSupply: formData.totalSupply || null,
             circulatingSupply: formData.circulatingSupply || null,
             contractAddress: formData.contractAddress || null,
           },
+          sections: sections.map(s => ({
+            id: s.id,
+            type: s.type,
+            variant: s.variant,
+            visible: s.visible,
+            order: s.order,
+          })),
+          templateId: selectedTemplateId || null,
+          blueprintId: blueprintId || null,
         },
       };
 
@@ -463,16 +482,23 @@ const Builder = () => {
         finalSubdomain = `${subdomain}-${Math.random().toString(36).substring(2, 6)}`;
       }
 
-      // Create project with blueprint/template config
+      // Create project with blueprint/template config and sections
       const projectConfig = {
         tokenomics: {
           totalSupply: formData.totalSupply || null,
           circulatingSupply: formData.circulatingSupply || null,
           contractAddress: formData.contractAddress || null,
         },
+        sections: sections.map(s => ({
+          id: s.id,
+          type: s.type,
+          variant: s.variant,
+          visible: s.visible,
+          order: s.order,
+        })),
         templateId: selectedTemplateId || null,
         blueprintId: blueprintId || null,
-      };
+      } as Json;
 
       // Create project first (without logo)
       const { data: project, error } = await supabase
@@ -489,8 +515,8 @@ const Builder = () => {
           discord_url: formData.discord || null,
           telegram_url: formData.telegram || null,
           dex_link: formData.dexLink || null,
-          show_roadmap: formData.showRoadmap,
-          show_faq: formData.showFaq,
+          show_roadmap: showRoadmap,
+          show_faq: showFaq,
           subdomain: finalSubdomain,
           status: 'published',
           generated_url: `https://${finalSubdomain}.solsite.xyz`,
@@ -919,6 +945,7 @@ const Builder = () => {
                           });
                           setLogoPreview(null);
                           setLogoFile(null);
+                          setSections(DEFAULT_SECTIONS);
                         }}
                       >
                         Create Another Site
