@@ -2,24 +2,21 @@ name = "solsite-worker"
 main = "src/worker.ts"
 compatibility_date = "2024-01-01"
 
-# Production environment
+# Production environment (default)
 [env.production]
+name = "solsite-worker"
 routes = [
   { pattern = "*.solsite.fun/*", zone_name = "solsite.fun" },
   { pattern = "solsite.fun/*", zone_name = "solsite.fun" }
 ]
 
-# Development/staging
+# Staging environment
 [env.staging]
+name = "solsite-worker-staging"
 routes = [
   { pattern = "*.staging.solsite.fun/*", zone_name = "solsite.fun" }
 ]
 
-# KV namespace for caching (optional, for more control)
-# [[kv_namespaces]]
-# binding = "SITE_CACHE"
-# id = "your-kv-namespace-id"
-
-# Environment variables (set via wrangler secret)
+# Environment variables
 [vars]
 CACHE_TTL = "3600"
