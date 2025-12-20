@@ -43,6 +43,11 @@ export default {
       return handleCors();
     }
 
+    // Handle cache purge endpoint
+    if (url.pathname === '/_purge') {
+      return handleCachePurge(url, hostname);
+    }
+
     try {
       // Determine if this is a subdomain request or custom domain
       const { subdomain, isCustomDomain } = parseHostname(hostname);
@@ -174,6 +179,52 @@ function handleCors(): Response {
       'Access-Control-Max-Age': '86400',
     },
   });
+}
+
+/**
+ * Handle cache purge requests
+ * Usage: GET /_purge - purges cache for the current domain
+ */
+async function handleCachePurge(url: URL, hostname: string): Promise<Response> {
+  try {
+    const cache = caches.default;
+    
+    // Create cache key for the root of this site
+    const siteUrl = new URL('/', `https://${hostname}`);
+    const cacheKey = new Request(siteUrl.toString());
+    
+    const deleted = await cache.delete(cacheKey);
+    
+    console.log(`[Solsite Worker] Cache purge for ${hostname}: ${deleted ? 'SUCCESS' : 'NOT_FOUND'}`);
+    
+    return new Response(JSON.stringify({
+      success: true,
+      hostname,
+      purged: deleted,
+      message: deleted ? 'Cache cleared successfully' : 'No cached entry found',
+      timestamp: new Date().toISOString(),
+    }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'no-store',
+      },
+    });
+  } catch (error) {
+    console.error(`[Solsite Worker] Cache purge error:`, error);
+    return new Response(JSON.stringify({
+      success: false,
+      hostname,
+      error: 'Failed to purge cache',
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
+  }
 }
 
 /**
