@@ -36,6 +36,12 @@ const LOVABLE_ORIGIN = 'https://solsite.lovable.app';
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+
+    // Force HTTPS redirect
+    if (url.protocol === 'http:') {
+      url.protocol = 'https:';
+      return Response.redirect(url.toString(), 301);
+    }
     const hostname = url.hostname.toLowerCase();
     
     // Log request for debugging
