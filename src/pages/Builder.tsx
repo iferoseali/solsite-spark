@@ -36,6 +36,7 @@ import { useWalletAuth } from "@/hooks/useWalletAuth";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { generatePreviewHtml } from "@/lib/preview";
+import { purgeCache } from "@/lib/cachePurge";
 import { PaymentModal } from "@/components/payment/PaymentModal";
 import { usePayment } from "@/hooks/usePayment";
 import { SectionManager, DEFAULT_SECTIONS, type SectionConfig } from "@/components/builder/SectionManager";
@@ -609,6 +610,16 @@ const Builder = () => {
 
       const { error } = await supabase.from('projects').update(updateData).eq('id', generatedProject.id);
       if (error) { toast.error('Failed to save changes'); return; }
+      
+      // Auto-purge cache so users see updated content immediately
+      if (generatedProject.subdomain) {
+        purgeCache(generatedProject.subdomain).then(success => {
+          if (success) {
+            console.log(`Cache purged for ${generatedProject.subdomain}`);
+          }
+        });
+      }
+      
       toast.success('Changes saved!');
       refreshPreview();
     } catch (error) {
