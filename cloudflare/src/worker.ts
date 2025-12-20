@@ -95,21 +95,22 @@ export default {
         return createErrorResponse(originResponse.status);
       }
 
-      // Clone response for caching
+      // Clone response for caching with explicit Content-Type
+      const cacheTtl = parseInt(env.CACHE_TTL || '3600');
+      const contentType = originResponse.headers.get('Content-Type') || 'text/html; charset=utf-8';
+
       response = new Response(originResponse.body, {
         status: originResponse.status,
-        headers: originResponse.headers,
+        headers: new Headers({
+          'Content-Type': contentType,
+          'Cache-Control': `public, max-age=${cacheTtl}, s-maxage=${cacheTtl}`,
+          'X-Cache-Status': 'MISS',
+          'X-Served-By': 'cloudflare-edge',
+        }),
       });
 
-      // Set cache headers
-      const cacheTtl = parseInt(env.CACHE_TTL || '3600');
-      
       // Only cache successful responses
       if (originResponse.status === 200) {
-        response.headers.set('Cache-Control', `public, max-age=${cacheTtl}, s-maxage=${cacheTtl}`);
-        response.headers.set('X-Cache-Status', 'MISS');
-        response.headers.set('X-Served-By', 'cloudflare-edge');
-        
         // Store in cache (don't await, let it happen in background)
         ctx.waitUntil(cache.put(cacheKey, response.clone()));
       }
