@@ -131,8 +131,16 @@ export function generatePreviewHtml(project: ProjectData, config: TemplateConfig
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${data.coinName} (${data.ticker}) - Official Website</title>
-  ${data.logoUrl ? `<link rel="icon" type="image/png" href="${data.logoUrl}">` : ''}
-  ${data.logoUrl ? `<meta property="og:image" content="${data.logoUrl}">` : ''}
+  <meta name="description" content="${data.tagline || data.description || `${data.coinName} - The next big thing on Solana`}">
+  <link rel="icon" type="image/png" href="${data.logoUrl || 'https://www.solsite.fun/favicon.png'}">
+  <meta property="og:title" content="${data.coinName} (${data.ticker})">
+  <meta property="og:description" content="${data.tagline || data.description || `${data.coinName} - The next big thing on Solana`}">
+  <meta property="og:image" content="${data.logoUrl || 'https://www.solsite.fun/favicon.png'}">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${data.coinName} (${data.ticker})">
+  <meta name="twitter:description" content="${data.tagline || data.description || `${data.coinName} - The next big thing on Solana`}">
+  <meta name="twitter:image" content="${data.logoUrl || 'https://www.solsite.fun/favicon.png'}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="${fontsUrl}" rel="stylesheet">

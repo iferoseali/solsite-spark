@@ -2379,10 +2379,15 @@ function generateWebsiteHTML(project: Project, template: Template | null, templa
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${project.coin_name} ($${project.ticker}) - Official Website</title>
   <meta name="description" content="${project.tagline || project.description || `${project.coin_name} - The next big thing on Solana`}">
+  <link rel="icon" type="image/png" href="${project.logo_url || 'https://www.solsite.fun/favicon.png'}">
   <meta property="og:title" content="${project.coin_name} ($${project.ticker})">
   <meta property="og:description" content="${project.tagline || project.description || `${project.coin_name} - The next big thing on Solana`}">
-  ${project.logo_url ? `<meta property="og:image" content="${project.logo_url}">` : ''}
-  ${project.logo_url ? `<link rel="icon" type="image/png" href="${project.logo_url}">` : ''}
+  <meta property="og:image" content="${project.logo_url || 'https://www.solsite.fun/favicon.png'}">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${project.coin_name} ($${project.ticker})">
+  <meta name="twitter:description" content="${project.tagline || project.description || `${project.coin_name} - The next big thing on Solana`}">
+  <meta name="twitter:image" content="${project.logo_url || 'https://www.solsite.fun/favicon.png'}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="${generateFontsLink(config)}" rel="stylesheet">
