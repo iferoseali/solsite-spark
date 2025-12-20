@@ -536,27 +536,38 @@ const Builder = () => {
 
         // Apply blueprint sections if available, mapping types correctly
         if (blueprint?.sections && Array.isArray(blueprint.sections)) {
-          const blueprintSections = blueprint.sections as Array<{
-            id?: string;
-            type: string;
-            variant?: string;
-            layout?: string;
-            visible?: boolean;
-            order?: number;
-          }>;
+        const blueprintSections = blueprint.sections as Array<
+          string | { id?: string; type?: string; variant?: string; layout?: string; visible?: boolean; order?: number }
+        >;
 
-          // Map and filter valid sections
+          // Map and filter valid sections - handle both string[] and object[] formats
           const mappedSections: SectionConfig[] = [];
           blueprintSections.forEach((s, i) => {
-            const mappedType = mapBlueprintTypeToSectionType(s.type);
-            if (mappedType) {
-              mappedSections.push({
-                id: s.id || generateSectionId(mappedType),
-                type: mappedType,
-                variant: s.variant || s.layout || 'default',
-                visible: s.visible ?? true,
-                order: s.order ?? i,
-              });
+            // Handle string format: ['hero', 'features']
+            if (typeof s === 'string') {
+              const mappedType = mapBlueprintTypeToSectionType(s);
+              if (mappedType) {
+                mappedSections.push({
+                  id: generateSectionId(mappedType),
+                  type: mappedType,
+                  variant: 'default',
+                  visible: true,
+                  order: i,
+                });
+              }
+            }
+            // Handle object format: [{type: 'hero', variant: 'centered'}]
+            else if (typeof s === 'object' && s !== null) {
+              const mappedType = mapBlueprintTypeToSectionType(s.type);
+              if (mappedType) {
+                mappedSections.push({
+                  id: s.id || generateSectionId(mappedType),
+                  type: mappedType,
+                  variant: s.variant || s.layout || 'default',
+                  visible: s.visible ?? true,
+                  order: s.order ?? i,
+                });
+              }
             }
           });
 

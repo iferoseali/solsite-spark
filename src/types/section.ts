@@ -125,6 +125,7 @@ const BLUEPRINT_TYPE_MAP: Record<string, SectionType | null> = {
   cta: null,
 };
 
-export function mapBlueprintTypeToSectionType(blueprintType: string): SectionType | null {
+export function mapBlueprintTypeToSectionType(blueprintType: string | undefined | null): SectionType | null {
+  if (!blueprintType) return null;
   return BLUEPRINT_TYPE_MAP[blueprintType.toLowerCase()] ?? null;
 }
