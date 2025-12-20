@@ -1,91 +1,74 @@
-# Cloudflare Worker for Solsite
+# Solsite Cloudflare Worker
 
-This directory contains the Cloudflare Worker that handles:
-- Wildcard subdomain routing for `*.solsite.fun`
-- Custom domain proxying
-- Edge caching for faster global performance
-- DDoS protection via Cloudflare
+Handles wildcard subdomain routing (`*.solsite.fun`) and custom domain proxying with edge caching.
 
-## Setup Instructions
+## Quick Deploy
 
-### 1. Prerequisites
-- Cloudflare account with `solsite.fun` domain added
-- Node.js installed locally
-- Wrangler CLI: `npm install -g wrangler`
-
-### 2. Authenticate with Cloudflare
 ```bash
-wrangler login
-```
-
-### 3. Configure Environment Variables
-Create a `.dev.vars` file (do not commit this):
-```
-SUPABASE_URL=https://bzbxdiaqpbroxhcibtpm.supabase.co
-```
-
-Add production secrets:
-```bash
-wrangler secret put SUPABASE_URL
-```
-
-### 4. Deploy the Worker
-```bash
+# 1. Navigate to cloudflare directory
 cd cloudflare
-wrangler deploy
+
+# 2. Install dependencies
+npm install
+
+# 3. Login to Cloudflare
+npx wrangler login
+
+# 4. Set the Supabase URL secret
+npx wrangler secret put SUPABASE_URL --env production
+# Enter: https://bzbxdiaqpbroxhcibtpm.supabase.co
+
+# 5. Deploy to production
+npm run deploy
 ```
 
-### 5. Configure DNS Routes
+## Expected Output
 
-In Cloudflare Dashboard → DNS:
+After successful deployment, you should see:
+```
+Uploaded solsite-worker (X.XX sec)
+Published solsite-worker (X.XX sec)
+  *.solsite.fun/*
+  solsite.fun/*
+```
 
-1. **Wildcard A Record** (for subdomains):
-   - Type: `A`
-   - Name: `*`
-   - Content: `185.158.133.1` (or use proxied)
-   - Proxy status: Proxied (orange cloud)
+## DNS Configuration
 
-2. **Root A Record**:
-   - Type: `A`
-   - Name: `@`
-   - Content: `185.158.133.1`
-   - Proxy status: Proxied
+Add these records in Cloudflare Dashboard → DNS:
 
-### 6. Configure Worker Routes
-
-In Cloudflare Dashboard → Workers Routes:
-
-1. Add route: `*.solsite.fun/*` → `solsite-worker`
-2. Add route: `solsite.fun/*` → `solsite-worker` (for root domain)
-
-### 7. Custom Domains
-
-For users with custom domains pointing to `185.158.133.1`:
-- They need to add their domain to Cloudflare (free plan works)
-- Configure A record pointing to the Worker
-- Or use CNAME flattening to `proxy.solsite.fun`
+| Type | Name | Content | Proxy |
+|------|------|---------|-------|
+| A | @ | 185.158.133.1 | ✅ Proxied |
+| A | * | 185.158.133.1 | ✅ Proxied |
+| A | www | 185.158.133.1 | ✅ Proxied |
 
 ## Architecture
 
 ```
-┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
-│  User Request    │────▶│ Cloudflare Edge  │────▶│ Supabase Edge    │
-│ coin.solsite.fun │     │ (Worker + Cache) │     │ (render-site)    │
-└──────────────────┘     └──────────────────┘     └──────────────────┘
-                                  │
-                                  ▼
-                         ┌──────────────────┐
-                         │  Edge Cache      │
-                         │  (1 hour TTL)    │
-                         └──────────────────┘
+User Request → Cloudflare Edge (Worker + Cache) → Supabase Edge Function (render-site)
+     ↓
+coin.solsite.fun → Check cache → If MISS, fetch from Supabase → Cache response (1hr TTL)
 ```
 
-## Cache Behavior
+## Commands
 
-- Published sites: Cached for 1 hour at edge
-- Preview/Draft: No caching, always fresh
-- Cache is automatically purged when sites are updated (via API)
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Local development |
+| `npm run deploy` | Deploy to production |
+| `npm run deploy:staging` | Deploy to staging |
+| `npm run tail` | View live logs |
 
-## Monitoring
+## Troubleshooting
 
-View logs in Cloudflare Dashboard → Workers → solsite-worker → Logs
+**"You need to register a workers.dev subdomain"**
+- This warning can be ignored if routes are configured
+- Check that `solsite.fun` is added to your Cloudflare account
+
+**Routes not showing after deploy**
+- Verify `zone_name = "solsite.fun"` in wrangler.toml
+- Ensure the domain is active in Cloudflare
+
+**Cache not working**
+- Check `X-Cache-Status` header in response
+- Use `wrangler tail` to see cache HIT/MISS logs
