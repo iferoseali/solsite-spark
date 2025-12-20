@@ -8,7 +8,7 @@ const Site = () => {
   useEffect(() => {
     if (subdomain) {
       // Redirect to the public site URL
-      window.location.href = `https://${subdomain}.solsite.xyz`;
+      window.location.href = `https://${subdomain}.solsite.fun`;
     } else {
       // No subdomain provided, go back to dashboard
       navigate("/dashboard");

@@ -5,14 +5,14 @@ compatibility_date = "2024-01-01"
 # Production environment
 [env.production]
 routes = [
-  { pattern = "*.solsite.xyz/*", zone_name = "solsite.xyz" },
-  { pattern = "solsite.xyz/*", zone_name = "solsite.xyz" }
+  { pattern = "*.solsite.fun/*", zone_name = "solsite.fun" },
+  { pattern = "solsite.fun/*", zone_name = "solsite.fun" }
 ]
 
 # Development/staging
 [env.staging]
 routes = [
-  { pattern = "*.staging.solsite.xyz/*", zone_name = "solsite.xyz" }
+  { pattern = "*.staging.solsite.fun/*", zone_name = "solsite.fun" }
 ]
 
 # KV namespace for caching (optional, for more control)

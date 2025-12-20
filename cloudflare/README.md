@@ -1,7 +1,7 @@
 # Cloudflare Worker for Solsite
 
 This directory contains the Cloudflare Worker that handles:
-- Wildcard subdomain routing for `*.solsite.xyz`
+- Wildcard subdomain routing for `*.solsite.fun`
 - Custom domain proxying
 - Edge caching for faster global performance
 - DDoS protection via Cloudflare
@@ -9,7 +9,7 @@ This directory contains the Cloudflare Worker that handles:
 ## Setup Instructions
 
 ### 1. Prerequisites
-- Cloudflare account with `solsite.xyz` domain added
+- Cloudflare account with `solsite.fun` domain added
 - Node.js installed locally
 - Wrangler CLI: `npm install -g wrangler`
 
@@ -55,22 +55,22 @@ In Cloudflare Dashboard → DNS:
 
 In Cloudflare Dashboard → Workers Routes:
 
-1. Add route: `*.solsite.xyz/*` → `solsite-worker`
-2. Add route: `solsite.xyz/*` → `solsite-worker` (for root domain)
+1. Add route: `*.solsite.fun/*` → `solsite-worker`
+2. Add route: `solsite.fun/*` → `solsite-worker` (for root domain)
 
 ### 7. Custom Domains
 
 For users with custom domains pointing to `185.158.133.1`:
 - They need to add their domain to Cloudflare (free plan works)
 - Configure A record pointing to the Worker
-- Or use CNAME flattening to `proxy.solsite.xyz`
+- Or use CNAME flattening to `proxy.solsite.fun`
 
 ## Architecture
 
 ```
 ┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
 │  User Request    │────▶│ Cloudflare Edge  │────▶│ Supabase Edge    │
-│ coin.solsite.xyz │     │ (Worker + Cache) │     │ (render-site)    │
+│ coin.solsite.fun │     │ (Worker + Cache) │     │ (render-site)    │
 └──────────────────┘     └──────────────────┘     └──────────────────┘
                                   │
                                   ▼
