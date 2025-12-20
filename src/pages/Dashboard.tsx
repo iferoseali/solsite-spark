@@ -7,7 +7,7 @@ import { WalletVerification } from "@/components/wallet/WalletVerification";
 import { useWalletAuth } from "@/hooks/useWalletAuth";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-import { Plus, Wallet } from "lucide-react";
+import { Plus, Wallet, RefreshCw } from "lucide-react";
 import { useUserProjects, useDeleteProject, useUpdateProject, useDuplicateProject } from "@/hooks/queries/useProjects";
 import { ProjectCard } from "@/components/dashboard/ProjectCard";
 import { EmptyState } from "@/components/dashboard/EmptyState";
@@ -33,7 +33,7 @@ const Dashboard = () => {
   const { setVisible } = useWalletModal();
   const { isVerified, user, isVerifying, isLoading: isAuthLoading } = useWalletAuth();
   
-  const { data: projects = [], isLoading: isProjectsLoading } = useUserProjects(user?.id);
+  const { data: projects = [], isLoading: isProjectsLoading, refetch, isFetching } = useUserProjects(user?.id);
   const deleteProjectMutation = useDeleteProject();
   const updateProjectMutation = useUpdateProject();
   const duplicateProjectMutation = useDuplicateProject();
@@ -198,14 +198,26 @@ const Dashboard = () => {
               </p>
             </div>
             
-            {typedProjects.length > 0 && (
-              <Link to="/builder">
-                <Button variant="glow" className="gap-2">
-                  <Plus className="w-4 h-4" />
-                  New Project
-                </Button>
-              </Link>
-            )}
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="shrink-0"
+              >
+                <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
+              </Button>
+              
+              {typedProjects.length > 0 && (
+                <Link to="/builder">
+                  <Button variant="glow" className="gap-2">
+                    <Plus className="w-4 h-4" />
+                    New Project
+                  </Button>
+                </Link>
+              )}
+            </div>
           </div>
 
           {/* Content */}
