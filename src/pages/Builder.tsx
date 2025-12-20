@@ -713,24 +713,64 @@ const Builder = () => {
         features: features.map(f => ({ id: f.id, title: f.title, description: f.description, icon: f.icon })),
         templateId: selectedTemplateId || null,
         blueprintId: blueprintId || null,
-      } as unknown as Json;
+      };
 
-      const { data: project, error } = await supabase.from('projects').insert([{
-        user_id: user.id, template_id: templateId, coin_name: formData.coinName, ticker: formData.ticker,
-        tagline: formData.tagline || null, description: formData.description || null, logo_url: null,
-        twitter_url: formData.twitter || null, discord_url: formData.discord || null, telegram_url: formData.telegram || null,
-        dex_link: formData.dexLink || null, show_roadmap: showRoadmap, show_faq: showFaq,
-        subdomain: finalSubdomain, status: 'published', generated_url: `https://${finalSubdomain}.solsite.fun`, config: projectConfig
-      }]).select().single();
+      const { data, error } = await supabase.functions.invoke('manage-project', {
+        body: {
+          action: 'create',
+          user_id: user.id,
+          wallet_address: user.wallet_address,
+          template_id: templateId || undefined,
+          coin_name: formData.coinName,
+          ticker: formData.ticker,
+          tagline: formData.tagline || undefined,
+          description: formData.description || undefined,
+          twitter_url: formData.twitter || undefined,
+          discord_url: formData.discord || undefined,
+          telegram_url: formData.telegram || undefined,
+          dex_link: formData.dexLink || undefined,
+          show_roadmap: showRoadmap,
+          show_faq: showFaq,
+          subdomain: finalSubdomain,
+          config: projectConfig,
+        },
+      });
 
-      if (error) { toast.error('Failed to create website'); return; }
-      if (logoFile) { const logoUrl = await uploadLogo(project.id); if (logoUrl) await supabase.from('projects').update({ logo_url: logoUrl }).eq('id', project.id); }
-      await supabase.from('domains').insert({ project_id: project.id, subdomain: finalSubdomain, status: 'active' });
-      setGeneratedProject({ id: project.id, subdomain: finalSubdomain });
+      const project = (data as any)?.project;
+      if (error || !project?.id) {
+        console.error('Failed to create project:', error, data);
+        toast.error((data as any)?.error || 'Failed to create website');
+        return;
+      }
+
+      if (logoFile) {
+        const logoUrl = await uploadLogo(project.id);
+        if (logoUrl) {
+          const { error: updateError, data: updateData } = await supabase.functions.invoke('manage-project', {
+            body: {
+              action: 'update',
+              project_id: project.id,
+              user_id: user.id,
+              wallet_address: user.wallet_address,
+              updates: { logo_url: logoUrl },
+            },
+          });
+
+          if (updateError) {
+            console.error('Failed to update logo:', updateError, updateData);
+          }
+        }
+      }
+
+      setGeneratedProject({ id: project.id, subdomain: project.subdomain || finalSubdomain });
       clearDraft(); // Clear draft after successful generation
       toast.success('Website generated successfully!');
-    } catch { toast.error('Failed to generate website'); } 
-    finally { setIsGenerating(false); }
+    } catch (err) {
+      console.error('Project generation failed:', err);
+      toast.error('Failed to generate website');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const subdomain = formData.coinName ? generateSubdomain(formData.coinName) : 'yourcoin';
