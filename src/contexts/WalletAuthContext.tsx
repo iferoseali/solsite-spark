@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode, useRef } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import bs58 from 'bs58';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,6 +38,9 @@ export const WalletAuthProvider = ({ children }: { children: ReactNode }) => {
   const [isVerified, setIsVerified] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Avoid clearing sessions during initial wallet adapter hydration
+  const wasConnectedRef = useRef(false);
+
   // Generate a message to sign for authentication
   const generateAuthMessage = useCallback((nonce: string) => {
     return `Sign this message to verify your wallet ownership on Solsite.\n\nNonce: ${nonce}\nTimestamp: ${Date.now()}`;
@@ -63,13 +66,13 @@ export const WalletAuthProvider = ({ children }: { children: ReactNode }) => {
       const stored = localStorage.getItem(WALLET_SESSION_KEY);
       if (stored) {
         const session: WalletSession = JSON.parse(stored);
-        
+
         // Check if session has expired
         if (Date.now() - session.verifiedAt > SESSION_EXPIRY_MS) {
           localStorage.removeItem(WALLET_SESSION_KEY);
           return null;
         }
-        
+
         return session;
       }
     } catch {
@@ -103,17 +106,17 @@ export const WalletAuthProvider = ({ children }: { children: ReactNode }) => {
       // Generate a random nonce
       const nonce = Math.random().toString(36).substring(2, 15);
       const message = generateAuthMessage(nonce);
-      
+
       // Request signature from wallet
       const encodedMessage = new TextEncoder().encode(message);
       const signature = await signMessage(encodedMessage);
-      
+
       // Convert signature to base58 for verification
       const signatureBase58 = bs58.encode(signature);
-      
-      // Send to edge function for server-side verification
+
+      // Send to backend function for server-side verification
       const walletAddress = publicKey.toBase58();
-      
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/wallet-auth`,
         {
@@ -122,13 +125,13 @@ export const WalletAuthProvider = ({ children }: { children: ReactNode }) => {
           body: JSON.stringify({
             wallet_address: walletAddress,
             signature: signatureBase58,
-            message: message
-          })
+            message: message,
+          }),
         }
       );
 
       const result = await response.json();
-      
+
       if (!response.ok || !result.success) {
         console.error('Auth failed:', result.error);
         toast.error(result.error || 'Failed to verify wallet');
@@ -153,14 +156,18 @@ export const WalletAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [publicKey, signMessage, generateAuthMessage, saveSession]);
 
-  // Reset state when wallet disconnects
+  // Reset state only when an actual disconnect happens (not on initial load)
   useEffect(() => {
     if (!connected) {
-      setUser(null);
-      setIsVerified(false);
-      clearSession();
+      if (wasConnectedRef.current) {
+        setUser(null);
+        setIsVerified(false);
+        clearSession();
+      }
       setIsLoading(false);
     }
+
+    wasConnectedRef.current = connected;
   }, [connected, clearSession]);
 
   // Auto-fetch user data when wallet connects
@@ -173,18 +180,18 @@ export const WalletAuthProvider = ({ children }: { children: ReactNode }) => {
 
       setIsLoading(true);
       const walletAddress = publicKey.toBase58();
-      
+
       try {
         // Check if we have a stored session for this wallet
         const storedSession = getStoredSession();
-        
+
         // Fetch user from database
         const existingUser = await fetchUser(walletAddress);
 
         if (existingUser) {
           setUser(existingUser);
           setIsVerified(true);
-          
+
           // Update session if it was for a different wallet or missing
           if (!storedSession || storedSession.walletAddress !== walletAddress) {
             saveSession(walletAddress);

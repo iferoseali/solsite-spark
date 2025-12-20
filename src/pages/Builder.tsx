@@ -589,39 +589,55 @@ const Builder = () => {
     if (!generatedProject || !user) return;
     setIsSaving(true);
     try {
-      let logoUrl = undefined;
+      let logoUrl: string | null | undefined = undefined;
       if (logoFile) logoUrl = await uploadLogo(generatedProject.id);
 
-      const updateData: Record<string, unknown> = {
-        coin_name: formData.coinName,
-        ticker: formData.ticker,
-        tagline: formData.tagline || null,
-        description: formData.description || null,
-        twitter_url: formData.twitter || null,
-        discord_url: formData.discord || null,
-        telegram_url: formData.telegram || null,
-        dex_link: formData.dexLink || null,
-        show_roadmap: showRoadmap,
-        show_faq: showFaq,
-        config: {
-          tokenomics: { totalSupply: formData.totalSupply || null, circulatingSupply: formData.circulatingSupply || null, contractAddress: formData.contractAddress || null },
-          sections: sections.map(s => ({ id: s.id, type: s.type, variant: s.variant, visible: s.visible, order: s.order })),
-          faqItems, roadmapPhases, teamMembers, features,
-          templateId: selectedTemplateId || null,
-          blueprintId: blueprintId || null,
-          buyNowLink: formData.buyNowLink || null,
-          buyNowText: formData.buyNowText || null,
-          showBuyNow: formData.showBuyNow,
-          learnMoreLink: formData.learnMoreLink || null,
-          learnMoreText: formData.learnMoreText || null,
-          showLearnMore: formData.showLearnMore,
-        },
+      const config = {
+        tokenomics: { totalSupply: formData.totalSupply || null, circulatingSupply: formData.circulatingSupply || null, contractAddress: formData.contractAddress || null },
+        sections: sections.map(s => ({ id: s.id, type: s.type, variant: s.variant, visible: s.visible, order: s.order })),
+        faqItems,
+        roadmapPhases,
+        teamMembers,
+        features,
+        templateId: selectedTemplateId || null,
+        blueprintId: blueprintId || null,
+        buyNowLink: formData.buyNowLink || null,
+        buyNowText: formData.buyNowText || null,
+        showBuyNow: formData.showBuyNow,
+        learnMoreLink: formData.learnMoreLink || null,
+        learnMoreText: formData.learnMoreText || null,
+        showLearnMore: formData.showLearnMore,
       };
-      if (logoUrl) updateData.logo_url = logoUrl;
 
-      const { error } = await supabase.from('projects').update(updateData).eq('id', generatedProject.id);
-      if (error) { toast.error('Failed to save changes'); return; }
-      
+      const { data, error } = await supabase.functions.invoke('manage-project', {
+        body: {
+          action: 'update',
+          project_id: generatedProject.id,
+          user_id: user.id,
+          wallet_address: user.wallet_address,
+          updates: {
+            coin_name: formData.coinName,
+            ticker: formData.ticker,
+            tagline: formData.tagline || null,
+            description: formData.description || null,
+            twitter_url: formData.twitter || null,
+            discord_url: formData.discord || null,
+            telegram_url: formData.telegram || null,
+            dex_link: formData.dexLink || null,
+            show_roadmap: showRoadmap,
+            show_faq: showFaq,
+            config,
+            ...(logoUrl ? { logo_url: logoUrl } : {}),
+          },
+        },
+      });
+
+      if (error) {
+        console.error('Save changes failed:', error, data);
+        toast.error((data as any)?.error || 'Failed to save changes');
+        return;
+      }
+
       // Auto-purge cache so users see updated content immediately
       if (generatedProject.subdomain) {
         purgeCache(generatedProject.subdomain).then(success => {
@@ -630,10 +646,11 @@ const Builder = () => {
           }
         });
       }
-      
+
       toast.success('Changes saved!');
       refreshPreview();
-    } catch (error) {
+    } catch (err) {
+      console.error('Save changes failed:', err);
       toast.error('Failed to save changes');
     } finally {
       setIsSaving(false);
