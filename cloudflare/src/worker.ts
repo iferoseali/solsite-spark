@@ -95,14 +95,16 @@ export default {
         return createErrorResponse(originResponse.status);
       }
 
-      // Clone response for caching with explicit Content-Type
+      // Clone response for caching - FORCE text/html since render-site only returns HTML
       const cacheTtl = parseInt(env.CACHE_TTL || '3600');
-      const contentType = originResponse.headers.get('Content-Type') || 'text/html; charset=utf-8';
 
-      response = new Response(originResponse.body, {
+      // Read the HTML content to ensure proper handling
+      const htmlContent = await originResponse.text();
+
+      response = new Response(htmlContent, {
         status: originResponse.status,
         headers: new Headers({
-          'Content-Type': contentType,
+          'Content-Type': 'text/html; charset=utf-8',  // Always force text/html
           'Cache-Control': `public, max-age=${cacheTtl}, s-maxage=${cacheTtl}`,
           'X-Cache-Status': 'MISS',
           'X-Served-By': 'cloudflare-edge',
