@@ -154,7 +154,7 @@ Deno.serve(async (req) => {
           show_faq: body.show_faq !== false,
           subdomain: finalSubdomain,
           status: 'published',
-          generated_url: `https://${finalSubdomain}.solsite.xyz`,
+          generated_url: `https://${finalSubdomain}.solsite.fun`,
           config: body.config || {}
         })
         .select()

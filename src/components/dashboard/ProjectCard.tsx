@@ -60,7 +60,7 @@ export function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate, o
   // For published sites, link directly to the live subdomain
   // For drafts, use the edge function preview
   const liveUrl = isPublished && project.subdomain 
-    ? `https://${project.subdomain}.solsite.xyz` 
+    ? `https://${project.subdomain}.solsite.fun` 
     : null;
   const previewUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?preview=true&templateId=${templateId}&projectId=${project.id}`;
 

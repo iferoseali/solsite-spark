@@ -28,7 +28,7 @@ const RESERVED_SUBDOMAINS = new Set([
 ]);
 
 // Main domain that serves the app
-const APP_DOMAIN = 'solsite.xyz';
+const APP_DOMAIN = 'solsite.fun';
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -50,7 +50,7 @@ export default {
       // If it's the main app domain without subdomain, redirect to app
       if (!subdomain && !isCustomDomain) {
         // Root domain - could serve landing page or redirect
-        return Response.redirect('https://app.solsite.xyz', 302);
+        return Response.redirect('https://app.solsite.fun', 302);
       }
 
       // Check if subdomain is reserved
@@ -267,7 +267,7 @@ function createErrorResponse(status: number): Response {
     <div class="status">${status}</div>
     <h1>${title}</h1>
     <p>${message}</p>
-    <a href="https://solsite.xyz">Create Your Site</a>
+    <a href="https://solsite.fun">Create Your Site</a>
   </div>
   <div class="powered">Powered by Solsite</div>
 </body>
