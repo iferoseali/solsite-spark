@@ -24,6 +24,7 @@ interface WalletAuthContextType {
 const WalletAuthContext = createContext<WalletAuthContextType | null>(null);
 
 const WALLET_SESSION_KEY = 'solsite_wallet_session';
+const SESSION_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 interface WalletSession {
   walletAddress: string;
@@ -56,12 +57,20 @@ export const WalletAuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem(WALLET_SESSION_KEY);
   }, []);
 
-  // Get stored session
+  // Get stored session (returns null if expired)
   const getStoredSession = useCallback((): WalletSession | null => {
     try {
       const stored = localStorage.getItem(WALLET_SESSION_KEY);
       if (stored) {
-        return JSON.parse(stored);
+        const session: WalletSession = JSON.parse(stored);
+        
+        // Check if session has expired
+        if (Date.now() - session.verifiedAt > SESSION_EXPIRY_MS) {
+          localStorage.removeItem(WALLET_SESSION_KEY);
+          return null;
+        }
+        
+        return session;
       }
     } catch {
       // Invalid JSON, clear it
