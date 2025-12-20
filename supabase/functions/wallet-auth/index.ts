@@ -1,4 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import nacl from 'https://esm.sh/tweetnacl@1.0.3'
+import bs58 from 'https://esm.sh/bs58@5.0.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -54,9 +56,35 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Note: Full signature verification would require nacl/tweetnacl library
-    // For now, we accept the signature if format is valid
-    // In production, implement proper Ed25519 signature verification
+    // Cryptographically verify the Ed25519 signature
+    try {
+      const messageBytes = new TextEncoder().encode(message);
+      const signatureBytes = bs58.decode(signature);
+      const publicKeyBytes = bs58.decode(wallet_address);
+
+      // Verify signature using tweetnacl
+      const isValid = nacl.sign.detached.verify(
+        messageBytes,
+        signatureBytes,
+        publicKeyBytes
+      );
+
+      if (!isValid) {
+        console.log('Signature verification failed for wallet:', wallet_address);
+        return new Response(
+          JSON.stringify({ error: 'Invalid signature - verification failed' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('Signature verified successfully for wallet:', wallet_address);
+    } catch (verifyError) {
+      console.error('Signature verification error:', verifyError);
+      return new Response(
+        JSON.stringify({ error: 'Invalid signature format or verification error' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Create Supabase client with service role key (bypasses RLS)
     const supabaseAdmin = createClient(

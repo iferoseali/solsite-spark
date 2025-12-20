@@ -5,6 +5,86 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// HTML sanitization utilities to prevent XSS attacks
+function escapeHtml(str: string | null | undefined): string {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+function escapeAttr(str: string | null | undefined): string {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/`/g, '&#x60;')
+    .replace(/=/g, '&#x3D;');
+}
+
+function sanitizeUrl(url: string | null | undefined): string {
+  if (!url) return '';
+  const trimmed = url.trim();
+  
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return escapeAttr(trimmed);
+    }
+  } catch {
+    // If URL parsing fails, check if it's a relative URL starting with /
+    if (trimmed.startsWith('/')) {
+      return escapeAttr(trimmed);
+    }
+  }
+  
+  // Block javascript:, data:, vbscript:, etc.
+  return '';
+}
+
+// Sanitize all project fields
+interface SanitizedProject {
+  id: string;
+  coin_name: string;
+  ticker: string;
+  tagline: string;
+  description: string;
+  logo_url: string;
+  twitter_url: string;
+  discord_url: string;
+  telegram_url: string;
+  dex_link: string;
+  show_roadmap: boolean;
+  show_faq: boolean;
+  config: Record<string, any>;
+  template_id: string | null;
+}
+
+function sanitizeProject(project: Project): SanitizedProject {
+  return {
+    id: project.id,
+    coin_name: escapeHtml(project.coin_name),
+    ticker: escapeHtml(project.ticker),
+    tagline: escapeHtml(project.tagline),
+    description: escapeHtml(project.description),
+    logo_url: sanitizeUrl(project.logo_url),
+    twitter_url: sanitizeUrl(project.twitter_url),
+    discord_url: sanitizeUrl(project.discord_url),
+    telegram_url: sanitizeUrl(project.telegram_url),
+    dex_link: sanitizeUrl(project.dex_link),
+    show_roadmap: project.show_roadmap,
+    show_faq: project.show_faq,
+    config: project.config || {},
+    template_id: project.template_id,
+  };
+}
+
 interface Project {
   id: string;
   coin_name: string;
@@ -662,11 +742,10 @@ function generateBackgroundEffect(templateId: string, config: TemplateConfig): s
   }
 }
 
-function generateHeroSection(project: Project, config: TemplateConfig, templateId: string): string {
+function generateHeroSection(project: SanitizedProject, config: TemplateConfig, templateId: string): string {
   const logoHtml = project.logo_url 
     ? `<img src="${project.logo_url}" alt="${project.coin_name}" class="hero-logo-img" />`
     : `<div class="hero-logo-placeholder">${project.ticker?.[1] || '?'}</div>`;
-
   switch (config.heroLayout) {
     case 'fullscreen':
       // Degen Meme - Giant ticker, wild animations
@@ -2294,7 +2373,9 @@ function generateTemplateStyles(config: TemplateConfig, templateId: string): str
   return `<style>${baseStyles}${specificStyles}${commonStyles}</style>`;
 }
 
-function generateWebsiteHTML(project: Project, template: Template | null, templateId: string = 'cult_minimal'): string {
+function generateWebsiteHTML(rawProject: Project, template: Template | null, templateId: string = 'cult_minimal'): string {
+  // Sanitize all project data to prevent XSS
+  const project = sanitizeProject(rawProject);
   const config = getTemplateConfig(templateId);
   
   const logoHtml = project.logo_url 
