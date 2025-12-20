@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { SplashScreen } from "@/components/SplashScreen";
 import { PageLoader } from "@/components/ui/page-loader";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { WalletAuthProvider } from "@/contexts/WalletAuthContext";
 
 // Eagerly loaded (critical path)
 import Index from "./pages/Index";
@@ -48,6 +49,7 @@ const App = () => {
         <ThemeProvider defaultTheme="dark">
           <Suspense fallback={<PageLoader />}>
             <WalletProvider>
+              <WalletAuthProvider>
               <TooltipProvider>
                 {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
                 <Toaster />
@@ -88,6 +90,7 @@ const App = () => {
                   </Suspense>
                 </BrowserRouter>
               </TooltipProvider>
+              </WalletAuthProvider>
             </WalletProvider>
           </Suspense>
         </ThemeProvider>

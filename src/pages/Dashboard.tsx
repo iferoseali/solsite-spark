@@ -31,9 +31,9 @@ interface Project {
 const Dashboard = () => {
   const { connected } = useWallet();
   const { setVisible } = useWalletModal();
-  const { isVerified, user, isVerifying } = useWalletAuth();
+  const { isVerified, user, isVerifying, isLoading: isAuthLoading } = useWalletAuth();
   
-  const { data: projects = [], isLoading } = useUserProjects(user?.id);
+  const { data: projects = [], isLoading: isProjectsLoading } = useUserProjects(user?.id);
   const deleteProjectMutation = useDeleteProject();
   const updateProjectMutation = useUpdateProject();
   const duplicateProjectMutation = useDuplicateProject();
@@ -102,6 +102,28 @@ const Dashboard = () => {
       toast.error("Failed to rename project");
     }
   };
+
+  // Loading auth state
+  if (isAuthLoading && connected) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="pt-24 pb-16">
+          <div className="container px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div 
+                  key={i} 
+                  className="aspect-[4/3] rounded-2xl bg-card border border-border animate-pulse" 
+                />
+              ))}
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   // Not connected state
   if (!connected) {
@@ -187,7 +209,7 @@ const Dashboard = () => {
           </div>
 
           {/* Content */}
-          {isLoading ? (
+          {isProjectsLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3].map((i) => (
                 <div 
