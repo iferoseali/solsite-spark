@@ -24,7 +24,7 @@ const steps = [
     icon: Rocket,
     step: "04",
     title: "Launch",
-    description: "Hit generate and get your site live at coinname.solsite.xyz instantly."
+    description: "Hit generate and get your site live at coinname.solsite.fun instantly."
   }
 ];
 

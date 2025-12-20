@@ -53,7 +53,7 @@ export const PreviewControls = ({
           <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
           <div className="w-3 h-3 rounded-full bg-accent/60" />
         </div>
-        <span className="text-xs text-muted-foreground ml-2 font-mono">{subdomain}.solsite.xyz</span>
+        <span className="text-xs text-muted-foreground ml-2 font-mono">{subdomain}.solsite.fun</span>
       </div>
 
       <div className="flex items-center gap-1">

@@ -2418,7 +2418,7 @@ function generateWebsiteHTML(project: Project, template: Template | null, templa
 
   <footer class="footer">
     <div class="container">
-      <p class="footer-built">Built with <a href="https://solsite.xyz" target="_blank">Solsite</a></p>
+      <p class="footer-built">Built with <a href="https://solsite.fun" target="_blank">Solsite</a></p>
       <p class="footer-disclaimer">Solsite provides website infrastructure only. We do not endorse any token. DYOR.</p>
     </div>
   </footer>
@@ -2660,7 +2660,7 @@ function generateNotFoundHTML(): string {
     <h1>404</h1>
     <h2>Site Not Found</h2>
     <p>This meme coin website doesn't exist yet.</p>
-    <a href="https://solsite.xyz">Create Your Site</a>
+    <a href="https://solsite.fun">Create Your Site</a>
   </div>
 </body>
 </html>`;

@@ -698,7 +698,7 @@ const Builder = () => {
         tagline: formData.tagline || null, description: formData.description || null, logo_url: null,
         twitter_url: formData.twitter || null, discord_url: formData.discord || null, telegram_url: formData.telegram || null,
         dex_link: formData.dexLink || null, show_roadmap: showRoadmap, show_faq: showFaq,
-        subdomain: finalSubdomain, status: 'published', generated_url: `https://${finalSubdomain}.solsite.xyz`, config: projectConfig
+        subdomain: finalSubdomain, status: 'published', generated_url: `https://${finalSubdomain}.solsite.fun`, config: projectConfig
       }]).select().single();
 
       if (error) { toast.error('Failed to create website'); return; }
@@ -821,7 +821,7 @@ const Builder = () => {
                 <div className="p-6 rounded-xl bg-accent/10 border border-accent/30">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center"><Check className="w-5 h-5 text-accent" /></div>
-                    <div><p className="font-semibold text-accent">Website Live!</p><p className="text-sm text-muted-foreground">{generatedProject.subdomain}.solsite.xyz</p></div>
+                    <div><p className="font-semibold text-accent">Website Live!</p><p className="text-sm text-muted-foreground">{generatedProject.subdomain}.solsite.fun</p></div>
                   </div>
                   <div className="flex gap-2">
                     <a href={previewUrl!} target="_blank" rel="noopener noreferrer" className="flex-1"><Button variant="accent" className="w-full gap-2"><ExternalLink className="w-4 h-4" />View Live</Button></a>
@@ -1047,7 +1047,7 @@ const Builder = () => {
               {/* Domain Preview */}
               <div className="p-4 rounded-xl glass">
                 <p className="text-sm text-muted-foreground mb-1">{generatedProject ? 'Your site is live at:' : 'Your site will be live at:'}</p>
-                <p className="text-primary font-mono text-sm">{generatedProject?.subdomain || subdomain}.solsite.xyz</p>
+                <p className="text-primary font-mono text-sm">{generatedProject?.subdomain || subdomain}.solsite.fun</p>
               </div>
 
               {/* Generate / Save Button */}
