@@ -3,7 +3,7 @@ import { Check, Sparkles, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const features = [
-  "Free subdomain (coin.solsite.xyz)",
+  "Free subdomain (coin.solsite.fun)",
   "All 30+ templates included",
   "Mobile responsive design",
   "Dynamic animations",

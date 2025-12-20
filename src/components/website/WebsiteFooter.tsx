@@ -11,7 +11,7 @@ export const WebsiteFooter = ({ styles }: WebsiteFooterProps) => {
       style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}
     >
       <a 
-        href="https://solsite.xyz" 
+        href="https://solsite.fun" 
         target="_blank" 
         rel="noopener noreferrer"
         className="text-white/60 hover:text-white transition-colors"

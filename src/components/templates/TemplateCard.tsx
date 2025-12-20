@@ -206,7 +206,7 @@ export const TemplateCard = memo(forwardRef<HTMLDivElement, TemplateCardProps>((
             <div className="w-2 h-2 rounded-full bg-yellow-400" />
             <div className="w-2 h-2 rounded-full bg-green-400" />
             <div className="flex-1 mx-3 h-4 rounded bg-white/5 flex items-center px-2">
-              <span className="text-[8px] text-white/40 truncate">solsite.xyz/preview</span>
+              <span className="text-[8px] text-white/40 truncate">solsite.fun/preview</span>
             </div>
           </div>
           <div className="flex-1 relative overflow-hidden">

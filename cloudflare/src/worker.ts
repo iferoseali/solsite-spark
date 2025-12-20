@@ -2,7 +2,7 @@
  * Solsite Cloudflare Worker
  * 
  * Handles:
- * - Wildcard subdomain routing (*.solsite.xyz)
+ * - Wildcard subdomain routing (*.solsite.fun)
  * - Custom domain proxying
  * - Edge caching for performance
  * - Request logging and analytics
@@ -127,7 +127,7 @@ export default {
  * Parse hostname to extract subdomain or detect custom domain
  */
 function parseHostname(hostname: string): { subdomain: string | null; isCustomDomain: boolean } {
-  // Check if it's a solsite.xyz subdomain
+  // Check if it's a solsite.fun subdomain
   if (hostname.endsWith(`.${APP_DOMAIN}`)) {
     const subdomain = hostname.slice(0, hostname.length - APP_DOMAIN.length - 1);
     return { subdomain: subdomain || null, isCustomDomain: false };

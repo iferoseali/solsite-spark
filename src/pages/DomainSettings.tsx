@@ -209,7 +209,7 @@ const DomainSettings = () => {
               </h1>
               {project && (
                 <p className="text-muted-foreground mt-1">
-                  {project.coin_name} • {project.subdomain}.solsite.xyz
+                  {project.coin_name} • {project.subdomain}.solsite.fun
                 </p>
               )}
             </div>
@@ -356,17 +356,17 @@ const DomainSettings = () => {
                 <CardContent>
                   <div className="flex items-center gap-3">
                     <code className="flex-1 px-4 py-2 bg-muted rounded-lg text-sm font-mono">
-                      {project?.subdomain}.solsite.xyz
+                      {project?.subdomain}.solsite.fun
                     </code>
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => copyToClipboard(`${project?.subdomain}.solsite.xyz`, "URL")}
+                      onClick={() => copyToClipboard(`${project?.subdomain}.solsite.fun`, "URL")}
                     >
                       <Copy className="w-4 h-4" />
                     </Button>
                     <a
-                      href={`https://${project?.subdomain}.solsite.xyz`}
+                      href={`https://${project?.subdomain}.solsite.fun`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
