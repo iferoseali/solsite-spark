@@ -131,6 +131,8 @@ export function generatePreviewHtml(project: ProjectData, config: TemplateConfig
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${data.coinName} (${data.ticker}) - Official Website</title>
+  ${data.logoUrl ? `<link rel="icon" type="image/png" href="${data.logoUrl}">` : ''}
+  ${data.logoUrl ? `<meta property="og:image" content="${data.logoUrl}">` : ''}
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="${fontsUrl}" rel="stylesheet">
