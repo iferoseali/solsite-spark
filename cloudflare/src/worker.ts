@@ -30,6 +30,9 @@ const RESERVED_SUBDOMAINS = new Set([
 // Main domain that serves the app
 const APP_DOMAIN = 'solsite.fun';
 
+// Lovable app origin for proxying (never shown to users)
+const LOVABLE_ORIGIN = 'https://solsite.lovable.app';
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
@@ -52,16 +55,28 @@ export default {
       // Determine if this is a subdomain request or custom domain
       const { subdomain, isCustomDomain } = parseHostname(hostname);
 
-      // If it's the main app domain without subdomain, redirect to app
+      // If it's the main app domain without subdomain, proxy to Lovable app
       if (!subdomain && !isCustomDomain) {
-        // Root domain - could serve landing page or redirect
-        return Response.redirect('https://app.solsite.fun', 302);
+        // Root domain - proxy to Lovable app (URL stays as solsite.fun)
+        const originResponse = await fetch(`${LOVABLE_ORIGIN}${url.pathname}${url.search}`, {
+          method: request.method,
+          headers: request.headers,
+          body: request.body,
+        });
+        return new Response(originResponse.body, {
+          status: originResponse.status,
+          headers: originResponse.headers,
+        });
       }
 
-      // Check if subdomain is reserved
+      // Check if subdomain is reserved - redirect to root domain
       if (subdomain && RESERVED_SUBDOMAINS.has(subdomain)) {
-        // Let these pass through to origin or handle specially
-        return fetch(request);
+        // Redirect app-related subdomains to root domain
+        if (subdomain === 'app' || subdomain === 'dashboard' || subdomain === 'admin' || subdomain === 'www') {
+          return Response.redirect('https://solsite.fun', 302);
+        }
+        // For technical subdomains (mail, smtp, ftp, etc.), return 404
+        return createErrorResponse(404);
       }
 
       // Try to serve from cache first
