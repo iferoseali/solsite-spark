@@ -43,6 +43,7 @@ interface UpdateProjectRequest {
     show_faq?: boolean;
     config?: Record<string, unknown>;
     status?: string;
+    subdomain?: string;
   };
 }
 
@@ -258,6 +259,54 @@ Deno.serve(async (req) => {
         }
       }
 
+      // Handle subdomain change
+      let oldSubdomain: string | null = null;
+      if (body.updates.subdomain !== undefined) {
+        const newSubdomain = body.updates.subdomain.toLowerCase().trim();
+        
+        // Validate subdomain format
+        if (!validateSubdomain(newSubdomain)) {
+          return new Response(
+            JSON.stringify({ error: 'Invalid subdomain format. Use only lowercase letters, numbers, and hyphens.' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Get current subdomain for cache purging
+        const { data: currentProject } = await supabaseAdmin
+          .from('projects')
+          .select('subdomain')
+          .eq('id', body.project_id)
+          .single();
+        
+        oldSubdomain = currentProject?.subdomain || null;
+
+        // Check if new subdomain is different and available
+        if (newSubdomain !== oldSubdomain) {
+          const { data: existingDomain } = await supabaseAdmin
+            .from('domains')
+            .select('id, project_id')
+            .eq('subdomain', newSubdomain)
+            .maybeSingle();
+
+          if (existingDomain && existingDomain.project_id !== body.project_id) {
+            return new Response(
+              JSON.stringify({ error: 'This subdomain is already taken' }),
+              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+
+          updates.subdomain = newSubdomain;
+          updates.generated_url = `https://${newSubdomain}.solsite.fun`;
+
+          // Update domains table
+          await supabaseAdmin
+            .from('domains')
+            .update({ subdomain: newSubdomain, updated_at: new Date().toISOString() })
+            .eq('project_id', body.project_id);
+        }
+      }
+
       // Update project
       const { data: updatedProject, error: updateError } = await supabaseAdmin
         .from('projects')
@@ -276,7 +325,7 @@ Deno.serve(async (req) => {
 
       console.log('Project updated:', body.project_id);
       return new Response(
-        JSON.stringify({ success: true, project: updatedProject }),
+        JSON.stringify({ success: true, project: updatedProject, oldSubdomain }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

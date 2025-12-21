@@ -133,6 +133,72 @@ export const domainService = {
   },
 
   /**
+   * Update subdomain for a project
+   */
+  async updateSubdomain(
+    projectId: string, 
+    userId: string, 
+    walletAddress: string, 
+    newSubdomain: string
+  ): Promise<{ success: boolean; message: string; oldSubdomain?: string }> {
+    try {
+      const response = await supabase.functions.invoke("manage-project", {
+        body: {
+          action: "update",
+          project_id: projectId,
+          user_id: userId,
+          wallet_address: walletAddress,
+          updates: {
+            subdomain: newSubdomain,
+          },
+        },
+      });
+
+      if (response.error) {
+        console.error("Subdomain update error:", response.error);
+        return { success: false, message: response.error.message || "Failed to update subdomain" };
+      }
+
+      if (response.data?.error) {
+        return { success: false, message: response.data.error };
+      }
+
+      return { 
+        success: true, 
+        message: "Subdomain updated successfully",
+        oldSubdomain: response.data?.oldSubdomain 
+      };
+    } catch (error) {
+      console.error("Failed to update subdomain:", error);
+      return { success: false, message: "Failed to update subdomain" };
+    }
+  },
+
+  /**
+   * Check if a subdomain is available
+   */
+  async checkSubdomainAvailability(subdomain: string, currentProjectId?: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase
+        .from("domains")
+        .select("subdomain, project_id")
+        .eq("subdomain", subdomain)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error checking subdomain:", error);
+        return false;
+      }
+
+      // Available if no match found, or if it matches current project
+      return !data || (currentProjectId !== undefined && data.project_id === currentProjectId);
+    } catch (error) {
+      console.error("Failed to check subdomain:", error);
+      return false;
+    }
+  },
+
+  /**
    * Get DNS instructions for a domain
    */
   getDNSInstructions(customDomain: string, projectId: string) {

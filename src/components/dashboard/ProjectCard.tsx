@@ -154,7 +154,7 @@ export function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate, o
 
         {/* Hover overlay with quick actions */}
         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-          <Link to={`/builder?projectId=${project.id}`}>
+          <Link to={`/builder?edit=${project.id}`}>
             <Button variant="secondary" size="sm" className="gap-2">
               <Edit className="w-4 h-4" />
               Edit
@@ -247,7 +247,7 @@ export function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate, o
                 Rename
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to={`/builder?projectId=${project.id}`} className="flex items-center gap-2">
+                <Link to={`/builder?edit=${project.id}`} className="flex items-center gap-2">
                   <Edit className="w-4 h-4" />
                   Edit Project
                 </Link>
