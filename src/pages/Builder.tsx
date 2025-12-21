@@ -154,8 +154,8 @@ const Builder = () => {
   const [sections, setSections] = useState<SectionConfig[]>(DEFAULT_SECTIONS);
   
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  // TEST MODE: Set to true to bypass payment for testing
-  const [hasPaid, setHasPaid] = useState(true);
+  // Production payment check - set to false in production
+  const [hasPaid, setHasPaid] = useState(import.meta.env.DEV);
   const { checkExistingPayment } = usePayment();
 
   // Subdomain state

@@ -3,6 +3,7 @@ import { escapeHtml, sanitizeUrl } from '../htmlSanitize';
 import type { ProjectData, TemplateConfig, SanitizedData, FaqItemData, RoadmapPhaseData, TeamMemberData, FeatureData } from './types';
 import { getTemplateStyles, generateFontUrl } from './styles';
 import { generateCss } from './css';
+import { SITE_CONFIG } from '../config';
 import {
   generateHeader,
   generateHero,
@@ -21,6 +22,9 @@ import {
 // Re-export types
 export type { ProjectData, TemplateConfig, TemplateStyles, SanitizedData } from './types';
 export { getTemplateStyles } from './styles';
+
+// Default favicon URL using SITE_CONFIG
+const DEFAULT_FAVICON = `${SITE_CONFIG.builtWithUrl}/favicon.png`;
 
 function sanitizeProjectData(project: ProjectData): SanitizedData {
   // Sanitize FAQ items
@@ -132,15 +136,15 @@ export function generatePreviewHtml(project: ProjectData, config: TemplateConfig
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${data.coinName} (${data.ticker}) - Official Website</title>
   <meta name="description" content="${data.tagline || data.description || `${data.coinName} - The next big thing on Solana`}">
-  <link rel="icon" type="image/png" href="${data.logoUrl || 'https://www.solsite.fun/favicon.png'}">
+  <link rel="icon" type="image/png" href="${data.logoUrl || DEFAULT_FAVICON}">
   <meta property="og:title" content="${data.coinName} (${data.ticker})">
   <meta property="og:description" content="${data.tagline || data.description || `${data.coinName} - The next big thing on Solana`}">
-  <meta property="og:image" content="${data.logoUrl || 'https://www.solsite.fun/favicon.png'}">
+  <meta property="og:image" content="${data.logoUrl || DEFAULT_FAVICON}">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${data.coinName} (${data.ticker})">
   <meta name="twitter:description" content="${data.tagline || data.description || `${data.coinName} - The next big thing on Solana`}">
-  <meta name="twitter:image" content="${data.logoUrl || 'https://www.solsite.fun/favicon.png'}">
+  <meta name="twitter:image" content="${data.logoUrl || DEFAULT_FAVICON}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="${fontsUrl}" rel="stylesheet">
