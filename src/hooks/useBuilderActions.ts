@@ -272,11 +272,19 @@ export function useBuilderActions({
         return;
       }
 
+      // Trigger prerender to update cached content and purge CDN cache
       if (generatedProject.subdomain) {
-        purgeCache(generatedProject.subdomain).then(success => {
-          if (success) {
-            console.log(`Cache purged for ${generatedProject.subdomain}`);
+        console.log(`[Builder] Triggering prerender for ${generatedProject.subdomain}`);
+        supabase.functions.invoke('prerender-site', {
+          body: { projectId: generatedProject.id, action: 'prerender' },
+        }).then(response => {
+          if (response.error) {
+            console.error('Prerender failed:', response.error);
+          } else {
+            console.log('Prerender completed:', response.data);
           }
+        }).catch(err => {
+          console.error('Prerender error:', err);
         });
       }
 

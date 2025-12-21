@@ -1,6 +1,7 @@
 // Project service - handles all project-related database operations
 
 import { supabase } from "@/integrations/supabase/client";
+import { purgeCache } from "@/lib/cachePurge";
 import type { Project, CreateProjectData, UpdateProjectData, ProjectConfig } from "@/types/project";
 import type { Json } from "@/integrations/supabase/types";
 
@@ -137,9 +138,27 @@ export const projectService = {
 
     const project = data as Project;
 
-    // If the project is published and we're updating content (not just status),
-    // invalidate the cache and trigger re-render
-    if (project.status === "published" && !updateData.status) {
+    // If publishing, trigger pre-render and cache purge
+    if (updateData.status === "published" && project.subdomain) {
+      console.log(`[ProjectService] Publishing ${project.subdomain}, triggering prerender...`);
+      this.triggerPrerender(id).catch((err) => {
+        console.error("Failed to pre-render after publish:", err);
+      });
+    }
+    // If unpublishing, invalidate the cache
+    else if (updateData.status === "draft" && project.subdomain) {
+      console.log(`[ProjectService] Unpublishing ${project.subdomain}, invalidating cache...`);
+      this.invalidateCache(id).catch((err) => {
+        console.error("Failed to invalidate cache:", err);
+      });
+      // Also purge Cloudflare edge cache immediately
+      purgeCache(project.subdomain).catch((err) => {
+        console.error("Failed to purge Cloudflare cache:", err);
+      });
+    }
+    // If updating content on a published project (not changing status)
+    else if (project.status === "published" && !updateData.status && project.subdomain) {
+      console.log(`[ProjectService] Content updated for published project ${project.subdomain}, re-rendering...`);
       this.triggerPrerender(id).catch((err) => {
         console.error("Failed to re-render after update:", err);
       });
@@ -165,32 +184,20 @@ export const projectService = {
 
   /**
    * Publish a project (change status to published)
-   * Also triggers pre-rendering for faster serving
+   * Triggers pre-rendering and cache purge for faster serving
    */
   async publish(id: string): Promise<Project> {
-    const project = await this.update(id, { status: "published" });
-    
-    // Trigger pre-rendering in the background (don't await to avoid blocking)
-    this.triggerPrerender(id).catch((err) => {
-      console.error("Failed to trigger pre-render:", err);
-    });
-    
-    return project;
+    // Update triggers prerender automatically via update method
+    return this.update(id, { status: "published" });
   },
 
   /**
    * Unpublish a project (change status to draft)
-   * Also invalidates the pre-rendered cache
+   * Invalidates the pre-rendered cache and purges CDN
    */
   async unpublish(id: string): Promise<Project> {
-    const project = await this.update(id, { status: "draft" });
-    
-    // Invalidate the cache in the background
-    this.invalidateCache(id).catch((err) => {
-      console.error("Failed to invalidate cache:", err);
-    });
-    
-    return project;
+    // Update triggers cache invalidation automatically via update method
+    return this.update(id, { status: "draft" });
   },
 
   /**
