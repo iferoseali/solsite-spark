@@ -255,18 +255,18 @@ const Templates = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="space-y-4 mb-8"
+            className="space-y-3 md:space-y-4 mb-6 md:mb-8"
           >
-            {/* Search bar */}
-            <div className="flex gap-3">
-              <div className="relative flex-1">
+            {/* Search bar - mobile optimized */}
+            <div className="flex flex-wrap gap-2 md:gap-3">
+              <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   id="template-search"
-                  placeholder="Search templates... (⌘K)"
+                  placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 h-10 md:h-auto"
                 />
               </div>
               
@@ -286,12 +286,12 @@ const Templates = () => {
                 </button>
               </div>
 
-              {/* Sort dropdown */}
+              {/* Sort dropdown - responsive text */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="gap-2">
+                  <Button variant="outline" className="gap-1 md:gap-2 px-2 md:px-4">
                     <ArrowUpDown className="w-4 h-4" />
-                    {SORT_OPTIONS.find((o) => o.id === sortBy)?.label}
+                    <span className="hidden sm:inline">{SORT_OPTIONS.find((o) => o.id === sortBy)?.label}</span>
                     <ChevronDown className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -304,24 +304,25 @@ const Templates = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Favorites filter */}
+              {/* Favorites filter - icon only on mobile */}
               <Button
                 variant={showFavoritesOnly ? "default" : "outline"}
                 onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-                className="gap-2"
+                className="gap-1 md:gap-2 px-2 md:px-4"
               >
                 <Heart className={`w-4 h-4 ${showFavoritesOnly ? "fill-current" : ""}`} />
-                Favorites {favorites.length > 0 && `(${favorites.length})`}
+                <span className="hidden sm:inline">Favorites</span>
+                {favorites.length > 0 && <span className="text-xs">({favorites.length})</span>}
               </Button>
             </div>
 
-            {/* Category filters */}
-            <div className="flex flex-wrap gap-2">
+            {/* Category filters - horizontal scroll on mobile */}
+            <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap scrollbar-hide">
               {TEMPLATE_CATEGORIES.map((cat) => (
                 <button
                   key={cat.id}
                   onClick={() => toggleCategory(cat.id)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  className={`flex-shrink-0 px-3 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-medium transition-all whitespace-nowrap ${
                     activeCategories.includes(cat.id)
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -333,30 +334,33 @@ const Templates = () => {
             </div>
           </motion.div>
 
-          {/* Compare bar */}
+          {/* Compare bar - mobile responsive */}
           <AnimatePresence>
             {compareIds.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
-                className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-card border border-border rounded-2xl shadow-2xl px-6 py-4 flex items-center gap-4"
+                className="fixed bottom-4 md:bottom-6 left-2 right-2 md:left-1/2 md:right-auto md:-translate-x-1/2 z-40 bg-card border border-border rounded-xl md:rounded-2xl shadow-2xl px-4 md:px-6 py-3 md:py-4 flex items-center justify-between md:justify-start gap-2 md:gap-4"
               >
-                <span className="text-sm font-medium">
-                  {compareIds.length} template{compareIds.length > 1 ? "s" : ""} selected
+                <span className="text-xs md:text-sm font-medium">
+                  {compareIds.length} selected
                 </span>
-                <Button
-                  variant="glow"
-                  onClick={() => setShowComparison(true)}
-                  disabled={compareIds.length < 2}
-                  className="gap-2"
-                >
-                  <SlidersHorizontal className="w-4 h-4" />
-                  Compare
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => setCompareIds([])}>
-                  <X className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="glow"
+                    size="sm"
+                    onClick={() => setShowComparison(true)}
+                    disabled={compareIds.length < 2}
+                    className="gap-1 md:gap-2 text-xs md:text-sm"
+                  >
+                    <SlidersHorizontal className="w-3 h-3 md:w-4 md:h-4" />
+                    <span className="hidden sm:inline">Compare</span>
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setCompareIds([])} className="p-2">
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -375,7 +379,7 @@ const Templates = () => {
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6"
             >
               {filteredAndSortedTemplates.map((template, index) => {
                 const templateId = getTemplateId(template.name);
