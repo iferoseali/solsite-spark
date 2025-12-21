@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useWalletAuth } from "@/hooks/useWalletAuth";
-import { useProject } from "@/hooks/queries/useProjects";
+import { useProject, projectKeys } from "@/hooks/queries/useProjects";
 import { domainService, type Domain } from "@/services/domainService";
 import { purgeCache } from "@/lib/cachePurge";
 import { toast } from "sonner";
@@ -23,13 +24,15 @@ import {
   AlertCircle,
   Shield,
   Check,
-  X
+  X,
+  Info
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const DomainSettings = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const projectId = searchParams.get("projectId");
   const { isVerified, user } = useWalletAuth();
 
@@ -46,6 +49,7 @@ const DomainSettings = () => {
   const [subdomainAvailable, setSubdomainAvailable] = useState<boolean | null>(null);
   const [checkingSubdomain, setCheckingSubdomain] = useState(false);
   const [isSavingSubdomain, setIsSavingSubdomain] = useState(false);
+  const [subdomainChangesRemaining, setSubdomainChangesRemaining] = useState<number | null>(null);
   const subdomainCheckTimeout = useRef<NodeJS.Timeout | null>(null);
 
   // Load domain data
@@ -71,6 +75,9 @@ const DomainSettings = () => {
       if (domainData?.custom_domain) {
         setCustomDomain(domainData.custom_domain);
       }
+      // Load subdomain changes count
+      const changesCount = await domainService.getSubdomainChangesCount(projectId);
+      setSubdomainChangesRemaining(2 - changesCount);
     } catch (error) {
       console.error("Failed to load domain:", error);
     } finally {
@@ -199,6 +206,10 @@ const DomainSettings = () => {
       toast.error("This subdomain is already taken");
       return;
     }
+    if (subdomainChangesRemaining !== null && subdomainChangesRemaining <= 0) {
+      toast.error("You have reached the maximum number of subdomain changes");
+      return;
+    }
 
     setIsSavingSubdomain(true);
     try {
@@ -214,7 +225,13 @@ const DomainSettings = () => {
         if (result.oldSubdomain && result.oldSubdomain !== editSubdomain) {
           await purgeCache(result.oldSubdomain);
         }
+        // Update remaining changes count
+        if (result.subdomainChangesRemaining !== undefined) {
+          setSubdomainChangesRemaining(result.subdomainChangesRemaining);
+        }
         toast.success("Subdomain updated successfully!");
+        // Invalidate project lists so Dashboard updates
+        queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
         refetchProject();
         await loadDomain();
       } else {
@@ -228,7 +245,8 @@ const DomainSettings = () => {
   };
 
   const subdomainHasChanges = editSubdomain !== project?.subdomain;
-  const canSaveSubdomain = subdomainHasChanges && editSubdomain.length >= 3 && subdomainAvailable !== false && !checkingSubdomain;
+  const hasChangesRemaining = subdomainChangesRemaining === null || subdomainChangesRemaining > 0;
+  const canSaveSubdomain = subdomainHasChanges && editSubdomain.length >= 3 && subdomainAvailable !== false && !checkingSubdomain && hasChangesRemaining;
 
   // Get DNS instructions
   const dnsInstructions = projectId 
@@ -497,6 +515,27 @@ const DomainSettings = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {/* Subdomain changes limit info */}
+                  <div className={cn(
+                    "flex items-start gap-2 p-3 rounded-lg text-sm",
+                    subdomainChangesRemaining === 0 
+                      ? "bg-destructive/10 text-destructive" 
+                      : "bg-muted text-muted-foreground"
+                  )}>
+                    <Info className="w-4 h-4 mt-0.5 shrink-0" />
+                    <div>
+                      {subdomainChangesRemaining === 0 ? (
+                        <span>You have used all 2 subdomain changes. No more changes are allowed.</span>
+                      ) : subdomainChangesRemaining === 1 ? (
+                        <span>You have <strong>1 subdomain change</strong> remaining. Choose carefully!</span>
+                      ) : subdomainChangesRemaining === 2 ? (
+                        <span>You can change your subdomain up to <strong>2 times</strong>.</span>
+                      ) : (
+                        <span>Subdomain changes are limited.</span>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="flex items-center gap-2">
                     <Input
                       value={editSubdomain}
@@ -504,6 +543,7 @@ const DomainSettings = () => {
                       placeholder="yoursite"
                       className="font-mono text-sm max-w-[200px]"
                       maxLength={63}
+                      disabled={subdomainChangesRemaining === 0}
                     />
                     <span className="text-muted-foreground font-mono text-sm">.solsite.fun</span>
                     <div className="w-5 h-5 flex items-center justify-center">
@@ -534,7 +574,7 @@ const DomainSettings = () => {
                   {subdomainAvailable === false && (
                     <p className="text-xs text-destructive">This subdomain is already taken</p>
                   )}
-                  {subdomainAvailable === true && subdomainHasChanges && (
+                  {subdomainAvailable === true && subdomainHasChanges && hasChangesRemaining && (
                     <p className="text-xs text-accent">Subdomain is available!</p>
                   )}
                   
