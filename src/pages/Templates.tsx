@@ -31,7 +31,7 @@ import {
   getTemplateId,
   type Category,
   type SortOption,
-} from "@/lib/templateData";
+} from "@/lib/templates";
 import type { TemplateBlueprint } from "@/types/template";
 
 const Templates = () => {

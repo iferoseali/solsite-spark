@@ -16,7 +16,7 @@ import {
   TeamSection,
   WebsiteFooter,
 } from "@/components/website";
-import { getTemplateById } from "@/lib/templateRegistry";
+import { getTemplateById } from "@/lib/templates";
 
 // Section variants
 import { HeroCentered, HeroSplit, HeroFullScreen, HeroMinimal, HeroAsymmetric } from "@/components/website/sections/hero";

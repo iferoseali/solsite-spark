@@ -3,7 +3,7 @@ import { useRef, useState } from "react";
 import { Rocket, Flame, Sparkles, Zap, Crown, Code, Skull, Eye, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { SOLSITE_TEMPLATE_REGISTRY, TemplateDefinition } from "@/lib/templateRegistry";
+import { SOLSITE_TEMPLATE_REGISTRY, type TemplateDefinition } from "@/lib/templates";
 
 // Map template IDs to visual metadata with brand-matched colors
 const templateMeta: Record<string, {
