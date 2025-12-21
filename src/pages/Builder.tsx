@@ -89,23 +89,23 @@ const Builder = () => {
     sections: false,
   });
 
-  // Template hook
+  // State hook - initialize first, template hook will update sections
+  const state = useBuilderState({
+    editProjectId,
+    generatedProject,
+  });
+
+  // Template hook - manages template/layout/personality and can update sections
   const template = useBuilderTemplate({
     urlTemplateId,
     urlBlueprintId,
     preselectedLayout,
     preselectedPersonality,
     editProjectId,
-    setSections: (sections) => state.setSections(sections),
-  });
-
-  // State hook
-  const state = useBuilderState({
-    currentLayout: template.currentLayout,
-    currentPersonality: template.currentPersonality,
-    selectedTemplateId: template.selectedTemplateId,
-    editProjectId,
-    generatedProject,
+    setSections: state.setSections,
+    setCurrentLayoutForPreview: state.setCurrentLayout,
+    setCurrentPersonalityForPreview: state.setCurrentPersonality,
+    setSelectedTemplateIdForPreview: state.setSelectedTemplateId,
   });
 
   // Project loader hook
@@ -121,6 +121,8 @@ const Builder = () => {
     setCurrentLayout: template.setCurrentLayout,
     setCurrentPersonality: template.setCurrentPersonality,
     setTemplateId: template.setTemplateId,
+    setCurrentLayoutForPreview: state.setCurrentLayout,
+    setCurrentPersonalityForPreview: state.setCurrentPersonality,
     onProjectLoaded: setGeneratedProject,
   });
 
@@ -646,7 +648,7 @@ const Builder = () => {
               >
                 <iframe
                   key={previewKey}
-                  srcDoc={generatedProject ? previewHtml || '' : state.livePreviewHtml}
+                  srcDoc={state.livePreviewHtml}
                   className="w-full h-full border-0"
                   title="Website Preview"
                   sandbox="allow-scripts"

@@ -62,9 +62,6 @@ export interface BuilderSnapshot {
 }
 
 export interface UseBuilderStateProps {
-  currentLayout: string;
-  currentPersonality: string;
-  selectedTemplateId: string | null;
   editProjectId: string | null;
   generatedProject: { id: string; subdomain: string } | null;
 }
@@ -105,6 +102,14 @@ export interface UseBuilderStateReturn {
   showRoadmap: boolean;
   showFaq: boolean;
   
+  // Template/Preview state (managed internally for live preview)
+  currentLayout: string;
+  setCurrentLayout: React.Dispatch<React.SetStateAction<string>>;
+  currentPersonality: string;
+  setCurrentPersonality: React.Dispatch<React.SetStateAction<string>>;
+  selectedTemplateId: string | null;
+  setSelectedTemplateId: React.Dispatch<React.SetStateAction<string | null>>;
+  
   // Preview
   livePreviewHtml: string;
   isPendingPreview: boolean;
@@ -122,9 +127,6 @@ export interface UseBuilderStateReturn {
 }
 
 export function useBuilderState({
-  currentLayout,
-  currentPersonality,
-  selectedTemplateId,
   editProjectId,
   generatedProject,
 }: UseBuilderStateProps): UseBuilderStateReturn {
@@ -139,6 +141,11 @@ export function useBuilderState({
   
   // Sections
   const [sections, setSections] = useState<SectionConfig[]>(DEFAULT_SECTIONS);
+  
+  // Template/Preview configuration state (managed here for reactivity)
+  const [currentLayout, setCurrentLayout] = useState('minimal');
+  const [currentPersonality, setCurrentPersonality] = useState('degen');
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   
   // Logo state
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -329,6 +336,12 @@ export function useBuilderState({
     handleCropComplete,
     showRoadmap,
     showFaq,
+    currentLayout,
+    setCurrentLayout,
+    currentPersonality,
+    setCurrentPersonality,
+    selectedTemplateId,
+    setSelectedTemplateId,
     livePreviewHtml,
     isPendingPreview,
     showDraftBanner,
