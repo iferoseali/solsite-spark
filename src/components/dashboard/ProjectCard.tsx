@@ -51,8 +51,6 @@ interface ProjectCardProps {
 export function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate, onRename }: ProjectCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(project.coin_name);
-  const [previewLoaded, setPreviewLoaded] = useState(false);
-  const [previewError, setPreviewError] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   
   const isPublished = project.status === "published";
@@ -118,44 +116,17 @@ export function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate, o
               {project.subdomain ? `${project.subdomain}.solsite.fun` : "preview"}
             </span>
           </div>
-          
-          {/* Iframe Preview */}
+
+          {/* Static thumbnail */}
           <div className="relative flex-1 h-[calc(100%-28px)] overflow-hidden">
-            {/* Fallback gradient background */}
             <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-accent/10 to-muted/20" />
-            
-            {/* Iframe for live preview */}
-            {!previewError && (
-              <iframe
-                src={previewUrl}
-                className={cn(
-                  "absolute inset-0 w-full h-full border-0 pointer-events-none transition-opacity duration-300",
-                  "scale-[0.25] origin-top-left",
-                  previewLoaded ? "opacity-100" : "opacity-0"
-                )}
-                style={{ 
-                  width: "400%", 
-                  height: "400%",
-                }}
-                onLoad={() => setPreviewLoaded(true)}
-                onError={() => setPreviewError(true)}
-                sandbox="allow-scripts"
-                loading="lazy"
-              />
-            )}
-            
-            {/* Fallback content when preview fails or is loading */}
-            {(previewError || !previewLoaded) && (
-              <div className="absolute inset-0 p-4 flex flex-col justify-end">
-                <div className="rounded-xl bg-background/30 backdrop-blur-sm border border-border/50 p-3">
-                  <p className="text-xs text-muted-foreground mb-1">
-                    {previewError ? "Preview unavailable" : "Loading..."}
-                  </p>
-                  <p className="text-lg font-display font-bold truncate text-foreground">{project.coin_name}</p>
-                  <p className="text-sm text-muted-foreground truncate">${project.ticker}</p>
-                </div>
+            <div className="absolute inset-0 p-6 flex flex-col justify-end">
+              <div className="rounded-xl bg-background/30 backdrop-blur-sm border border-border/50 p-4">
+                <p className="text-xs text-muted-foreground mb-1">Website thumbnail</p>
+                <p className="text-xl font-display font-bold truncate text-foreground">{project.coin_name}</p>
+                <p className="text-sm text-muted-foreground truncate">${project.ticker}</p>
               </div>
-            )}
+            </div>
           </div>
         </div>
 
