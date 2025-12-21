@@ -27,7 +27,7 @@ const features = [
   {
     icon: Globe,
     title: "Instant Deployment",
-    description: "Free subdomain included. One-time 0.25 SOL generation fee."
+    description: "Free subdomain included. One-time 0.05 SOL generation fee."
   },
   {
     icon: Lock,

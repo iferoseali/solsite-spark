@@ -382,9 +382,14 @@ const DomainSettings = () => {
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Current Domain Status */}
-              <Card>
-                <CardHeader>
+              {/* Custom Domain - Coming Soon */}
+              <Card className="relative overflow-hidden">
+                <div className="absolute inset-0 bg-muted/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
+                  <Badge variant="secondary" className="text-base px-4 py-2 bg-primary/20 text-primary border-primary/30">
+                    Coming Soon
+                  </Badge>
+                </div>
+                <CardHeader className="opacity-60">
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle>Custom Domain</CardTitle>

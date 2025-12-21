@@ -1,6 +1,12 @@
 import { Link } from "react-router-dom";
 import { Twitter, MessageCircle, Github } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export const Footer = () => {
   return (
@@ -18,15 +24,39 @@ export const Footer = () => {
               No code required.
             </p>
             <div className="flex items-center gap-4">
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                <Twitter className="w-5 h-5" />
-              </a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                <MessageCircle className="w-5 h-5" />
-              </a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                <Github className="w-5 h-5" />
-              </a>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-muted-foreground/50 cursor-not-allowed relative">
+                    <Twitter className="w-5 h-5" />
+                    <Badge variant="outline" className="absolute -top-2 -right-3 text-[8px] px-1 py-0 h-3 bg-muted">
+                      Soon
+                    </Badge>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>Coming Soon</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-muted-foreground/50 cursor-not-allowed relative">
+                    <MessageCircle className="w-5 h-5" />
+                    <Badge variant="outline" className="absolute -top-2 -right-3 text-[8px] px-1 py-0 h-3 bg-muted">
+                      Soon
+                    </Badge>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>Coming Soon</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-muted-foreground/50 cursor-not-allowed relative">
+                    <Github className="w-5 h-5" />
+                    <Badge variant="outline" className="absolute -top-2 -right-3 text-[8px] px-1 py-0 h-3 bg-muted">
+                      Soon
+                    </Badge>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>Coming Soon</TooltipContent>
+              </Tooltip>
             </div>
           </div>
 
@@ -36,15 +66,15 @@ export const Footer = () => {
             <ul className="space-y-2">
               <li><Link to="/templates" className="text-muted-foreground hover:text-primary transition-colors text-sm">Templates</Link></li>
               <li><Link to="/builder" className="text-muted-foreground hover:text-primary transition-colors text-sm">Builder</Link></li>
-              <li><a href="#pricing" className="text-muted-foreground hover:text-primary transition-colors text-sm">Pricing</a></li>
+              <li><a href="/#pricing" className="text-muted-foreground hover:text-primary transition-colors text-sm">Pricing</a></li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-semibold mb-4">Legal</h4>
             <ul className="space-y-2">
-              <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors text-sm">Terms of Service</a></li>
-              <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors text-sm">Privacy Policy</a></li>
+              <li><Link to="/terms" className="text-muted-foreground hover:text-primary transition-colors text-sm">Terms of Service</Link></li>
+              <li><Link to="/privacy" className="text-muted-foreground hover:text-primary transition-colors text-sm">Privacy Policy</Link></li>
             </ul>
           </div>
         </div>
