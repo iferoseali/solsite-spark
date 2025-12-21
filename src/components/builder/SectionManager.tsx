@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, memo } from "react";
 import {
   DndContext,
   closestCenter,
@@ -40,7 +40,7 @@ interface SectionManagerProps {
   onChange: (sections: SectionConfig[]) => void;
 }
 
-export const SectionManager = ({ sections, onChange }: SectionManagerProps) => {
+export const SectionManager = memo(function SectionManager({ sections, onChange }: SectionManagerProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const sensors = useSensors(
@@ -183,7 +183,7 @@ export const SectionManager = ({ sections, onChange }: SectionManagerProps) => {
       )}
     </div>
   );
-};
+});
 
 // Re-export for backwards compatibility
 export { DEFAULT_SECTIONS } from "./sectionTypes";

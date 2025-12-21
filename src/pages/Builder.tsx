@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useDeferredValue, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useTransition } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -185,7 +185,7 @@ const Builder = () => {
     logoPreview,
   }), [formData, faqItems, roadmapPhases, teamMembers, features, sections, logoPreview]);
 
-  // Push to history with debounce
+  // Push to history with debounce (increased to 1000ms for performance)
   const pushToHistory = useCallback(() => {
     if (isRestoringHistory.current) return;
     
@@ -208,7 +208,7 @@ const Builder = () => {
         return newHistory;
       });
       setHistoryIndex(prev => Math.min(prev + 1, MAX_HISTORY - 1));
-    }, 500);
+    }, 1000); // Increased from 500ms for better performance
   }, [createSnapshot, historyIndex]);
 
   // Undo function
@@ -415,48 +415,64 @@ const Builder = () => {
   const showRoadmap = sections.some(s => s.type === 'roadmap' && s.visible);
   const showFaq = sections.some(s => s.type === 'faq' && s.visible);
 
-  const deferredFormData = useDeferredValue(formData);
-  const deferredLogoPreview = useDeferredValue(logoPreview);
-  const deferredSections = useDeferredValue(sections);
-  const deferredFaqItems = useDeferredValue(faqItems);
-  const deferredRoadmapPhases = useDeferredValue(roadmapPhases);
-  const deferredTeamMembers = useDeferredValue(teamMembers);
-  const deferredFeatures = useDeferredValue(features);
-
-  const livePreviewHtml = useMemo(() => {
-    return generatePreviewHtml(
-      {
-        coinName: deferredFormData.coinName,
-        ticker: deferredFormData.ticker,
-        tagline: deferredFormData.tagline,
-        description: deferredFormData.description,
-        logoUrl: deferredLogoPreview,
-        twitter: deferredFormData.twitter,
-        discord: deferredFormData.discord,
-        telegram: deferredFormData.telegram,
-        dexLink: deferredFormData.dexLink,
-        buyNowLink: deferredFormData.buyNowLink,
-        buyNowText: deferredFormData.buyNowText,
-        showBuyNow: deferredFormData.showBuyNow,
-        learnMoreLink: deferredFormData.learnMoreLink,
-        learnMoreText: deferredFormData.learnMoreText,
-        showLearnMore: deferredFormData.showLearnMore,
-        showRoadmap,
-        showFaq,
-        tokenomics: {
-          totalSupply: deferredFormData.totalSupply,
-          circulatingSupply: deferredFormData.circulatingSupply,
-          contractAddress: deferredFormData.contractAddress,
-        },
-        sections: deferredSections,
-        faqItems: deferredFaqItems.filter(f => f.question && f.answer),
-        roadmapPhases: deferredRoadmapPhases.filter(p => p.title),
-        teamMembers: deferredTeamMembers.filter(m => m.name),
-        features: deferredFeatures.filter(f => f.title),
-      },
-      { layout: currentLayout, personality: currentPersonality, templateId: selectedTemplateId || undefined }
-    );
-  }, [deferredFormData, deferredLogoPreview, currentLayout, currentPersonality, selectedTemplateId, showRoadmap, showFaq, deferredSections, deferredFaqItems, deferredRoadmapPhases, deferredTeamMembers, deferredFeatures]);
+  // Use transition for non-blocking preview generation
+  const [isPendingPreview, startPreviewTransition] = useTransition();
+  const [livePreviewHtml, setLivePreviewHtml] = useState('');
+  
+  // Throttled preview generation with useTransition
+  const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  useEffect(() => {
+    // Clear previous timeout
+    if (previewTimeoutRef.current) {
+      clearTimeout(previewTimeoutRef.current);
+    }
+    
+    // Throttle preview generation to 800ms
+    previewTimeoutRef.current = setTimeout(() => {
+      startPreviewTransition(() => {
+        const html = generatePreviewHtml(
+          {
+            coinName: formData.coinName,
+            ticker: formData.ticker,
+            tagline: formData.tagline,
+            description: formData.description,
+            logoUrl: logoPreview,
+            twitter: formData.twitter,
+            discord: formData.discord,
+            telegram: formData.telegram,
+            dexLink: formData.dexLink,
+            buyNowLink: formData.buyNowLink,
+            buyNowText: formData.buyNowText,
+            showBuyNow: formData.showBuyNow,
+            learnMoreLink: formData.learnMoreLink,
+            learnMoreText: formData.learnMoreText,
+            showLearnMore: formData.showLearnMore,
+            showRoadmap,
+            showFaq,
+            tokenomics: {
+              totalSupply: formData.totalSupply,
+              circulatingSupply: formData.circulatingSupply,
+              contractAddress: formData.contractAddress,
+            },
+            sections,
+            faqItems: faqItems.filter(f => f.question && f.answer),
+            roadmapPhases: roadmapPhases.filter(p => p.title),
+            teamMembers: teamMembers.filter(m => m.name),
+            features: features.filter(f => f.title),
+          },
+          { layout: currentLayout, personality: currentPersonality, templateId: selectedTemplateId || undefined }
+        );
+        setLivePreviewHtml(html);
+      });
+    }, 800);
+    
+    return () => {
+      if (previewTimeoutRef.current) {
+        clearTimeout(previewTimeoutRef.current);
+      }
+    };
+  }, [formData, logoPreview, currentLayout, currentPersonality, selectedTemplateId, showRoadmap, showFaq, sections, faqItems, roadmapPhases, teamMembers, features]);
 
   useEffect(() => {
     const loadTemplatePreview = async () => {

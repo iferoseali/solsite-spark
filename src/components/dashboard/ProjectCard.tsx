@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, memo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { 
   Edit, 
@@ -49,7 +49,7 @@ interface ProjectCardProps {
   onRename: (project: Project, newName: string) => void;
 }
 
-export function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate, onRename }: ProjectCardProps) {
+export const ProjectCard = memo(function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate, onRename }: ProjectCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(project.coin_name);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -77,31 +77,31 @@ export function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate, o
     }
   }, [isEditing]);
 
-  const handleStartEdit = () => {
+  const handleStartEdit = useCallback(() => {
     setEditName(project.coin_name);
     setIsEditing(true);
-  };
+  }, [project.coin_name]);
 
-  const handleCancelEdit = () => {
+  const handleCancelEdit = useCallback(() => {
     setEditName(project.coin_name);
     setIsEditing(false);
-  };
+  }, [project.coin_name]);
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = useCallback(() => {
     const trimmedName = editName.trim();
     if (trimmedName && trimmedName !== project.coin_name && trimmedName.length <= 50) {
       onRename(project, trimmedName);
     }
     setIsEditing(false);
-  };
+  }, [editName, project, onRename]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       handleSaveEdit();
     } else if (e.key === "Escape") {
       handleCancelEdit();
     }
-  };
+  }, [handleSaveEdit, handleCancelEdit]);
 
   return (
     <div className="group relative rounded-2xl overflow-hidden bg-card border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5">
@@ -304,4 +304,4 @@ export function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate, o
       </div>
     </div>
   );
-}
+});

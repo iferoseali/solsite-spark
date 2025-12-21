@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, memo } from "react";
 import { Plus, Trash2, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -97,7 +97,7 @@ const SortableFaqItem = ({ item, index, onChange, onRemove }: SortableFaqItemPro
   );
 };
 
-export const FaqEditor = ({ items, onChange }: FaqEditorProps) => {
+export const FaqEditor = memo(function FaqEditor({ items, onChange }: FaqEditorProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -165,4 +165,4 @@ export const FaqEditor = ({ items, onChange }: FaqEditorProps) => {
       )}
     </div>
   );
-};
+});
