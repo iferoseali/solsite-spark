@@ -57,12 +57,17 @@ export const ProjectCard = memo(function ProjectCard({ project, onDelete, onTogg
   const isPublished = project.status === "published";
   const templateId = project.config?.templateId || project.template_id || "cult_minimal";
   
-  // For published sites, link directly to the live subdomain
+  // For published sites, link directly to the live subdomain with cache buster
   // For drafts, use the edge function preview
-  const liveUrl = isPublished && project.subdomain 
-    ? SITE_CONFIG.getSiteUrl(project.subdomain)
-    : null;
-  const previewUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?preview=true&templateId=${templateId}&projectId=${project.id}`;
+  const getLiveUrl = () => {
+    if (isPublished && project.subdomain) {
+      // Add timestamp to bust cache and ensure latest version
+      return `${SITE_CONFIG.getSiteUrl(project.subdomain)}?t=${Date.now()}`;
+    }
+    return null;
+  };
+  const liveUrl = isPublished && project.subdomain ? SITE_CONFIG.getSiteUrl(project.subdomain) : null;
+  const previewUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?preview=true&templateId=${templateId}&projectId=${project.id}&t=${Date.now()}`;
 
   const formattedDate = new Date(project.created_at).toLocaleDateString("en-US", {
     month: "short",
@@ -140,7 +145,7 @@ export const ProjectCard = memo(function ProjectCard({ project, onDelete, onTogg
             </Button>
           </Link>
           {liveUrl ? (
-            <a href={liveUrl} target="_blank" rel="noopener noreferrer">
+            <a href={getLiveUrl()!} target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="sm" className="gap-2">
                 <ExternalLink className="w-4 h-4" />
                 View Live
@@ -232,7 +237,7 @@ export const ProjectCard = memo(function ProjectCard({ project, onDelete, onTogg
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
-                if (liveUrl) window.open(liveUrl, "_blank");
+                if (liveUrl) window.open(getLiveUrl()!, "_blank");
                 else window.open(previewUrl, "_blank");
               }}>
                 <ExternalLink className="w-4 h-4 mr-2" />
