@@ -1,5 +1,9 @@
 // Preview HTML generator types
+// Import SectionConfig from centralized types
+import type { SectionConfig } from "@/types/section";
 
+// Re-export for consumers
+export type { SectionConfig };
 export interface FaqItemData {
   question: string;
   answer: string;
@@ -29,14 +33,6 @@ export interface TokenomicsInput {
   totalSupply?: string;
   circulatingSupply?: string;
   contractAddress?: string;
-}
-
-export interface SectionConfig {
-  id: string;
-  type: string;
-  variant: string;
-  visible: boolean;
-  order: number;
 }
 
 export interface ProjectData {

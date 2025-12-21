@@ -26,14 +26,7 @@ import { AboutCentered, AboutSplit, AboutCards } from "@/components/website/sect
 import { FaqAccordion, FaqGrid } from "@/components/website/sections/faq";
 import { CommunitySocials, CommunityCards } from "@/components/website/sections/community";
 import { TeamGrid, TeamCards } from "@/components/website/sections/team";
-
-interface SectionConfig {
-  id: string;
-  type: string;
-  variant: string;
-  visible: boolean;
-  order: number;
-}
+import type { SectionConfig } from "@/types/section";
 
 const WebsiteRenderer = () => {
   const [searchParams] = useSearchParams();

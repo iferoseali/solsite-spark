@@ -2,6 +2,7 @@ import { RefreshCw, Monitor, Tablet, Smartphone, Maximize2, ExternalLink, Save, 
 import { Button } from "@/components/ui/button";
 import { TemplateSwitcher } from "./TemplateSwitcher";
 import { cn } from "@/lib/utils";
+import { SITE_CONFIG } from "@/lib/config";
 
 type DeviceSize = 'desktop' | 'tablet' | 'mobile';
 
@@ -53,7 +54,7 @@ export const PreviewControls = ({
           <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
           <div className="w-3 h-3 rounded-full bg-accent/60" />
         </div>
-        <span className="text-xs text-muted-foreground ml-2 font-mono">{subdomain}.solsite.fun</span>
+        <span className="text-xs text-muted-foreground ml-2 font-mono">{SITE_CONFIG.getSubdomainDisplay(subdomain)}</span>
       </div>
 
       <div className="flex items-center gap-1">

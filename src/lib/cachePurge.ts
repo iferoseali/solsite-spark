@@ -1,10 +1,12 @@
+import { SITE_CONFIG } from "@/lib/config";
+
 /**
  * Purges the Cloudflare edge cache for a given subdomain
  * This ensures users see updated content immediately after saving
  */
 export async function purgeCache(subdomain: string): Promise<boolean> {
   try {
-    const purgeUrl = `https://${subdomain}.solsite.fun/_purge`;
+    const purgeUrl = `${SITE_CONFIG.getSiteUrl(subdomain)}/_purge`;
     const response = await fetch(purgeUrl, {
       method: 'GET',
       headers: {

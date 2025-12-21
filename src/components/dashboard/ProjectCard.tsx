@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { SITE_CONFIG } from "@/lib/config";
 
 interface Project {
   id: string;
@@ -59,7 +60,7 @@ export function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate, o
   // For published sites, link directly to the live subdomain
   // For drafts, use the edge function preview
   const liveUrl = isPublished && project.subdomain 
-    ? `https://${project.subdomain}.solsite.fun` 
+    ? SITE_CONFIG.getSiteUrl(project.subdomain)
     : null;
   const previewUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?preview=true&templateId=${templateId}&projectId=${project.id}`;
 
@@ -113,7 +114,7 @@ export function ProjectCard({ project, onDelete, onTogglePublish, onDuplicate, o
             <div className="w-2 h-2 rounded-full bg-yellow-400/80" />
             <div className="w-2 h-2 rounded-full bg-green-400/80" />
             <span className="ml-2 text-xs text-muted-foreground truncate">
-              {project.subdomain ? `${project.subdomain}.solsite.fun` : "preview"}
+              {project.subdomain ? SITE_CONFIG.getSubdomainDisplay(project.subdomain) : "preview"}
             </span>
           </div>
 
