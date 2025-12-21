@@ -137,7 +137,25 @@ const Templates = () => {
       result = result.filter((t) => {
         const templateId = getTemplateId(t.name);
         const meta = TEMPLATE_META[templateId];
-        return meta && activeCategories.includes(meta.category);
+        if (!meta) return false;
+        
+        // Check if premium filter is selected
+        if (activeCategories.includes("premium" as Category) && meta.isPremium) {
+          return true;
+        }
+        
+        // Check other categories
+        const nonPremiumCategories = activeCategories.filter(c => c !== "premium") as string[];
+        if (nonPremiumCategories.length > 0 && !meta.isPremium) {
+          return nonPremiumCategories.includes(meta.category as string);
+        }
+        
+        // If only premium is selected and template is not premium, exclude it
+        if (activeCategories.length === 1 && activeCategories.includes("premium" as Category)) {
+          return meta.isPremium === true;
+        }
+        
+        return false;
       });
     }
 

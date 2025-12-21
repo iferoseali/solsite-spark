@@ -5,7 +5,7 @@
 // TYPES
 // ============================================
 
-export type Category = "all" | "meme" | "professional" | "gaming" | "tech" | "minimal" | "community";
+export type Category = "all" | "meme" | "professional" | "gaming" | "tech" | "minimal" | "community" | "premium";
 export type SortOption = "name" | "newest" | "popular";
 
 export interface TemplateMeta {
@@ -14,6 +14,7 @@ export interface TemplateMeta {
   features: string[];
   category: Category;
   popularity: number;
+  isPremium?: boolean;
 }
 
 export interface CategoryOption {
@@ -81,11 +82,21 @@ export const TEMPLATE_ID_MAP: Record<string, string> = {
   "Infra Terminal": "infra_terminal",
   "Social First": "social_first",
   "Futuristic 3D": "futuristic_3d",
+  // Premium templates
+  "Pump Blast Hero": "pump_blast_hero",
+  "Chaos Carousel": "chaos_carousel",
+  "Only Up Maxi Chart": "only_up_maxi_chart",
+  "Stealth Drop Reveal": "stealth_drop_reveal",
+  "Brutalist Pump.fun": "brutalist_pump_fun",
+  "Meme Wall Madness": "meme_wall_madness",
+  "Trend Hacker": "trend_hacker",
+  "Social Rocket": "social_rocket",
 };
 
 // Template categories for filtering
 export const TEMPLATE_CATEGORIES: CategoryOption[] = [
   { id: "all", label: "All", emoji: "✨" },
+  { id: "premium", label: "Premium", emoji: "👑" },
   { id: "meme", label: "Meme", emoji: "🚀" },
   { id: "professional", label: "Pro", emoji: "💼" },
   { id: "gaming", label: "Gaming", emoji: "🎮" },
@@ -118,6 +129,15 @@ export const TEMPLATE_META: Record<string, TemplateMeta> = {
   "infra_terminal": { emoji: "💻", tagline: "CLI-inspired design for infrastructure projects", features: ["Terminal window", "Typing animation", "Matrix effect"], category: "tech", popularity: 75 },
   "social_first": { emoji: "💬", tagline: "Community-focused design with warm tones", features: ["Avatar focus", "Social proof", "Yellow accents"], category: "community", popularity: 68 },
   "futuristic_3d": { emoji: "🌌", tagline: "Immersive holographic design for premium launches", features: ["3D space bg", "Floating shapes", "Hologram buttons"], category: "professional", popularity: 87 },
+  // Premium templates
+  "pump_blast_hero": { emoji: "💥", tagline: "Explosive flashing hero for viral pump launches", features: ["Flash gradient bg", "Shake animations", "Ticker marquee"], category: "premium", popularity: 99, isPremium: true },
+  "chaos_carousel": { emoji: "🎪", tagline: "Neon chaos with horizontal snap scroll gallery", features: ["Animated grid bg", "Horizontal scroll", "Glow hover effects"], category: "premium", popularity: 97, isPremium: true },
+  "only_up_maxi_chart": { emoji: "📈", tagline: "Terminal green with live chart focus", features: ["Grid dark bg", "Chart widget", "Monospace aesthetic"], category: "premium", popularity: 96, isPremium: true },
+  "stealth_drop_reveal": { emoji: "🕵️", tagline: "Mysterious blackout with countdown reveal", features: ["Grain texture", "Glitch hover", "Countdown timer"], category: "premium", popularity: 95, isPremium: true },
+  "brutalist_pump_fun": { emoji: "◾", tagline: "Raw brutalist design, pure pump.fun energy", features: ["No animations", "Pure black/white", "Bold sans-serif"], category: "premium", popularity: 94, isPremium: true },
+  "meme_wall_madness": { emoji: "🖼️", tagline: "Neon meme gallery with horizontal snap scroll", features: ["Animated neon bg", "Image carousel", "Glow pop effects"], category: "premium", popularity: 93, isPremium: true },
+  "trend_hacker": { emoji: "🐦", tagline: "Twitter-trend inspired with hashtag showcase", features: ["Grid dark bg", "Trending section", "Tilt hover effects"], category: "premium", popularity: 92, isPremium: true },
+  "social_rocket": { emoji: "🚀", tagline: "Social-first with parallax scroll and links", features: ["Gradient dark bg", "Parallax scroll", "Social card carousel"], category: "premium", popularity: 91, isPremium: true },
 };
 
 // ============================================
@@ -234,6 +254,112 @@ export const SOLSITE_TEMPLATE_REGISTRY: TemplateRegistry = {
         { type: "utility", variant: "default", animation: "fade-up", fields: ["features"] },
         { type: "tokenomics", variant: "grid", animation: "fade-up", fields: ["stats"] },
         { type: "roadmap", variant: "timeline", animation: "fade-up", fields: ["phases"] },
+      ]
+    },
+    // ============================================
+    // PREMIUM TEMPLATES
+    // ============================================
+    {
+      template_id: "pump_blast_hero",
+      name: "Pump Blast Hero",
+      inspiration: "Viral pump launches, high-energy meme coins",
+      category: "horizontal-scroll",
+      theme: { background: "#0a0a0a", primary: "#14F195", accent: "#ff4fd8", text: "#ffffff" },
+      sections: [
+        { type: "hero", variant: "fullscreen", animation: "bounce", fields: ["coin_name", "ticker", "tagline", "logo"] },
+        { type: "tokenomics", variant: "horizontal", animation: "horizontal-scroll", fields: ["stats"] },
+        { type: "community", variant: "default", animation: "fade-up", fields: ["socials"] },
+      ]
+    },
+    {
+      template_id: "chaos_carousel",
+      name: "Chaos Carousel",
+      inspiration: "Neon chaos galleries, meme culture",
+      category: "horizontal-scroll",
+      theme: { background: "#0d0d1a", primary: "#FF00FF", accent: "#00ffff", text: "#ffffff" },
+      sections: [
+        { type: "hero", variant: "centered", animation: "fade-in", fields: ["coin_name", "ticker", "tagline"] },
+        { type: "utility", variant: "default", animation: "horizontal-scroll", fields: ["features"] },
+        { type: "tokenomics", variant: "horizontal", animation: "horizontal-scroll", fields: ["stats"] },
+        { type: "community", variant: "default", animation: "fade-up", fields: ["socials"] },
+      ]
+    },
+    {
+      template_id: "only_up_maxi_chart",
+      name: "Only Up Maxi Chart",
+      inspiration: "Trading terminals, chart-focused sites",
+      category: "vertical",
+      theme: { background: "#0a0a0a", primary: "#00FF00", accent: "#00cc00", text: "#00FF00" },
+      sections: [
+        { type: "hero", variant: "minimal", animation: "fade-in", fields: ["coin_name", "ticker", "tagline"] },
+        { type: "tokenomics", variant: "grid", animation: "fade-up", fields: ["stats"] },
+        { type: "roadmap", variant: "timeline", animation: "fade-up", fields: ["phases"] },
+        { type: "community", variant: "default", animation: "fade-in", fields: ["socials"] },
+      ]
+    },
+    {
+      template_id: "stealth_drop_reveal",
+      name: "Stealth Drop Reveal",
+      inspiration: "Mysterious launches, countdown reveals",
+      category: "vertical",
+      theme: { background: "#050505", primary: "#ffffff", accent: "#888888", text: "#ffffff" },
+      sections: [
+        { type: "hero", variant: "centered", animation: "fade-in", fields: ["coin_name", "ticker", "tagline"] },
+        { type: "story", variant: "default", animation: "parallax", fields: ["lore"] },
+        { type: "tokenomics", variant: "cards", animation: "fade-up", fields: ["stats"] },
+        { type: "community", variant: "default", animation: "fade-in", fields: ["socials"] },
+      ]
+    },
+    {
+      template_id: "brutalist_pump_fun",
+      name: "Brutalist Pump.fun",
+      inspiration: "Raw brutalist design, anti-design movement",
+      category: "vertical",
+      theme: { background: "#000000", primary: "#ffffff", accent: "#ffffff", text: "#ffffff" },
+      sections: [
+        { type: "hero", variant: "minimal", animation: "none", fields: ["coin_name", "ticker", "tagline", "logo"] },
+        { type: "tokenomics", variant: "grid", animation: "none", fields: ["stats"] },
+        { type: "faq", variant: "default", animation: "none", fields: ["items"] },
+        { type: "community", variant: "default", animation: "none", fields: ["socials"] },
+      ]
+    },
+    {
+      template_id: "meme_wall_madness",
+      name: "Meme Wall Madness",
+      inspiration: "Neon galleries, meme showcases",
+      category: "horizontal-scroll",
+      theme: { background: "#0a0014", primary: "#FF00FF", accent: "#ff6600", text: "#ffffff" },
+      sections: [
+        { type: "hero", variant: "fullscreen", animation: "bounce", fields: ["coin_name", "ticker", "tagline", "logo"] },
+        { type: "utility", variant: "default", animation: "horizontal-scroll", fields: ["features"] },
+        { type: "tokenomics", variant: "horizontal", animation: "horizontal-scroll", fields: ["stats"] },
+        { type: "community", variant: "default", animation: "fade-up", fields: ["socials"] },
+      ]
+    },
+    {
+      template_id: "trend_hacker",
+      name: "Trend Hacker",
+      inspiration: "Twitter trends, social virality",
+      category: "vertical",
+      theme: { background: "#0a0a12", primary: "#1DA1F2", accent: "#00acee", text: "#ffffff" },
+      sections: [
+        { type: "hero", variant: "split", animation: "fade-in", fields: ["coin_name", "ticker", "tagline"] },
+        { type: "tokenomics", variant: "cards", animation: "stagger", fields: ["stats"] },
+        { type: "roadmap", variant: "cards", animation: "fade-up", fields: ["phases"] },
+        { type: "community", variant: "default", animation: "fade-in", fields: ["socials"] },
+      ]
+    },
+    {
+      template_id: "social_rocket",
+      name: "Social Rocket",
+      inspiration: "Social-first launches, community focus",
+      category: "horizontal-scroll",
+      theme: { background: "#0a1020", primary: "#1DA1F2", accent: "#22c55e", text: "#ffffff" },
+      sections: [
+        { type: "hero", variant: "centered", animation: "parallax", fields: ["coin_name", "ticker", "tagline", "logo"] },
+        { type: "utility", variant: "default", animation: "horizontal-scroll", fields: ["features"] },
+        { type: "tokenomics", variant: "horizontal", animation: "horizontal-scroll", fields: ["stats"] },
+        { type: "community", variant: "default", animation: "fade-up", fields: ["socials"] },
       ]
     }
   ]
