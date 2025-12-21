@@ -22,6 +22,8 @@ const DomainSettings = lazy(() => import("./pages/DomainSettings"));
 const Site = lazy(() => import("./pages/Site"));
 const WebsiteRenderer = lazy(() => import("./pages/WebsiteRenderer"));
 const TemplateBuilder = lazy(() => import("./pages/admin/TemplateBuilder"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Privacy = lazy(() => import("./pages/Privacy"));
 
 // Lazy load wallet provider (heavy Solana deps)
 const WalletProvider = lazy(() => 
@@ -85,6 +87,8 @@ const App = () => {
                           <TemplateBuilder />
                         </ErrorBoundary>
                       } />
+                      <Route path="/terms" element={<Terms />} />
+                      <Route path="/privacy" element={<Privacy />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </Suspense>

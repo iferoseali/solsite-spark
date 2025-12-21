@@ -1,5 +1,5 @@
 // Fixed SOL prices
-export const WEBSITE_PRICE_SOL = 0.5;
+export const WEBSITE_PRICE_SOL = 0.05;
 export const DOMAIN_PRICE_SOL = 0.1;
 
 export interface PriceData {

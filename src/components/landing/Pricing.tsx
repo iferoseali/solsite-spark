@@ -46,7 +46,7 @@ export const Pricing = () => {
               {/* Price display */}
               <div className="flex items-center justify-center gap-3 mb-2">
                 <div className="text-5xl md:text-6xl font-display font-bold text-gradient-primary">
-                  0.25
+                  0.05
                 </div>
                 <div className="text-left">
                   <div className="text-2xl font-bold text-foreground">SOL</div>

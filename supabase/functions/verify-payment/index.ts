@@ -10,7 +10,7 @@ const SOLANA_RPC = 'https://api.mainnet-beta.solana.com';
 const TREASURY_WALLET = Deno.env.get('TREASURY_WALLET') || '';
 
 // Fixed SOL prices
-const WEBSITE_PRICE_SOL = 0.5;
+const WEBSITE_PRICE_SOL = 0.05;
 const DOMAIN_PRICE_SOL = 0.1;
 
 interface VerifyPaymentRequest {
