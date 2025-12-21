@@ -46,6 +46,7 @@ export interface TemplateDefinition {
   name: string;
   inspiration: string;
   category: 'horizontal-scroll' | 'vertical' | 'hybrid';
+  tier?: 'standard' | 'premium';
   theme: TemplateTheme;
   sections: TemplateSection[];
 }
@@ -81,6 +82,15 @@ export const TEMPLATE_ID_MAP: Record<string, string> = {
   "Infra Terminal": "infra_terminal",
   "Social First": "social_first",
   "Futuristic 3D": "futuristic_3d",
+  // Premium templates
+  "Genesis Pump": "premium_genesis_pump",
+  "Velocity Dark": "premium_velocity_dark",
+  "Meme Matrix": "premium_meme_matrix",
+  "Orbit Launchpad": "premium_orbit_launchpad",
+  "Stealth Drop": "premium_stealth_drop",
+  "Pump.fun Hero": "premium_pump_fun_hero",
+  "Chart Maxi": "premium_chart_maxi",
+  "Zero Info": "premium_zero_info",
 };
 
 // Template categories for filtering
@@ -118,6 +128,15 @@ export const TEMPLATE_META: Record<string, TemplateMeta> = {
   "infra_terminal": { emoji: "💻", tagline: "CLI-inspired design for infrastructure projects", features: ["Terminal window", "Typing animation", "Matrix effect"], category: "tech", popularity: 75 },
   "social_first": { emoji: "💬", tagline: "Community-focused design with warm tones", features: ["Avatar focus", "Social proof", "Yellow accents"], category: "community", popularity: 68 },
   "futuristic_3d": { emoji: "🌌", tagline: "Immersive holographic design for premium launches", features: ["3D space bg", "Floating shapes", "Hologram buttons"], category: "professional", popularity: 87 },
+  // Premium templates
+  "premium_genesis_pump": { emoji: "💎", tagline: "Animated gradient memecoin launch template", features: ["Animated gradient bg", "Parallax scroll", "Glow hover effects"], category: "meme", popularity: 99 },
+  "premium_velocity_dark": { emoji: "🖤", tagline: "Minimal dark design for serious projects", features: ["Solid black bg", "Clean typography", "Underline animations"], category: "professional", popularity: 96 },
+  "premium_meme_matrix": { emoji: "🌐", tagline: "Neon cyberpunk aesthetic for viral memes", features: ["Animated grid bg", "Tilt scroll effects", "Shake-pop hovers"], category: "meme", popularity: 97 },
+  "premium_orbit_launchpad": { emoji: "🚀", tagline: "Glassmorphism design for startup launches", features: ["Blurred gradients", "Slide animations", "Lift shadows"], category: "professional", popularity: 94 },
+  "premium_stealth_drop": { emoji: "🥷", tagline: "Mysterious blackout design for stealth launches", features: ["Grain texture", "Reveal animations", "Glitch effects"], category: "minimal", popularity: 93 },
+  "premium_pump_fun_hero": { emoji: "💹", tagline: "Terminal-style pump.fun inspired design", features: ["Noise black bg", "Typewriter effect", "Blink hovers"], category: "meme", popularity: 98 },
+  "premium_chart_maxi": { emoji: "📈", tagline: "Chart-focused design for traders", features: ["Chart grid bg", "Scale hovers", "Bold typography"], category: "meme", popularity: 95 },
+  "premium_zero_info": { emoji: "⬛", tagline: "Ultra-minimal brutalist design", features: ["Plain black bg", "No animations", "Raw typography"], category: "minimal", popularity: 90 },
 };
 
 // ============================================
@@ -234,6 +253,107 @@ export const SOLSITE_TEMPLATE_REGISTRY: TemplateRegistry = {
         { type: "utility", variant: "default", animation: "fade-up", fields: ["features"] },
         { type: "tokenomics", variant: "grid", animation: "fade-up", fields: ["stats"] },
         { type: "roadmap", variant: "timeline", animation: "fade-up", fields: ["phases"] },
+      ]
+    },
+    // Premium Templates
+    {
+      template_id: "premium_genesis_pump",
+      name: "Genesis Pump",
+      inspiration: "High-energy memecoin launches",
+      category: "horizontal-scroll",
+      tier: "premium",
+      theme: { background: "#0A0A0A", primary: "#14F195", accent: "#14F195", text: "#ffffff" },
+      sections: [
+        { type: "hero", variant: "fullscreen", animation: "fade-up", fields: ["coin_name", "ticker", "tagline", "cta_primary", "cta_secondary"] },
+        { type: "utility", variant: "horizontal", animation: "horizontal-scroll", fields: ["cards"] },
+        { type: "tokenomics", variant: "grid", animation: "fade-up", fields: ["stats"] },
+      ]
+    },
+    {
+      template_id: "premium_velocity_dark",
+      name: "Velocity Dark",
+      inspiration: "Clean Solana infrastructure projects",
+      category: "vertical",
+      tier: "premium",
+      theme: { background: "#000000", primary: "#FFFFFF", accent: "#14F195", text: "#ffffff" },
+      sections: [
+        { type: "hero", variant: "minimal", animation: "fade-in", fields: ["coin_name", "tagline", "cta_primary"] },
+        { type: "utility", variant: "default", animation: "fade-in", fields: ["features"] },
+        { type: "community", variant: "horizontal", animation: "horizontal-scroll", fields: ["logos"] },
+      ]
+    },
+    {
+      template_id: "premium_meme_matrix",
+      name: "Meme Matrix",
+      inspiration: "Cyberpunk viral meme tokens",
+      category: "horizontal-scroll",
+      tier: "premium",
+      theme: { background: "#0A0A0A", primary: "#00FFCC", accent: "#FF00FF", text: "#ffffff" },
+      sections: [
+        { type: "hero", variant: "fullscreen", animation: "fade-up", fields: ["coin_name", "tagline", "cta_primary"] },
+        { type: "utility", variant: "horizontal", animation: "horizontal-scroll", fields: ["images"] },
+        { type: "roadmap", variant: "horizontal", animation: "horizontal-scroll", fields: ["phases"] },
+      ]
+    },
+    {
+      template_id: "premium_orbit_launchpad",
+      name: "Orbit Launchpad",
+      inspiration: "Solana startup launches",
+      category: "horizontal-scroll",
+      tier: "premium",
+      theme: { background: "#0A0F1A", primary: "#14F195", accent: "#00d4ff", text: "#ffffff" },
+      sections: [
+        { type: "hero", variant: "centered", animation: "fade-up", fields: ["coin_name", "cta_primary"] },
+        { type: "tokenomics", variant: "cards", animation: "stagger", fields: ["stats"] },
+        { type: "utility", variant: "horizontal", animation: "horizontal-scroll", fields: ["cards"] },
+      ]
+    },
+    {
+      template_id: "premium_stealth_drop",
+      name: "Stealth Drop",
+      inspiration: "Mysterious stealth launches",
+      category: "horizontal-scroll",
+      tier: "premium",
+      theme: { background: "#0A0A0A", primary: "#FFFFFF", accent: "#14F195", text: "#ffffff" },
+      sections: [
+        { type: "hero", variant: "minimal", animation: "fade-in", fields: ["coin_name", "cta_primary"] },
+        { type: "story", variant: "default", animation: "fade-in", fields: ["headline", "text"] },
+        { type: "utility", variant: "horizontal", animation: "horizontal-scroll", fields: ["cards"] },
+      ]
+    },
+    {
+      template_id: "premium_pump_fun_hero",
+      name: "Pump.fun Hero",
+      inspiration: "Pump.fun terminal aesthetic",
+      category: "vertical",
+      tier: "premium",
+      theme: { background: "#0A0A0A", primary: "#14F195", accent: "#14F195", text: "#ffffff" },
+      sections: [
+        { type: "hero", variant: "minimal", animation: "fade-in", fields: ["coin_name", "cta_primary"] },
+        { type: "story", variant: "default", animation: "fade-in", fields: ["text"] },
+      ]
+    },
+    {
+      template_id: "premium_chart_maxi",
+      name: "Chart Maxi",
+      inspiration: "Trader-focused meme tokens",
+      category: "horizontal-scroll",
+      tier: "premium",
+      theme: { background: "#0A0A0A", primary: "#00FF00", accent: "#00FF00", text: "#ffffff" },
+      sections: [
+        { type: "hero", variant: "centered", animation: "fade-in", fields: ["coin_name"] },
+        { type: "utility", variant: "horizontal", animation: "horizontal-scroll", fields: ["cards"] },
+      ]
+    },
+    {
+      template_id: "premium_zero_info",
+      name: "Zero Info",
+      inspiration: "Ultra-minimal brutalist design",
+      category: "vertical",
+      tier: "premium",
+      theme: { background: "#000000", primary: "#FFFFFF", accent: "#FFFFFF", text: "#ffffff" },
+      sections: [
+        { type: "hero", variant: "minimal", animation: "none", fields: ["coin_name", "cta_primary"] },
       ]
     }
   ]

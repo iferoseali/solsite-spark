@@ -13,6 +13,7 @@ const templateMeta: Record<string, {
   personality: string;
   description: string;
   accentColor: string;
+  isPremium?: boolean;
   mockupStyle: {
     bg: string;
     primary: string;
@@ -72,6 +73,87 @@ const templateMeta: Record<string, {
     description: "Clean technical aesthetics for builder tokens",
     accentColor: "#00ffa3",
     mockupStyle: { bg: "#0d1117", primary: "#00ffa3", text: "#c9d1d9" }
+  },
+  // Premium Templates
+  premium_genesis_pump: {
+    icon: Rocket,
+    gradient: "from-emerald-400 via-green-500 to-teal-600",
+    bgGradient: "from-[#0A0A0A] to-[#0a1a0a]",
+    personality: "Premium • Genesis",
+    description: "High-energy animated gradient for memecoin launches",
+    accentColor: "#14F195",
+    isPremium: true,
+    mockupStyle: { bg: "#0A0A0A", primary: "#14F195", text: "#ffffff" }
+  },
+  premium_velocity_dark: {
+    icon: Zap,
+    gradient: "from-gray-100 via-gray-300 to-gray-500",
+    bgGradient: "from-[#000000] to-[#111111]",
+    personality: "Premium • Velocity",
+    description: "Ultra-clean minimal dark design for serious projects",
+    accentColor: "#FFFFFF",
+    isPremium: true,
+    mockupStyle: { bg: "#000000", primary: "#FFFFFF", text: "#ffffff" }
+  },
+  premium_meme_matrix: {
+    icon: Sparkles,
+    gradient: "from-cyan-400 via-teal-500 to-fuchsia-600",
+    bgGradient: "from-[#0A0A0A] to-[#0a0a1a]",
+    personality: "Premium • Matrix",
+    description: "Neon cyberpunk aesthetic for viral meme tokens",
+    accentColor: "#00FFCC",
+    isPremium: true,
+    mockupStyle: { bg: "#0A0A0A", primary: "#00FFCC", text: "#ffffff" }
+  },
+  premium_orbit_launchpad: {
+    icon: Rocket,
+    gradient: "from-emerald-400 via-cyan-500 to-blue-600",
+    bgGradient: "from-[#0A0F1A] to-[#0a1a2a]",
+    personality: "Premium • Orbit",
+    description: "Glassmorphism design for startup launches",
+    accentColor: "#14F195",
+    isPremium: true,
+    mockupStyle: { bg: "#0A0F1A", primary: "#14F195", text: "#ffffff" }
+  },
+  premium_stealth_drop: {
+    icon: Eye,
+    gradient: "from-gray-400 via-gray-600 to-emerald-600",
+    bgGradient: "from-[#0A0A0A] to-[#111111]",
+    personality: "Premium • Stealth",
+    description: "Mysterious blackout design for stealth launches",
+    accentColor: "#14F195",
+    isPremium: true,
+    mockupStyle: { bg: "#0A0A0A", primary: "#14F195", text: "#ffffff" }
+  },
+  premium_pump_fun_hero: {
+    icon: Flame,
+    gradient: "from-green-400 via-emerald-500 to-teal-600",
+    bgGradient: "from-[#0A0A0A] to-[#0a1a0a]",
+    personality: "Premium • Pump.fun",
+    description: "Terminal-style pump.fun inspired design",
+    accentColor: "#14F195",
+    isPremium: true,
+    mockupStyle: { bg: "#0A0A0A", primary: "#14F195", text: "#ffffff" }
+  },
+  premium_chart_maxi: {
+    icon: Zap,
+    gradient: "from-lime-400 via-green-500 to-emerald-600",
+    bgGradient: "from-[#0A0A0A] to-[#0a1a0a]",
+    personality: "Premium • Chart",
+    description: "Chart-focused design for degenerate traders",
+    accentColor: "#00FF00",
+    isPremium: true,
+    mockupStyle: { bg: "#0A0A0A", primary: "#00FF00", text: "#ffffff" }
+  },
+  premium_zero_info: {
+    icon: Skull,
+    gradient: "from-gray-100 via-gray-400 to-gray-600",
+    bgGradient: "from-[#000000] to-[#0a0a0a]",
+    personality: "Premium • Zero",
+    description: "Ultra-minimal brutalist design with no distractions",
+    accentColor: "#FFFFFF",
+    isPremium: true,
+    mockupStyle: { bg: "#000000", primary: "#FFFFFF", text: "#ffffff" }
   }
 };
 
@@ -211,8 +293,15 @@ const TemplateCard = ({
         </div>
         
         {/* Floating badge */}
-        <div className="absolute right-4 top-4 rounded-full bg-background/80 px-3 py-1 text-xs font-semibold backdrop-blur-sm z-20">
-          #{index + 1} Popular
+        <div className="absolute right-4 top-4 flex items-center gap-2 z-20">
+          {meta.isPremium && (
+            <div className="rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 px-3 py-1 text-xs font-semibold text-black">
+              Premium
+            </div>
+          )}
+          <div className="rounded-full bg-background/80 px-3 py-1 text-xs font-semibold backdrop-blur-sm">
+            #{index + 1}
+          </div>
         </div>
       </div>
     </motion.div>
