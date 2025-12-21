@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/landing/Footer";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useWalletAuth } from "@/hooks/useWalletAuth";
 import { useProject } from "@/hooks/queries/useProjects";
 import { domainService, type Domain } from "@/services/domainService";
+import { purgeCache } from "@/lib/cachePurge";
 import { toast } from "sonner";
 import { 
   ArrowLeft, 
@@ -20,7 +21,9 @@ import {
   RefreshCw,
   ExternalLink,
   AlertCircle,
-  Shield
+  Shield,
+  Check,
+  X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +33,7 @@ const DomainSettings = () => {
   const projectId = searchParams.get("projectId");
   const { isVerified, user } = useWalletAuth();
 
-  const { data: project, isLoading: projectLoading } = useProject(projectId || undefined);
+  const { data: project, isLoading: projectLoading, refetch: refetchProject } = useProject(projectId || undefined);
 
   const [domain, setDomain] = useState<Domain | null>(null);
   const [customDomain, setCustomDomain] = useState("");
@@ -38,12 +41,26 @@ const DomainSettings = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
 
+  // Subdomain editing state
+  const [editSubdomain, setEditSubdomain] = useState("");
+  const [subdomainAvailable, setSubdomainAvailable] = useState<boolean | null>(null);
+  const [checkingSubdomain, setCheckingSubdomain] = useState(false);
+  const [isSavingSubdomain, setIsSavingSubdomain] = useState(false);
+  const subdomainCheckTimeout = useRef<NodeJS.Timeout | null>(null);
+
   // Load domain data
   useEffect(() => {
     if (projectId) {
       loadDomain();
     }
   }, [projectId]);
+
+  // Initialize subdomain from project
+  useEffect(() => {
+    if (project?.subdomain) {
+      setEditSubdomain(project.subdomain);
+    }
+  }, [project?.subdomain]);
 
   const loadDomain = async () => {
     if (!projectId) return;
@@ -120,10 +137,136 @@ const DomainSettings = () => {
     toast.success(`${label} copied to clipboard`);
   };
 
+  // Subdomain validation and availability check
+  const sanitizeSubdomain = (value: string): string => {
+    return value
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 63);
+  };
+
+  const checkSubdomainAvailability = useCallback(async (subdomain: string) => {
+    if (!subdomain || subdomain.length < 3) {
+      setSubdomainAvailable(null);
+      setCheckingSubdomain(false);
+      return;
+    }
+
+    // If same as current, it's available
+    if (subdomain === project?.subdomain) {
+      setSubdomainAvailable(true);
+      setCheckingSubdomain(false);
+      return;
+    }
+
+    setCheckingSubdomain(true);
+    try {
+      const isAvailable = await domainService.checkSubdomainAvailability(subdomain, projectId || undefined);
+      setSubdomainAvailable(isAvailable);
+    } catch (err) {
+      console.error('Failed to check subdomain:', err);
+      setSubdomainAvailable(null);
+    } finally {
+      setCheckingSubdomain(false);
+    }
+  }, [projectId, project?.subdomain]);
+
+  const handleSubdomainChange = useCallback((value: string) => {
+    const sanitized = sanitizeSubdomain(value);
+    setEditSubdomain(sanitized);
+    setSubdomainAvailable(null);
+
+    if (subdomainCheckTimeout.current) {
+      clearTimeout(subdomainCheckTimeout.current);
+    }
+
+    if (sanitized.length >= 3) {
+      subdomainCheckTimeout.current = setTimeout(() => {
+        checkSubdomainAvailability(sanitized);
+      }, 500);
+    }
+  }, [checkSubdomainAvailability]);
+
+  const handleSaveSubdomain = async () => {
+    if (!projectId || !user || !editSubdomain || editSubdomain.length < 3) return;
+    if (editSubdomain === project?.subdomain) {
+      toast.info("Subdomain is unchanged");
+      return;
+    }
+    if (subdomainAvailable === false) {
+      toast.error("This subdomain is already taken");
+      return;
+    }
+
+    setIsSavingSubdomain(true);
+    try {
+      const result = await domainService.updateSubdomain(
+        projectId,
+        user.id,
+        user.wallet_address,
+        editSubdomain
+      );
+
+      if (result.success) {
+        // Purge old cache if subdomain changed
+        if (result.oldSubdomain && result.oldSubdomain !== editSubdomain) {
+          await purgeCache(result.oldSubdomain);
+        }
+        toast.success("Subdomain updated successfully!");
+        refetchProject();
+        await loadDomain();
+      } else {
+        toast.error(result.message || "Failed to update subdomain");
+      }
+    } catch (error) {
+      toast.error("Failed to update subdomain");
+    } finally {
+      setIsSavingSubdomain(false);
+    }
+  };
+
+  const subdomainHasChanges = editSubdomain !== project?.subdomain;
+  const canSaveSubdomain = subdomainHasChanges && editSubdomain.length >= 3 && subdomainAvailable !== false && !checkingSubdomain;
+
   // Get DNS instructions
   const dnsInstructions = projectId 
     ? domainService.getDNSInstructions(customDomain || "", projectId)
     : null;
+
+  if (!isVerified) {
+    switch (status) {
+      case "active":
+        return (
+          <Badge className="bg-green-500/20 text-green-400 gap-1.5">
+            <CheckCircle className="w-3 h-3" />
+            Active
+          </Badge>
+        );
+      case "verifying":
+        return (
+          <Badge className="bg-yellow-500/20 text-yellow-400 gap-1.5">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            Verifying
+          </Badge>
+        );
+      case "failed":
+        return (
+          <Badge className="bg-red-500/20 text-red-400 gap-1.5">
+            <XCircle className="w-3 h-3" />
+            Failed
+          </Badge>
+        );
+      default:
+        return (
+          <Badge className="bg-muted text-muted-foreground gap-1.5">
+            <AlertCircle className="w-3 h-3" />
+            Pending Setup
+          </Badge>
+        );
+    }
+  };
 
   const getStatusBadge = (status: string | null) => {
     switch (status) {
@@ -345,16 +488,57 @@ const DomainSettings = () => {
                 </Card>
               )}
 
-              {/* Default Subdomain Info */}
+              {/* Default Subdomain - Editable */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Default Subdomain</CardTitle>
+                  <CardTitle>Subdomain</CardTitle>
                   <CardDescription>
-                    Your site is always available at this address
+                    Change your site's subdomain URL
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-3">
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={editSubdomain}
+                      onChange={(e) => handleSubdomainChange(e.target.value)}
+                      placeholder="yoursite"
+                      className="font-mono text-sm max-w-[200px]"
+                      maxLength={63}
+                    />
+                    <span className="text-muted-foreground font-mono text-sm">.solsite.fun</span>
+                    <div className="w-5 h-5 flex items-center justify-center">
+                      {checkingSubdomain ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                      ) : subdomainAvailable === true && subdomainHasChanges ? (
+                        <Check className="w-4 h-4 text-accent" />
+                      ) : subdomainAvailable === false ? (
+                        <X className="w-4 h-4 text-destructive" />
+                      ) : null}
+                    </div>
+                    <Button
+                      onClick={handleSaveSubdomain}
+                      disabled={!canSaveSubdomain || isSavingSubdomain}
+                      size="sm"
+                    >
+                      {isSavingSubdomain ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        "Save"
+                      )}
+                    </Button>
+                  </div>
+                  
+                  {editSubdomain.length > 0 && editSubdomain.length < 3 && (
+                    <p className="text-xs text-destructive">Must be at least 3 characters</p>
+                  )}
+                  {subdomainAvailable === false && (
+                    <p className="text-xs text-destructive">This subdomain is already taken</p>
+                  )}
+                  {subdomainAvailable === true && subdomainHasChanges && (
+                    <p className="text-xs text-accent">Subdomain is available!</p>
+                  )}
+                  
+                  <div className="flex items-center gap-3 pt-2 border-t border-border">
                     <code className="flex-1 px-4 py-2 bg-muted rounded-lg text-sm font-mono">
                       {project?.subdomain}.solsite.fun
                     </code>
