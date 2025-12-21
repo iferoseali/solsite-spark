@@ -207,7 +207,7 @@ const Templates = () => {
               Choose Your <span className="text-gradient-primary">Template</span>
             </h1>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              {templates.length} unique designs with distinct personalities, animations, and visual effects.
+              20+ unique designs with distinct personalities, animations, and visual effects.
             </p>
           </motion.div>
 

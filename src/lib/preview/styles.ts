@@ -92,6 +92,55 @@ const templateStyles: Record<string, TemplateStyles> = {
     bgColor: '#030014', text: '#ffffff', muted: 'rgba(123,92,255,0.6)',
     fontHeading: 'Orbitron', fontBody: 'Exo 2'
   },
+  // Premium Templates
+  pump_blast_hero: { 
+    primary: '#14F195', accent: '#00ff88', 
+    bgGradient: 'linear-gradient(135deg, #000000 0%, #001a0d 100%)', 
+    bgColor: '#000000', text: '#14F195', muted: 'rgba(20,241,149,0.6)',
+    fontHeading: 'JetBrains Mono', fontBody: 'JetBrains Mono'
+  },
+  chaos_carousel: { 
+    primary: '#FF00FF', accent: '#00ffff', 
+    bgGradient: 'linear-gradient(135deg, #0a0014 0%, #140028 100%)', 
+    bgColor: '#0a0014', text: '#ffffff', muted: 'rgba(255,0,255,0.6)',
+    fontHeading: 'Inter', fontBody: 'Inter'
+  },
+  only_up_maxi_chart: { 
+    primary: '#00FF00', accent: '#33ff33', 
+    bgGradient: 'linear-gradient(135deg, #001100 0%, #002200 100%)', 
+    bgColor: '#001100', text: '#00ff00', muted: 'rgba(0,255,0,0.5)',
+    fontHeading: 'JetBrains Mono', fontBody: 'JetBrains Mono'
+  },
+  stealth_drop_reveal: { 
+    primary: '#ffffff', accent: '#ff3366', 
+    bgGradient: 'linear-gradient(135deg, #050505 0%, #0a0a0a 100%)', 
+    bgColor: '#050505', text: '#888888', muted: 'rgba(255,255,255,0.4)',
+    fontHeading: 'DM Sans', fontBody: 'DM Sans'
+  },
+  brutalist_pump_fun: { 
+    primary: '#ffffff', accent: '#ff0000', 
+    bgGradient: 'linear-gradient(135deg, #000000 0%, #000000 100%)', 
+    bgColor: '#000000', text: '#ffffff', muted: 'rgba(255,255,255,0.6)',
+    fontHeading: 'Arial', fontBody: 'Arial'
+  },
+  meme_wall_madness: { 
+    primary: '#ff00aa', accent: '#ffff00', 
+    bgGradient: 'linear-gradient(135deg, #14001f 0%, #280038 100%)', 
+    bgColor: '#14001f', text: '#ffffff', muted: 'rgba(255,0,170,0.6)',
+    fontHeading: 'Inter', fontBody: 'Inter'
+  },
+  trend_hacker: { 
+    primary: '#1DA1F2', accent: '#00d9ff', 
+    bgGradient: 'linear-gradient(135deg, #0c1520 0%, #142030 100%)', 
+    bgColor: '#0c1520', text: '#e7e9ea', muted: 'rgba(29,161,242,0.6)',
+    fontHeading: 'Inter', fontBody: 'Inter'
+  },
+  social_rocket: { 
+    primary: '#9945FF', accent: '#14F195', 
+    bgGradient: 'linear-gradient(135deg, #0d0618 0%, #1a0c30 100%)', 
+    bgColor: '#0d0618', text: '#ffffff', muted: 'rgba(153,69,255,0.6)',
+    fontHeading: 'DM Sans', fontBody: 'DM Sans'
+  },
 };
 
 const personalityStyles: Record<string, TemplateStyles> = {
