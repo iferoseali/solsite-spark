@@ -271,6 +271,87 @@ function getTemplateConfig(templateId: string): TemplateConfig {
         backgroundEffect: '3d-space',
         buttonStyle: 'hologram'
       };
+    // Premium Templates
+    case 'pump_blast_hero':
+      return {
+        fonts: { heading: 'JetBrains Mono', body: 'JetBrains Mono', mono: 'JetBrains Mono' },
+        colors: { bg: '#000000', primary: '#14F195', accent: '#00ff88', text: '#14F195', muted: 'rgba(20,241,149,0.6)' },
+        heroLayout: 'fullscreen',
+        cardStyle: 'terminal',
+        animations: ['flash', 'shake'],
+        backgroundEffect: 'matrix',
+        buttonStyle: 'terminal'
+      };
+    case 'chaos_carousel':
+      return {
+        fonts: { heading: 'Inter', body: 'Inter' },
+        colors: { bg: '#0a0014', primary: '#FF00FF', accent: '#00ffff', text: '#ffffff', muted: 'rgba(255,0,255,0.6)' },
+        heroLayout: 'fullscreen',
+        cardStyle: 'neon',
+        animations: ['zoom-in', 'glow'],
+        backgroundEffect: 'cyber-grid',
+        buttonStyle: 'neon'
+      };
+    case 'only_up_maxi_chart':
+      return {
+        fonts: { heading: 'JetBrains Mono', body: 'JetBrains Mono', mono: 'JetBrains Mono' },
+        colors: { bg: '#001100', primary: '#00FF00', accent: '#33ff33', text: '#00ff00', muted: 'rgba(0,255,0,0.5)' },
+        heroLayout: 'minimal',
+        cardStyle: 'terminal',
+        animations: ['fade-in', 'scale'],
+        backgroundEffect: 'matrix',
+        buttonStyle: 'terminal'
+      };
+    case 'stealth_drop_reveal':
+      return {
+        fonts: { heading: 'DM Sans', body: 'DM Sans' },
+        colors: { bg: '#050505', primary: '#ffffff', accent: '#ff3366', text: '#888888', muted: 'rgba(255,255,255,0.4)' },
+        heroLayout: 'centered',
+        cardStyle: 'soft',
+        animations: ['reveal', 'glitch'],
+        backgroundEffect: 'fog',
+        buttonStyle: 'minimal'
+      };
+    case 'brutalist_pump_fun':
+      return {
+        fonts: { heading: 'Arial', body: 'Arial' },
+        colors: { bg: '#000000', primary: '#ffffff', accent: '#ff0000', text: '#ffffff', muted: 'rgba(255,255,255,0.6)' },
+        heroLayout: 'raw',
+        cardStyle: 'brutalist',
+        animations: ['none'],
+        backgroundEffect: 'none',
+        buttonStyle: 'raw'
+      };
+    case 'meme_wall_madness':
+      return {
+        fonts: { heading: 'Inter', body: 'Inter' },
+        colors: { bg: '#14001f', primary: '#ff00aa', accent: '#ffff00', text: '#ffffff', muted: 'rgba(255,0,170,0.6)' },
+        heroLayout: 'fullscreen',
+        cardStyle: 'neon',
+        animations: ['shake', 'glow'],
+        backgroundEffect: 'floating-emojis',
+        buttonStyle: 'neon'
+      };
+    case 'trend_hacker':
+      return {
+        fonts: { heading: 'Inter', body: 'Inter' },
+        colors: { bg: '#0c1520', primary: '#1DA1F2', accent: '#00d9ff', text: '#e7e9ea', muted: 'rgba(29,161,242,0.6)' },
+        heroLayout: 'split',
+        cardStyle: 'glass',
+        animations: ['fade-in', 'tilt'],
+        backgroundEffect: 'gradient-orbs',
+        buttonStyle: 'gradient'
+      };
+    case 'social_rocket':
+      return {
+        fonts: { heading: 'DM Sans', body: 'DM Sans' },
+        colors: { bg: '#0d0618', primary: '#9945FF', accent: '#14F195', text: '#ffffff', muted: 'rgba(153,69,255,0.6)' },
+        heroLayout: 'split',
+        cardStyle: 'glass',
+        animations: ['parallax', 'scale'],
+        backgroundEffect: 'gradient-orbs',
+        buttonStyle: 'gradient'
+      };
     default:
       return {
         fonts: { heading: 'Inter', body: 'Inter' },
@@ -2673,6 +2754,15 @@ Deno.serve(async (req) => {
           'Infra Terminal': 'infra_terminal',
           'Social First': 'social_first',
           'Futuristic 3D': 'futuristic_3d',
+          // Premium templates
+          'Pump Blast Hero': 'pump_blast_hero',
+          'Chaos Carousel': 'chaos_carousel',
+          'Only Up Maxi Chart': 'only_up_maxi_chart',
+          'Stealth Drop Reveal': 'stealth_drop_reveal',
+          'Brutalist Pump.fun': 'brutalist_pump_fun',
+          'Meme Wall Madness': 'meme_wall_madness',
+          'Trend Hacker': 'trend_hacker',
+          'Social Rocket': 'social_rocket',
         };
         selectedTemplateId = nameToId[templateData.name] || 'cult_minimal';
       }
