@@ -36,7 +36,7 @@ export const Hero = () => {
       >
         <div className="text-center">
           <div className="text-3xl sm:text-4xl font-bold text-gradient-primary">
-            20+
+            30+
           </div>
           <div className="text-sm text-muted-foreground mt-1">Templates</div>
         </div>
