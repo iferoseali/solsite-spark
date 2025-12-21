@@ -1,9 +1,9 @@
 import React, { useState, useEffect, forwardRef, memo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Check, Columns, Eye, Heart, Sparkles } from "lucide-react";
+import { Check, Columns, Eye, Heart, Sparkles, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getTemplateMeta } from "@/lib/templates";
+import { getTemplateMeta, TEMPLATE_META } from "@/lib/templates";
 import type { TemplateBlueprint } from "@/types/template";
 
 interface TemplateCardProps {
@@ -40,6 +40,7 @@ export const TemplateCard = memo(forwardRef<HTMLDivElement, TemplateCardProps>((
 
   const previewUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?preview=true&templateId=${templateId}`;
   const meta = getTemplateMeta(templateId);
+  const isPremium = meta.isPremium || false;
 
   useEffect(() => {
     const key = `tplthumb:v4:${templateId}`;
@@ -98,11 +99,16 @@ export const TemplateCard = memo(forwardRef<HTMLDivElement, TemplateCardProps>((
           )}
         </div>
 
-        {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xl">{meta.emoji}</span>
             <h3 className="font-semibold text-foreground truncate">{template.name}</h3>
+            {isPremium && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/30 text-amber-400 text-[10px] font-medium">
+                <Crown className="w-3 h-3" />
+                Premium
+              </span>
+            )}
             {isFavorite && <Heart className="w-4 h-4 fill-red-500 text-red-500" />}
           </div>
           <p className="text-sm text-muted-foreground line-clamp-1 mb-2">{meta.tagline}</p>
@@ -249,9 +255,15 @@ export const TemplateCard = memo(forwardRef<HTMLDivElement, TemplateCardProps>((
 
       {/* Label section */}
       <div className="relative p-5 bg-gradient-to-t from-black/90 via-black/60 to-transparent -mt-8 pt-12">
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
           <span className="text-2xl">{meta.emoji}</span>
           <h3 className="font-bold text-lg text-white">{template.name}</h3>
+          {isPremium && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500/30 to-yellow-500/30 border border-amber-500/40 text-amber-300 text-[10px] font-medium">
+              <Crown className="w-3 h-3" />
+              Premium
+            </span>
+          )}
         </div>
         <p className="text-sm text-white/60 mb-3 line-clamp-2">{meta.tagline}</p>
         <div className="flex flex-wrap gap-1.5">
