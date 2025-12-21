@@ -5,13 +5,46 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Site configuration
+const SITE_DOMAIN = 'solsite.fun';
+
+/**
+ * Purge Cloudflare edge cache for a subdomain
+ */
+async function purgeCloudflareCache(subdomain: string): Promise<boolean> {
+  try {
+    const siteUrl = `https://${subdomain}.${SITE_DOMAIN}/_purge`;
+    console.log(`[Prerender] Purging Cloudflare cache: ${siteUrl}`);
+    
+    const response = await fetch(siteUrl, {
+      method: 'GET',
+      headers: {
+        'Cache-Control': 'no-cache',
+      },
+    });
+    
+    if (!response.ok) {
+      console.warn(`[Prerender] Cache purge failed with status: ${response.status}`);
+      return false;
+    }
+    
+    const result = await response.json();
+    console.log(`[Prerender] Cache purge result:`, result);
+    return result.success === true;
+  } catch (error) {
+    console.error(`[Prerender] Cache purge error:`, error);
+    return false;
+  }
+}
+
 /**
  * Pre-render site edge function
  * 
  * This function is called when a site is published to:
  * 1. Generate the static HTML
  * 2. Store it in the pre-rendered-sites storage bucket
- * 3. This allows for faster serving and CDN caching
+ * 3. Purge the Cloudflare edge cache
+ * 4. This allows for faster serving and ensures fresh content
  * 
  * It can also be called to invalidate/clear cached content when a site is updated.
  */
@@ -43,14 +76,18 @@ Deno.serve(async (req) => {
       .single();
 
     if (projectError || !project) {
-      console.error('Project not found:', projectId);
+      console.error('[Prerender] Project not found:', projectId);
       return new Response(
         JSON.stringify({ error: 'Project not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    console.log(`[Prerender] Processing ${action} for project: ${project.subdomain || projectId}`);
+
     if (action === 'invalidate') {
+      let cachePurged = false;
+      
       // Delete the pre-rendered file if it exists
       if (project.subdomain) {
         const { error: deleteError } = await supabase
@@ -59,21 +96,29 @@ Deno.serve(async (req) => {
           .remove([`${project.subdomain}.html`]);
         
         if (deleteError) {
-          console.log('No cached file to delete or error:', deleteError.message);
+          console.log('[Prerender] No cached file to delete or error:', deleteError.message);
         } else {
-          console.log(`Invalidated cache for ${project.subdomain}`);
+          console.log(`[Prerender] Invalidated storage cache for ${project.subdomain}`);
         }
+        
+        // Also purge Cloudflare edge cache
+        cachePurged = await purgeCloudflareCache(project.subdomain);
       }
       
       return new Response(
-        JSON.stringify({ success: true, message: 'Cache invalidated' }),
+        JSON.stringify({ 
+          success: true, 
+          message: 'Cache invalidated',
+          subdomain: project.subdomain,
+          cloudflarePurged: cachePurged,
+        }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     // Pre-render the site by calling render-site edge function internally
     const renderUrl = `${supabaseUrl}/functions/v1/render-site?projectId=${projectId}`;
-    console.log('Pre-rendering site:', renderUrl);
+    console.log('[Prerender] Pre-rendering site:', renderUrl);
     
     const renderResponse = await fetch(renderUrl, {
       headers: {
@@ -82,7 +127,7 @@ Deno.serve(async (req) => {
     });
 
     if (!renderResponse.ok) {
-      console.error('Failed to render site:', renderResponse.status);
+      console.error('[Prerender] Failed to render site:', renderResponse.status);
       return new Response(
         JSON.stringify({ error: 'Failed to render site' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -90,7 +135,10 @@ Deno.serve(async (req) => {
     }
 
     const html = await renderResponse.text();
-    console.log(`Generated HTML for ${project.subdomain}, size: ${html.length} bytes`);
+    console.log(`[Prerender] Generated HTML for ${project.subdomain}, size: ${html.length} bytes`);
+
+    let storedSuccessfully = false;
+    let cachePurged = false;
 
     // Store in Supabase Storage
     if (project.subdomain) {
@@ -108,11 +156,15 @@ Deno.serve(async (req) => {
         );
 
       if (uploadError) {
-        console.error('Failed to upload pre-rendered HTML:', uploadError);
+        console.error('[Prerender] Failed to upload pre-rendered HTML:', uploadError);
         // Don't fail the request - the site can still be served dynamically
       } else {
-        console.log(`Pre-rendered HTML stored for ${project.subdomain}`);
+        console.log(`[Prerender] Pre-rendered HTML stored for ${project.subdomain}`);
+        storedSuccessfully = true;
       }
+      
+      // Always purge Cloudflare cache after pre-rendering
+      cachePurged = await purgeCloudflareCache(project.subdomain);
     }
 
     return new Response(
@@ -121,12 +173,14 @@ Deno.serve(async (req) => {
         message: 'Site pre-rendered successfully',
         subdomain: project.subdomain,
         htmlSize: html.length,
+        storedInBucket: storedSuccessfully,
+        cloudflarePurged: cachePurged,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Error in prerender-site:', error);
+    console.error('[Prerender] Error:', error);
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
