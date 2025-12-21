@@ -11,6 +11,9 @@ export interface UseBuilderTemplateProps {
   preselectedPersonality: string;
   editProjectId: string | null;
   setSections: React.Dispatch<React.SetStateAction<SectionConfig[]>>;
+  setCurrentLayoutForPreview: React.Dispatch<React.SetStateAction<string>>;
+  setCurrentPersonalityForPreview: React.Dispatch<React.SetStateAction<string>>;
+  setSelectedTemplateIdForPreview: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
 export interface UseBuilderTemplateReturn {
@@ -19,7 +22,6 @@ export interface UseBuilderTemplateReturn {
   blueprintId: string | null;
   setBlueprintId: React.Dispatch<React.SetStateAction<string | null>>;
   selectedTemplateId: string | null;
-  setSelectedTemplateId: React.Dispatch<React.SetStateAction<string | null>>;
   blueprintName: string;
   setBlueprintName: React.Dispatch<React.SetStateAction<string>>;
   currentLayout: string;
@@ -43,6 +45,9 @@ export function useBuilderTemplate({
   preselectedPersonality,
   editProjectId,
   setSections,
+  setCurrentLayoutForPreview,
+  setCurrentPersonalityForPreview,
+  setSelectedTemplateIdForPreview,
 }: UseBuilderTemplateProps): UseBuilderTemplateReturn {
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [blueprintId, setBlueprintId] = useState<string | null>(urlBlueprintId);
@@ -52,6 +57,15 @@ export function useBuilderTemplate({
   const [currentPersonality, setCurrentPersonality] = useState(preselectedPersonality);
   const [templatePreviewHtml, setTemplatePreviewHtml] = useState<string | null>(null);
   const [isLoadingTemplatePreview, setIsLoadingTemplatePreview] = useState(false);
+
+  // Initialize preview state from URL params
+  useEffect(() => {
+    setCurrentLayoutForPreview(preselectedLayout);
+    setCurrentPersonalityForPreview(preselectedPersonality);
+    if (urlTemplateId) {
+      setSelectedTemplateIdForPreview(urlTemplateId);
+    }
+  }, [preselectedLayout, preselectedPersonality, urlTemplateId, setCurrentLayoutForPreview, setCurrentPersonalityForPreview, setSelectedTemplateIdForPreview]);
 
   // Load template preview
   useEffect(() => {
@@ -74,8 +88,14 @@ export function useBuilderTemplate({
           
           if (blueprint) {
             setBlueprintName(blueprint.name);
-            if (blueprint.personality) setCurrentPersonality(blueprint.personality);
-            if (blueprint.layout_category) setCurrentLayout(blueprint.layout_category);
+            if (blueprint.personality) {
+              setCurrentPersonality(blueprint.personality);
+              setCurrentPersonalityForPreview(blueprint.personality);
+            }
+            if (blueprint.layout_category) {
+              setCurrentLayout(blueprint.layout_category);
+              setCurrentLayoutForPreview(blueprint.layout_category);
+            }
           }
         }
       } catch (error) {
@@ -86,7 +106,7 @@ export function useBuilderTemplate({
     };
 
     loadTemplatePreview();
-  }, [urlTemplateId, urlBlueprintId]);
+  }, [urlTemplateId, urlBlueprintId, setCurrentLayoutForPreview, setCurrentPersonalityForPreview]);
 
   // Fetch template ID
   useEffect(() => {
@@ -107,10 +127,16 @@ export function useBuilderTemplate({
     async (args: { templateKey: string; blueprintId: string; layout: string; personality: string }) => {
       const { templateKey, blueprintId: nextBlueprintId, layout, personality } = args;
 
+      // Update local state
       setSelectedTemplateId(templateKey);
       setBlueprintId(nextBlueprintId);
       setCurrentLayout(layout);
       setCurrentPersonality(personality);
+      
+      // Update preview state in useBuilderState for live preview regeneration
+      setSelectedTemplateIdForPreview(templateKey);
+      setCurrentLayoutForPreview(layout);
+      setCurrentPersonalityForPreview(personality);
 
       try {
         const { data: blueprint, error } = await supabase
@@ -166,7 +192,7 @@ export function useBuilderTemplate({
         toast.success('Template switched');
       }
     },
-    [setSections]
+    [setSections, setCurrentLayoutForPreview, setCurrentPersonalityForPreview, setSelectedTemplateIdForPreview]
   );
 
   return {
@@ -175,7 +201,6 @@ export function useBuilderTemplate({
     blueprintId,
     setBlueprintId,
     selectedTemplateId,
-    setSelectedTemplateId,
     blueprintName,
     setBlueprintName,
     currentLayout,

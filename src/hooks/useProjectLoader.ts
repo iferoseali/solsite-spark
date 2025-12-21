@@ -14,9 +14,13 @@ export interface UseProjectLoaderProps {
   setTeamMembers: React.Dispatch<React.SetStateAction<TeamMember[]>>;
   setFeatures: React.Dispatch<React.SetStateAction<Feature[]>>;
   setLogoPreview: React.Dispatch<React.SetStateAction<string | null>>;
+  // Template hook setters
   setCurrentLayout: React.Dispatch<React.SetStateAction<string>>;
   setCurrentPersonality: React.Dispatch<React.SetStateAction<string>>;
   setTemplateId: React.Dispatch<React.SetStateAction<string | null>>;
+  // State hook setters (for preview generation)
+  setCurrentLayoutForPreview: React.Dispatch<React.SetStateAction<string>>;
+  setCurrentPersonalityForPreview: React.Dispatch<React.SetStateAction<string>>;
   onProjectLoaded: (project: { id: string; subdomain: string }) => void;
 }
 
@@ -36,6 +40,8 @@ export function useProjectLoader({
   setCurrentLayout,
   setCurrentPersonality,
   setTemplateId,
+  setCurrentLayoutForPreview,
+  setCurrentPersonalityForPreview,
   onProjectLoaded,
 }: UseProjectLoaderProps): UseProjectLoaderReturn {
   const [isLoadingProject, setIsLoadingProject] = useState(!!editProjectId);
@@ -101,8 +107,12 @@ export function useProjectLoader({
 
           const template = project.templates as { layout_id: string; personality_id: string } | null;
           if (template) {
+            // Update template hook state
             setCurrentLayout(template.layout_id);
             setCurrentPersonality(template.personality_id);
+            // Update preview state for live preview generation
+            setCurrentLayoutForPreview(template.layout_id);
+            setCurrentPersonalityForPreview(template.personality_id);
           }
 
           onProjectLoaded({ id: project.id, subdomain: project.subdomain || '' });
