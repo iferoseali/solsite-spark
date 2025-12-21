@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, memo } from "react";
 import { Plus, Trash2, GripVertical, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -139,7 +139,7 @@ const SortablePhase = ({ phase, onChange, onRemove, onAddItem, onRemoveItem, onI
   );
 };
 
-export const RoadmapEditor = ({ phases, onChange }: RoadmapEditorProps) => {
+export const RoadmapEditor = memo(function RoadmapEditor({ phases, onChange }: RoadmapEditorProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -233,4 +233,4 @@ export const RoadmapEditor = ({ phases, onChange }: RoadmapEditorProps) => {
       )}
     </div>
   );
-};
+});

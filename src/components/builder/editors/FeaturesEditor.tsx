@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, memo } from "react";
 import { Plus, Trash2, Sparkles, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -116,7 +116,7 @@ const SortableFeature = ({ feature, onChange, onRemove }: SortableFeatureProps) 
   );
 };
 
-export const FeaturesEditor = ({ features, onChange }: FeaturesEditorProps) => {
+export const FeaturesEditor = memo(function FeaturesEditor({ features, onChange }: FeaturesEditorProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -185,4 +185,4 @@ export const FeaturesEditor = ({ features, onChange }: FeaturesEditorProps) => {
       )}
     </div>
   );
-};
+});

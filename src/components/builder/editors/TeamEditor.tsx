@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, memo } from "react";
 import { Plus, Trash2, Twitter, User, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -122,7 +122,7 @@ const SortableMember = ({ member, onChange, onRemove }: SortableMemberProps) => 
   );
 };
 
-export const TeamEditor = ({ members, onChange }: TeamEditorProps) => {
+export const TeamEditor = memo(function TeamEditor({ members, onChange }: TeamEditorProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -191,4 +191,4 @@ export const TeamEditor = ({ members, onChange }: TeamEditorProps) => {
       )}
     </div>
   );
-};
+});

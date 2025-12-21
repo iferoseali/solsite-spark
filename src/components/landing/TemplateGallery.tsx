@@ -321,7 +321,7 @@ export const TemplateGallery = () => {
           </motion.div>
 
           {/* Horizontal scroll gallery */}
-          <div className="relative">
+          <div className="relative overflow-hidden">
             {/* Gradient fades */}
             <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-24 bg-gradient-to-r from-background to-transparent" />
             <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-24 bg-gradient-to-l from-background to-transparent" />
@@ -335,15 +335,6 @@ export const TemplateGallery = () => {
                   key={template.template_id} 
                   template={template} 
                   index={index}
-                  onPreview={setSelectedTemplate}
-                />
-              ))}
-              {/* Duplicate for seamless scroll feel */}
-              {templates.map((template, index) => (
-                <TemplateCard 
-                  key={`dup-${template.template_id}`} 
-                  template={template} 
-                  index={index + templates.length}
                   onPreview={setSelectedTemplate}
                 />
               ))}

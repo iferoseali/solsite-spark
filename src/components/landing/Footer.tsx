@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { Twitter, MessageCircle, Github } from "lucide-react";
 import logo from "@/assets/logo.png";
-import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
@@ -26,34 +25,34 @@ export const Footer = () => {
             <div className="flex items-center gap-4">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="text-muted-foreground/50 cursor-not-allowed relative">
+                  <button type="button" className="text-muted-foreground/50 cursor-not-allowed relative" disabled>
                     <Twitter className="w-5 h-5" />
-                    <Badge variant="outline" className="absolute -top-2 -right-3 text-[8px] px-1 py-0 h-3 bg-muted">
+                    <span className="absolute -top-2 -right-3 text-[8px] px-1 py-0 h-3 bg-muted border border-border rounded-full flex items-center justify-center">
                       Soon
-                    </Badge>
-                  </span>
+                    </span>
+                  </button>
                 </TooltipTrigger>
                 <TooltipContent>Coming Soon</TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="text-muted-foreground/50 cursor-not-allowed relative">
+                  <button type="button" className="text-muted-foreground/50 cursor-not-allowed relative" disabled>
                     <MessageCircle className="w-5 h-5" />
-                    <Badge variant="outline" className="absolute -top-2 -right-3 text-[8px] px-1 py-0 h-3 bg-muted">
+                    <span className="absolute -top-2 -right-3 text-[8px] px-1 py-0 h-3 bg-muted border border-border rounded-full flex items-center justify-center">
                       Soon
-                    </Badge>
-                  </span>
+                    </span>
+                  </button>
                 </TooltipTrigger>
                 <TooltipContent>Coming Soon</TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="text-muted-foreground/50 cursor-not-allowed relative">
+                  <button type="button" className="text-muted-foreground/50 cursor-not-allowed relative" disabled>
                     <Github className="w-5 h-5" />
-                    <Badge variant="outline" className="absolute -top-2 -right-3 text-[8px] px-1 py-0 h-3 bg-muted">
+                    <span className="absolute -top-2 -right-3 text-[8px] px-1 py-0 h-3 bg-muted border border-border rounded-full flex items-center justify-center">
                       Soon
-                    </Badge>
-                  </span>
+                    </span>
+                  </button>
                 </TooltipTrigger>
                 <TooltipContent>Coming Soon</TooltipContent>
               </Tooltip>
