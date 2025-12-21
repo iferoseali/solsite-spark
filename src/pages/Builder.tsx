@@ -615,13 +615,24 @@ const Builder = () => {
           {/* Preview Panel */}
           <div className="w-full lg:w-1/2 xl:w-3/5 bg-secondary/30 p-6 lg:p-8 overflow-hidden flex flex-col">
             <PreviewControls
-              deviceSize={deviceSize}
-              onDeviceSizeChange={setDeviceSize}
-              onRefresh={refreshPreview}
+              subdomain={generatedProject?.subdomain || state.formData.ticker?.toLowerCase() || 'preview'}
+              previewUrl={generatedProject ? `https://${generatedProject.subdomain}.shipmemecoin.com` : null}
+              isGeneratedProject={!!generatedProject}
+              isSaving={actions.isSaving}
               isRefreshing={isRefreshingPreview}
-              onTemplateChange={template.handleTemplateChange}
+              deviceSize={deviceSize}
+              currentTemplateKey={template.selectedTemplateId || ''}
+              currentBlueprintId={template.blueprintId}
               currentLayout={template.currentLayout}
               currentPersonality={template.currentPersonality}
+              onRefresh={refreshPreview}
+              onSave={actions.saveChanges}
+              onDeviceChange={setDeviceSize}
+              onTemplateChange={template.handleTemplateChange}
+              onFullscreen={() => {
+                const iframe = document.querySelector('iframe');
+                if (iframe) iframe.requestFullscreen?.();
+              }}
             />
             
             <div className="flex-1 flex items-center justify-center overflow-hidden">
@@ -656,16 +667,17 @@ const Builder = () => {
           actions.handleGenerate();
         }}
         paymentType="website"
+        userId={user?.id || ''}
+        walletAddress={user?.wallet_address || ''}
       />
 
       {/* Logo Cropper */}
-      {state.showLogoCropper && state.tempLogoSrc && (
-        <LogoCropper
-          src={state.tempLogoSrc}
-          onComplete={state.handleCropComplete}
-          onCancel={() => state.setShowLogoCropper(false)}
-        />
-      )}
+      <LogoCropper
+        open={state.showLogoCropper && !!state.tempLogoSrc}
+        onOpenChange={(open) => !open && state.setShowLogoCropper(false)}
+        imageSrc={state.tempLogoSrc || ''}
+        onCropComplete={state.handleCropComplete}
+      />
     </div>
   );
 };
