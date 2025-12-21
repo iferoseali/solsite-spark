@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useTransition } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,66 +31,29 @@ import {
 import { useSearchParams, Link } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import type { Json } from "@/integrations/supabase/types";
 import { useWalletAuth } from "@/hooks/useWalletAuth";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-import { generatePreviewHtml } from "@/lib/preview";
-import { purgeCache } from "@/lib/cachePurge";
 import { PaymentModal } from "@/components/payment/PaymentModal";
-import { usePayment } from "@/hooks/usePayment";
-import { SectionManager, DEFAULT_SECTIONS, type SectionConfig } from "@/components/builder/SectionManager";
-import { mapBlueprintTypeToSectionType, generateSectionId } from "@/types/section";
+import { SectionManager } from "@/components/builder/SectionManager";
 import { LogoCropper } from "@/components/builder/LogoCropper";
 import { PreviewControls, type DeviceSize } from "@/components/builder/PreviewControls";
 import { FaqEditor, RoadmapEditor, TeamEditor, FeaturesEditor } from "@/components/builder/editors";
-import { 
-  FaqItem, RoadmapPhase, TeamMember, Feature,
-  DEFAULT_FAQ_ITEMS, DEFAULT_ROADMAP_PHASES
-} from "@/types/builder";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { useAutoSave, type AutoSaveData } from "@/hooks/useAutoSave";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
-// History state type for undo/redo
-interface BuilderSnapshot {
-  formData: typeof initialFormData;
-  faqItems: FaqItem[];
-  roadmapPhases: RoadmapPhase[];
-  teamMembers: TeamMember[];
-  features: Feature[];
-  sections: SectionConfig[];
-  logoPreview: string | null;
-}
-
-const initialFormData = {
-  coinName: "",
-  ticker: "",
-  tagline: "",
-  description: "",
-  twitter: "",
-  discord: "",
-  telegram: "",
-  dexLink: "",
-  buyNowLink: "",
-  buyNowText: "",
-  showBuyNow: true,
-  learnMoreLink: "",
-  learnMoreText: "",
-  showLearnMore: true,
-  showRoadmap: true,
-  showFaq: true,
-  totalSupply: "",
-  circulatingSupply: "",
-  contractAddress: "",
-};
+// Custom hooks
+import { useBuilderState } from "@/hooks/useBuilderState";
+import { useBuilderHistory } from "@/hooks/useBuilderHistory";
+import { useBuilderActions } from "@/hooks/useBuilderActions";
+import { useBuilderTemplate } from "@/hooks/useBuilderTemplate";
+import { useProjectLoader } from "@/hooks/useProjectLoader";
+import { useSubdomainValidator } from "@/hooks/useSubdomainValidator";
 
 const BUY_PRESETS = ['Buy Now', 'Buy $TICKER', 'Get Started', 'Trade Now'];
 const LEARN_PRESETS = ['Learn More', 'Explore', 'Join Community', 'Read Docs'];
-
-const MAX_HISTORY = 50;
 
 const Builder = () => {
   const [searchParams] = useSearchParams();
@@ -104,25 +67,13 @@ const Builder = () => {
   const { setVisible } = useWalletModal();
   const { user, isVerified } = useWalletAuth();
 
-  const [templateId, setTemplateId] = useState<string | null>(null);
-  const [blueprintId, setBlueprintId] = useState<string | null>(urlBlueprintId);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(urlTemplateId);
-  const [blueprintName, setBlueprintName] = useState<string>("");
-  const [currentLayout, setCurrentLayout] = useState(preselectedLayout);
-  const [currentPersonality, setCurrentPersonality] = useState(preselectedPersonality);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isLoadingProject, setIsLoadingProject] = useState(!!editProjectId);
-  const [generatedProject, setGeneratedProject] = useState<{
-    id: string;
-    subdomain: string;
-  } | null>(null);
-
+  // Generated project state
+  const [generatedProject, setGeneratedProject] = useState<{ id: string; subdomain: string } | null>(null);
+  
+  // Preview state
   const [previewKey, setPreviewKey] = useState(0);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [isRefreshingPreview, setIsRefreshingPreview] = useState(false);
-  const [templatePreviewHtml, setTemplatePreviewHtml] = useState<string | null>(null);
-  const [isLoadingTemplatePreview, setIsLoadingTemplatePreview] = useState(false);
   const [deviceSize, setDeviceSize] = useState<DeviceSize>('desktop');
 
   // Collapsible section states
@@ -138,385 +89,68 @@ const Builder = () => {
     sections: false,
   });
 
-  const [formData, setFormData] = useState(initialFormData);
+  // Template hook
+  const template = useBuilderTemplate({
+    urlTemplateId,
+    urlBlueprintId,
+    preselectedLayout,
+    preselectedPersonality,
+    editProjectId,
+    setSections: (sections) => state.setSections(sections),
+  });
 
-  // Custom content states
-  const [faqItems, setFaqItems] = useState<FaqItem[]>(DEFAULT_FAQ_ITEMS);
-  const [roadmapPhases, setRoadmapPhases] = useState<RoadmapPhase[]>(DEFAULT_ROADMAP_PHASES);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [features, setFeatures] = useState<Feature[]>([]);
+  // State hook
+  const state = useBuilderState({
+    currentLayout: template.currentLayout,
+    currentPersonality: template.currentPersonality,
+    selectedTemplateId: template.selectedTemplateId,
+    editProjectId,
+    generatedProject,
+  });
 
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
-  const [showLogoCropper, setShowLogoCropper] = useState(false);
-  const [tempLogoSrc, setTempLogoSrc] = useState<string | null>(null);
-  const [sections, setSections] = useState<SectionConfig[]>(DEFAULT_SECTIONS);
-  
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  // Production payment check - set to false in production
-  const [hasPaid, setHasPaid] = useState(import.meta.env.DEV);
-  const { checkExistingPayment } = usePayment();
+  // Project loader hook
+  const { isLoadingProject } = useProjectLoader({
+    editProjectId,
+    setFormData: state.setFormData,
+    setSections: state.setSections,
+    setFaqItems: state.setFaqItems,
+    setRoadmapPhases: state.setRoadmapPhases,
+    setTeamMembers: state.setTeamMembers,
+    setFeatures: state.setFeatures,
+    setLogoPreview: state.setLogoPreview,
+    setCurrentLayout: template.setCurrentLayout,
+    setCurrentPersonality: template.setCurrentPersonality,
+    setTemplateId: template.setTemplateId,
+    onProjectLoaded: setGeneratedProject,
+  });
 
-  // Subdomain state
-  const [customSubdomain, setCustomSubdomain] = useState("");
-  const [subdomainAvailable, setSubdomainAvailable] = useState<boolean | null>(null);
-  const [checkingSubdomain, setCheckingSubdomain] = useState(false);
-  const subdomainCheckTimeout = useRef<NodeJS.Timeout | null>(null);
+  // Subdomain validator hook
+  const subdomain = useSubdomainValidator(state.formData.coinName, editProjectId);
 
-  // Draft restore state
-  const [showDraftBanner, setShowDraftBanner] = useState(false);
-  const [savedDraft, setSavedDraft] = useState<AutoSaveData | null>(null);
+  // History hook
+  const history = useBuilderHistory({
+    createSnapshot: state.createSnapshot,
+    applySnapshot: state.applySnapshot,
+    isEditMode: !!editProjectId,
+    dependencies: [
+      state.formData, 
+      state.faqItems, 
+      state.roadmapPhases, 
+      state.teamMembers, 
+      state.features, 
+      state.sections, 
+      state.logoPreview
+    ],
+  });
 
-  // History for undo/redo
-  const [history, setHistory] = useState<BuilderSnapshot[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const historyDebounce = useRef<NodeJS.Timeout | null>(null);
-  const isRestoringHistory = useRef(false);
-
-  // Create a snapshot of current state
-  const createSnapshot = useCallback((): BuilderSnapshot => ({
-    formData: { ...formData },
-    faqItems: JSON.parse(JSON.stringify(faqItems)),
-    roadmapPhases: JSON.parse(JSON.stringify(roadmapPhases)),
-    teamMembers: JSON.parse(JSON.stringify(teamMembers)),
-    features: JSON.parse(JSON.stringify(features)),
-    sections: JSON.parse(JSON.stringify(sections)),
-    logoPreview,
-  }), [formData, faqItems, roadmapPhases, teamMembers, features, sections, logoPreview]);
-
-  // Push to history with debounce (increased to 1000ms for performance)
-  const pushToHistory = useCallback(() => {
-    if (isRestoringHistory.current) return;
-    
-    if (historyDebounce.current) {
-      clearTimeout(historyDebounce.current);
+  // Initialize history
+  useEffect(() => {
+    if (!editProjectId && !isLoadingProject) {
+      history.initializeHistory(state.createSnapshot());
     }
-    
-    historyDebounce.current = setTimeout(() => {
-      const snapshot = createSnapshot();
-      setHistory(prev => {
-        // Remove any future states if we're not at the end
-        const newHistory = prev.slice(0, historyIndex + 1);
-        // Add new snapshot
-        newHistory.push(snapshot);
-        // Limit history size
-        if (newHistory.length > MAX_HISTORY) {
-          newHistory.shift();
-          return newHistory;
-        }
-        return newHistory;
-      });
-      setHistoryIndex(prev => Math.min(prev + 1, MAX_HISTORY - 1));
-    }, 1000); // Increased from 500ms for better performance
-  }, [createSnapshot, historyIndex]);
+  }, [editProjectId, isLoadingProject]);
 
-  // Undo function
-  const undo = useCallback(() => {
-    if (historyIndex <= 0) return;
-    const newIndex = historyIndex - 1;
-    const snapshot = history[newIndex];
-    if (!snapshot) return;
-    
-    isRestoringHistory.current = true;
-    setFormData(snapshot.formData);
-    setFaqItems(snapshot.faqItems);
-    setRoadmapPhases(snapshot.roadmapPhases);
-    setTeamMembers(snapshot.teamMembers);
-    setFeatures(snapshot.features);
-    setSections(snapshot.sections);
-    setLogoPreview(snapshot.logoPreview);
-    setHistoryIndex(newIndex);
-    
-    setTimeout(() => {
-      isRestoringHistory.current = false;
-    }, 100);
-    
-    toast.success('Undone');
-  }, [history, historyIndex]);
-
-  // Redo function
-  const redo = useCallback(() => {
-    if (historyIndex >= history.length - 1) return;
-    const newIndex = historyIndex + 1;
-    const snapshot = history[newIndex];
-    if (!snapshot) return;
-    
-    isRestoringHistory.current = true;
-    setFormData(snapshot.formData);
-    setFaqItems(snapshot.faqItems);
-    setRoadmapPhases(snapshot.roadmapPhases);
-    setTeamMembers(snapshot.teamMembers);
-    setFeatures(snapshot.features);
-    setSections(snapshot.sections);
-    setLogoPreview(snapshot.logoPreview);
-    setHistoryIndex(newIndex);
-    
-    setTimeout(() => {
-      isRestoringHistory.current = false;
-    }, 100);
-    
-    toast.success('Redone');
-  }, [history, historyIndex]);
-
-  const canUndo = historyIndex > 0;
-  const canRedo = historyIndex < history.length - 1;
-
-  // Initialize history with first snapshot
-  useEffect(() => {
-    if (history.length === 0 && !editProjectId) {
-      const initialSnapshot = createSnapshot();
-      setHistory([initialSnapshot]);
-      setHistoryIndex(0);
-    }
-  }, []);
-
-  // Track changes for history
-  useEffect(() => {
-    if (history.length > 0) {
-      pushToHistory();
-    }
-  }, [formData, faqItems, roadmapPhases, teamMembers, features, sections, logoPreview]);
-
-  // Keyboard shortcuts for undo/redo
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-        e.preventDefault();
-        undo();
-      }
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
-        e.preventDefault();
-        redo();
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo]);
-
-  // Auto-save hook
-  const { loadDraft, clearDraft } = useAutoSave(
-    { formData, faqItems, roadmapPhases, teamMembers, features, sections, logoPreview },
-    !!editProjectId || !!generatedProject
-  );
-
-  // Check for saved draft on mount
-  useEffect(() => {
-    if (editProjectId) return; // Don't restore draft when editing
-    const draft = loadDraft();
-    if (draft && draft.formData && (draft.formData as { coinName?: string }).coinName) {
-      setSavedDraft(draft);
-      setShowDraftBanner(true);
-    }
-  }, [editProjectId, loadDraft]);
-
-  // Restore draft function
-  const restoreDraft = useCallback(() => {
-    if (!savedDraft) return;
-    const fd = savedDraft.formData as typeof formData;
-    setFormData(fd);
-    setFaqItems(savedDraft.faqItems as FaqItem[]);
-    setRoadmapPhases(savedDraft.roadmapPhases as RoadmapPhase[]);
-    setTeamMembers(savedDraft.teamMembers as TeamMember[]);
-    setFeatures(savedDraft.features as Feature[]);
-    setSections(savedDraft.sections as SectionConfig[]);
-    if (savedDraft.logoPreview) setLogoPreview(savedDraft.logoPreview);
-    setShowDraftBanner(false);
-    toast.success('Draft restored');
-  }, [savedDraft]);
-
-  // Dismiss draft
-  const dismissDraft = useCallback(() => {
-    setShowDraftBanner(false);
-    clearDraft();
-  }, [clearDraft]);
-
-  // Load existing project for editing
-  useEffect(() => {
-    const loadProject = async () => {
-      if (!editProjectId) return;
-      
-      setIsLoadingProject(true);
-      try {
-        const { data: project, error } = await supabase
-          .from('projects')
-          .select(`*, templates (layout_id, personality_id)`)
-          .eq('id', editProjectId)
-          .single();
-
-        if (error) throw error;
-
-        if (project) {
-          const config = project.config as { 
-            tokenomics?: { totalSupply?: string; circulatingSupply?: string; contractAddress?: string };
-            sections?: SectionConfig[];
-            faqItems?: FaqItem[];
-            roadmapPhases?: RoadmapPhase[];
-            teamMembers?: TeamMember[];
-            features?: Feature[];
-            buyNowLink?: string;
-            buyNowText?: string;
-            showBuyNow?: boolean;
-            learnMoreLink?: string;
-            learnMoreText?: string;
-            showLearnMore?: boolean;
-          } | null;
-          
-          setFormData({
-            coinName: project.coin_name || "",
-            ticker: project.ticker || "",
-            tagline: project.tagline || "",
-            description: project.description || "",
-            twitter: project.twitter_url || "",
-            discord: project.discord_url || "",
-            telegram: project.telegram_url || "",
-            dexLink: project.dex_link || "",
-            buyNowLink: config?.buyNowLink || "",
-            buyNowText: config?.buyNowText || "",
-            showBuyNow: config?.showBuyNow ?? true,
-            learnMoreLink: config?.learnMoreLink || "",
-            learnMoreText: config?.learnMoreText || "",
-            showLearnMore: config?.showLearnMore ?? true,
-            showRoadmap: project.show_roadmap ?? true,
-            showFaq: project.show_faq ?? true,
-            totalSupply: config?.tokenomics?.totalSupply || "",
-            circulatingSupply: config?.tokenomics?.circulatingSupply || "",
-            contractAddress: config?.tokenomics?.contractAddress || "",
-          });
-
-          if (config?.sections) setSections(config.sections);
-          if (config?.faqItems) setFaqItems(config.faqItems);
-          if (config?.roadmapPhases) setRoadmapPhases(config.roadmapPhases);
-          if (config?.teamMembers) setTeamMembers(config.teamMembers);
-          if (config?.features) setFeatures(config.features);
-          if (project.logo_url) setLogoPreview(project.logo_url);
-
-          const template = project.templates as { layout_id: string; personality_id: string } | null;
-          if (template) {
-            setCurrentLayout(template.layout_id);
-            setCurrentPersonality(template.personality_id);
-          }
-
-          setGeneratedProject({ id: project.id, subdomain: project.subdomain || '' });
-          setTemplateId(project.template_id || null);
-        }
-      } catch (error) {
-        console.error('Error loading project:', error);
-        toast.error('Failed to load project');
-      } finally {
-        setIsLoadingProject(false);
-      }
-    };
-
-    loadProject();
-  }, [editProjectId]);
-
-  const showRoadmap = sections.some(s => s.type === 'roadmap' && s.visible);
-  const showFaq = sections.some(s => s.type === 'faq' && s.visible);
-
-  // Use transition for non-blocking preview generation
-  const [isPendingPreview, startPreviewTransition] = useTransition();
-  const [livePreviewHtml, setLivePreviewHtml] = useState('');
-  
-  // Throttled preview generation with useTransition
-  const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
-  useEffect(() => {
-    // Clear previous timeout
-    if (previewTimeoutRef.current) {
-      clearTimeout(previewTimeoutRef.current);
-    }
-    
-    // Throttle preview generation to 800ms
-    previewTimeoutRef.current = setTimeout(() => {
-      startPreviewTransition(() => {
-        const html = generatePreviewHtml(
-          {
-            coinName: formData.coinName,
-            ticker: formData.ticker,
-            tagline: formData.tagline,
-            description: formData.description,
-            logoUrl: logoPreview,
-            twitter: formData.twitter,
-            discord: formData.discord,
-            telegram: formData.telegram,
-            dexLink: formData.dexLink,
-            buyNowLink: formData.buyNowLink,
-            buyNowText: formData.buyNowText,
-            showBuyNow: formData.showBuyNow,
-            learnMoreLink: formData.learnMoreLink,
-            learnMoreText: formData.learnMoreText,
-            showLearnMore: formData.showLearnMore,
-            showRoadmap,
-            showFaq,
-            tokenomics: {
-              totalSupply: formData.totalSupply,
-              circulatingSupply: formData.circulatingSupply,
-              contractAddress: formData.contractAddress,
-            },
-            sections,
-            faqItems: faqItems.filter(f => f.question && f.answer),
-            roadmapPhases: roadmapPhases.filter(p => p.title),
-            teamMembers: teamMembers.filter(m => m.name),
-            features: features.filter(f => f.title),
-          },
-          { layout: currentLayout, personality: currentPersonality, templateId: selectedTemplateId || undefined }
-        );
-        setLivePreviewHtml(html);
-      });
-    }, 800);
-    
-    return () => {
-      if (previewTimeoutRef.current) {
-        clearTimeout(previewTimeoutRef.current);
-      }
-    };
-  }, [formData, logoPreview, currentLayout, currentPersonality, selectedTemplateId, showRoadmap, showFaq, sections, faqItems, roadmapPhases, teamMembers, features]);
-
-  useEffect(() => {
-    const loadTemplatePreview = async () => {
-      if (!urlTemplateId) return;
-      setIsLoadingTemplatePreview(true);
-      try {
-        const previewUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-site?preview=true&templateId=${urlTemplateId}`;
-        const response = await fetch(previewUrl);
-        const html = await response.text();
-        setTemplatePreviewHtml(html);
-        setSelectedTemplateId(urlTemplateId);
-
-        if (urlBlueprintId) {
-          const { data: blueprint } = await supabase
-            .from('template_blueprints')
-            .select('name, personality, layout_category')
-            .eq('id', urlBlueprintId)
-            .single();
-          
-          if (blueprint) {
-            setBlueprintName(blueprint.name);
-            if (blueprint.personality) setCurrentPersonality(blueprint.personality);
-            if (blueprint.layout_category) setCurrentLayout(blueprint.layout_category);
-          }
-        }
-      } catch (error) {
-        console.error('Error loading template preview:', error);
-      } finally {
-        setIsLoadingTemplatePreview(false);
-      }
-    };
-
-    loadTemplatePreview();
-  }, [urlTemplateId, urlBlueprintId]);
-
-  useEffect(() => {
-    if (editProjectId || urlBlueprintId) return;
-    const fetchTemplate = async () => {
-      const { data } = await supabase.from('templates').select('id').eq('layout_id', preselectedLayout).eq('personality_id', preselectedPersonality).maybeSingle();
-      if (data) setTemplateId(data.id);
-    };
-    fetchTemplate();
-  }, [preselectedLayout, preselectedPersonality, editProjectId, urlBlueprintId]);
-
+  // Preview refresh
   const refreshPreview = useCallback(async () => {
     setIsRefreshingPreview(true);
     setPreviewKey(k => k + 1);
@@ -536,361 +170,44 @@ const Builder = () => {
     setIsRefreshingPreview(false);
   }, [generatedProject]);
 
-  const handleTemplateChange = useCallback(
-    async (args: { templateKey: string; blueprintId: string; layout: string; personality: string }) => {
-      const { templateKey, blueprintId: nextBlueprintId, layout, personality } = args;
+  // Actions hook
+  const actions = useBuilderActions({
+    formData: state.formData,
+    sections: state.sections,
+    faqItems: state.faqItems,
+    roadmapPhases: state.roadmapPhases,
+    teamMembers: state.teamMembers,
+    features: state.features,
+    logoFile: state.logoFile,
+    showRoadmap: state.showRoadmap,
+    showFaq: state.showFaq,
+    selectedTemplateId: template.selectedTemplateId,
+    blueprintId: template.blueprintId,
+    templateId: template.templateId,
+    user,
+    connected,
+    isVerified,
+    generatedProject,
+    customSubdomain: subdomain.customSubdomain,
+    subdomainAvailable: subdomain.subdomainAvailable,
+    clearDraft: state.clearDraft,
+    setVisible,
+    onProjectCreated: setGeneratedProject,
+    refreshPreview,
+  });
 
-      setSelectedTemplateId(templateKey);
-      setBlueprintId(nextBlueprintId);
-      setCurrentLayout(layout);
-      setCurrentPersonality(personality);
+  // Refresh preview when project is generated
+  useEffect(() => { 
+    if (generatedProject) refreshPreview(); 
+  }, [generatedProject?.subdomain]);
 
-      try {
-        const { data: blueprint, error } = await supabase
-          .from('template_blueprints')
-          .select('name, sections')
-          .eq('id', nextBlueprintId)
-          .maybeSingle();
-
-        if (error) throw error;
-
-        if (blueprint?.name) setBlueprintName(blueprint.name);
-
-        // Apply blueprint sections if available, mapping types correctly
-        if (blueprint?.sections && Array.isArray(blueprint.sections)) {
-        const blueprintSections = blueprint.sections as Array<
-          string | { id?: string; type?: string; variant?: string; layout?: string; visible?: boolean; order?: number }
-        >;
-
-          // Map and filter valid sections - handle both string[] and object[] formats
-          const mappedSections: SectionConfig[] = [];
-          blueprintSections.forEach((s, i) => {
-            // Handle string format: ['hero', 'features']
-            if (typeof s === 'string') {
-              const mappedType = mapBlueprintTypeToSectionType(s);
-              if (mappedType) {
-                mappedSections.push({
-                  id: generateSectionId(mappedType),
-                  type: mappedType,
-                  variant: 'default',
-                  visible: true,
-                  order: i,
-                });
-              }
-            }
-            // Handle object format: [{type: 'hero', variant: 'centered'}]
-            else if (typeof s === 'object' && s !== null) {
-              const mappedType = mapBlueprintTypeToSectionType(s.type);
-              if (mappedType) {
-                mappedSections.push({
-                  id: s.id || generateSectionId(mappedType),
-                  type: mappedType,
-                  variant: s.variant || s.layout || 'default',
-                  visible: s.visible ?? true,
-                  order: s.order ?? i,
-                });
-              }
-            }
-          });
-
-          if (mappedSections.length > 0) {
-            setSections(mappedSections);
-          }
-        }
-
-        toast.success(`Switched to ${blueprint?.name || 'template'}`);
-      } catch (error) {
-        console.error('Error fetching blueprint:', error);
-        toast.success('Template switched');
-      }
-    },
-    []
-  );
-
-  const saveChanges = async () => {
-    if (!generatedProject || !user) return;
-    setIsSaving(true);
-    try {
-      let logoUrl: string | null | undefined = undefined;
-      if (logoFile) logoUrl = await uploadLogo(generatedProject.id);
-
-      const config = {
-        tokenomics: { totalSupply: formData.totalSupply || null, circulatingSupply: formData.circulatingSupply || null, contractAddress: formData.contractAddress || null },
-        sections: sections.map(s => ({ id: s.id, type: s.type, variant: s.variant, visible: s.visible, order: s.order })),
-        faqItems,
-        roadmapPhases,
-        teamMembers,
-        features,
-        templateId: selectedTemplateId || null,
-        blueprintId: blueprintId || null,
-        buyNowLink: formData.buyNowLink || null,
-        buyNowText: formData.buyNowText || null,
-        showBuyNow: formData.showBuyNow,
-        learnMoreLink: formData.learnMoreLink || null,
-        learnMoreText: formData.learnMoreText || null,
-        showLearnMore: formData.showLearnMore,
-      };
-
-      const { data, error } = await supabase.functions.invoke('manage-project', {
-        body: {
-          action: 'update',
-          project_id: generatedProject.id,
-          user_id: user.id,
-          wallet_address: user.wallet_address,
-          updates: {
-            coin_name: formData.coinName,
-            ticker: formData.ticker,
-            tagline: formData.tagline || null,
-            description: formData.description || null,
-            twitter_url: formData.twitter || null,
-            discord_url: formData.discord || null,
-            telegram_url: formData.telegram || null,
-            dex_link: formData.dexLink || null,
-            show_roadmap: showRoadmap,
-            show_faq: showFaq,
-            config,
-            ...(logoUrl ? { logo_url: logoUrl } : {}),
-          },
-        },
-      });
-
-      if (error) {
-        console.error('Save changes failed:', error, data);
-        toast.error((data as any)?.error || 'Failed to save changes');
-        return;
-      }
-
-      // Auto-purge cache so users see updated content immediately
-      if (generatedProject.subdomain) {
-        purgeCache(generatedProject.subdomain).then(success => {
-          if (success) {
-            console.log(`Cache purged for ${generatedProject.subdomain}`);
-          }
-        });
-      }
-
-      toast.success('Changes saved!');
-      refreshPreview();
-    } catch (err) {
-      console.error('Save changes failed:', err);
-      toast.error('Failed to save changes');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setTempLogoSrc(reader.result as string);
-        setShowLogoCropper(true);
-      };
-      reader.readAsDataURL(file);
-      // Keep the file reference for upload
-      setLogoFile(file);
-    }
-  };
-
-  const handleCropComplete = useCallback((croppedImageUrl: string) => {
-    setLogoPreview(croppedImageUrl);
-    // Convert data URL to File for upload
-    fetch(croppedImageUrl)
-      .then(res => res.blob())
-      .then(blob => {
-        const file = new File([blob], 'logo.png', { type: 'image/png' });
-        setLogoFile(file);
-      });
-  }, []);
-
-  const uploadLogo = async (projectId: string): Promise<string | null> => {
-    if (!logoFile) return null;
-    setIsUploadingLogo(true);
-    try {
-      const fileExt = logoFile.name.split('.').pop();
-      const fileName = `${projectId}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage.from('project-logos').upload(fileName, logoFile, { upsert: true });
-      if (uploadError) return null;
-      const { data: { publicUrl } } = supabase.storage.from('project-logos').getPublicUrl(fileName);
-      return publicUrl;
-    } catch { return null; } 
-    finally { setIsUploadingLogo(false); }
-  };
-
-  const generateSubdomain = (coinName: string): string => coinName.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').slice(0, 30);
-
-  // Sanitize subdomain input
-  const sanitizeSubdomain = (value: string): string => {
-    return value
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 63);
-  };
-
-  // Check subdomain availability with debounce
-  const checkSubdomainAvailability = useCallback(async (subdomain: string) => {
-    if (!subdomain || subdomain.length < 3) {
-      setSubdomainAvailable(null);
-      setCheckingSubdomain(false);
-      return;
-    }
-
-    setCheckingSubdomain(true);
-    try {
-      const { data, error } = await supabase
-        .from('domains')
-        .select('subdomain, project_id')
-        .eq('subdomain', subdomain)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error checking subdomain:', error);
-        setSubdomainAvailable(null);
-        return;
-      }
-
-      // Available if no match found, or if it matches current project
-      const isAvailable = !data || (editProjectId && data.project_id === editProjectId);
-      setSubdomainAvailable(isAvailable);
-    } catch (err) {
-      console.error('Failed to check subdomain:', err);
-      setSubdomainAvailable(null);
-    } finally {
-      setCheckingSubdomain(false);
-    }
-  }, [editProjectId]);
-
-  // Handle subdomain input change with debounce
-  const handleSubdomainChange = useCallback((value: string) => {
-    const sanitized = sanitizeSubdomain(value);
-    setCustomSubdomain(sanitized);
-    setSubdomainAvailable(null);
-
-    if (subdomainCheckTimeout.current) {
-      clearTimeout(subdomainCheckTimeout.current);
-    }
-
-    if (sanitized.length >= 3) {
-      subdomainCheckTimeout.current = setTimeout(() => {
-        checkSubdomainAvailability(sanitized);
-      }, 500);
-    }
-  }, [checkSubdomainAvailability]);
-
-  // Auto-populate subdomain from coin name if user hasn't customized it
-  useEffect(() => {
-    if (!customSubdomain && formData.coinName && !editProjectId && !generatedProject) {
-      const autoSubdomain = sanitizeSubdomain(formData.coinName);
-      setCustomSubdomain(autoSubdomain);
-      if (autoSubdomain.length >= 3) {
-        checkSubdomainAvailability(autoSubdomain);
-      }
-    }
-  }, [formData.coinName, customSubdomain, editProjectId, generatedProject, checkSubdomainAvailability]);
-
-  const handleGenerate = async () => {
-    if (!formData.coinName || !formData.ticker) { toast.error("Please fill in at least the coin name and ticker"); return; }
-    if (!connected) { toast.error("Please connect your wallet first"); setVisible(true); return; }
-    if (!isVerified || !user) { toast.error("Please verify your wallet on the dashboard first"); return; }
-    if (customSubdomain.length < 3) { toast.error("Subdomain must be at least 3 characters"); return; }
-    if (subdomainAvailable === false) { toast.error("This subdomain is already taken"); return; }
-    const alreadyPaid = await checkExistingPayment(user.id, 'website');
-    if (!alreadyPaid && !hasPaid) { setShowPaymentModal(true); return; }
-    await createProject();
-  };
-
-  const createProject = async () => {
-    if (!user) return;
-    setIsGenerating(true);
-    try {
-      // Use the custom subdomain the user chose
-      const finalSubdomain = customSubdomain || generateSubdomain(formData.coinName);
-
-      const projectConfig = {
-        tokenomics: { totalSupply: formData.totalSupply || null, circulatingSupply: formData.circulatingSupply || null, contractAddress: formData.contractAddress || null },
-        sections: sections.map(s => ({ id: s.id, type: s.type as string, variant: s.variant, visible: s.visible, order: s.order })),
-        faqItems: faqItems.map(f => ({ id: f.id, question: f.question, answer: f.answer })),
-        roadmapPhases: roadmapPhases.map(p => ({ id: p.id, phase: p.phase, title: p.title, items: p.items, completed: p.completed })),
-        teamMembers: teamMembers.map(m => ({ id: m.id, name: m.name, role: m.role, avatar: m.avatar, twitter: m.twitter })),
-        features: features.map(f => ({ id: f.id, title: f.title, description: f.description, icon: f.icon })),
-        templateId: selectedTemplateId || null,
-        blueprintId: blueprintId || null,
-      };
-
-      const { data, error } = await supabase.functions.invoke('manage-project', {
-        body: {
-          action: 'create',
-          user_id: user.id,
-          wallet_address: user.wallet_address,
-          template_id: templateId || undefined,
-          coin_name: formData.coinName,
-          ticker: formData.ticker,
-          tagline: formData.tagline || undefined,
-          description: formData.description || undefined,
-          twitter_url: formData.twitter || undefined,
-          discord_url: formData.discord || undefined,
-          telegram_url: formData.telegram || undefined,
-          dex_link: formData.dexLink || undefined,
-          show_roadmap: showRoadmap,
-          show_faq: showFaq,
-          subdomain: finalSubdomain,
-          config: projectConfig,
-        },
-      });
-
-      const project = (data as any)?.project;
-      if (error || !project?.id) {
-        console.error('Failed to create project:', error, data);
-        toast.error((data as any)?.error || 'Failed to create website');
-        return;
-      }
-
-      if (logoFile) {
-        const logoUrl = await uploadLogo(project.id);
-        if (logoUrl) {
-          const { error: updateError, data: updateData } = await supabase.functions.invoke('manage-project', {
-            body: {
-              action: 'update',
-              project_id: project.id,
-              user_id: user.id,
-              wallet_address: user.wallet_address,
-              updates: { logo_url: logoUrl },
-            },
-          });
-
-          if (updateError) {
-            console.error('Failed to update logo:', updateError, updateData);
-          }
-        }
-      }
-
-      setGeneratedProject({ id: project.id, subdomain: project.subdomain || finalSubdomain });
-      clearDraft(); // Clear draft after successful generation
-      toast.success('Website generated successfully!');
-    } catch (err) {
-      console.error('Project generation failed:', err);
-      toast.error('Failed to generate website');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const displaySubdomain = customSubdomain || (formData.coinName ? generateSubdomain(formData.coinName) : 'yourcoin');
-  const previewUrl = generatedProject ? `/site/${generatedProject.subdomain}` : null;
-
-  useEffect(() => { if (generatedProject) refreshPreview(); }, [generatedProject?.subdomain]);
-
-  const toggleSection = (key: keyof typeof openSections) => setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
+  const toggleSection = (key: keyof typeof openSections) => 
+    setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
 
   const deviceWidths = { desktop: '100%', tablet: '768px', mobile: '375px' };
+  const displaySubdomain = subdomain.customSubdomain || 
+    (state.formData.coinName ? state.formData.coinName.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').slice(0, 30) : 'yourcoin');
+  const previewUrl = generatedProject ? `/site/${generatedProject.subdomain}` : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -900,21 +217,22 @@ const Builder = () => {
           {/* Form Panel */}
           <div className="w-full lg:w-1/2 xl:w-2/5 p-6 lg:p-8 overflow-y-auto border-r border-border">
             <div className="max-w-xl mx-auto space-y-4">
+              {/* Header */}
               <div className="flex items-start justify-between mb-6">
                 <div>
-                  <h1 className="text-2xl lg:text-3xl font-display font-bold mb-2">{editProjectId ? 'Edit Your Site' : 'Build Your Site'}</h1>
-                  <p className="text-muted-foreground text-sm">Template: <span className="text-primary">{blueprintName || `${currentLayout} × ${currentPersonality}`}</span></p>
+                  <h1 className="text-2xl lg:text-3xl font-display font-bold mb-2">
+                    {editProjectId ? 'Edit Your Site' : 'Build Your Site'}
+                  </h1>
+                  <p className="text-muted-foreground text-sm">
+                    Template: <span className="text-primary">
+                      {template.blueprintName || `${template.currentLayout} × ${template.currentPersonality}`}
+                    </span>
+                  </p>
                 </div>
                 <div className="flex items-center gap-1">
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={undo}
-                        disabled={!canUndo}
-                        className="h-9 w-9"
-                      >
+                      <Button variant="ghost" size="icon" onClick={history.undo} disabled={!history.canUndo} className="h-9 w-9">
                         <Undo2 className="w-4 h-4" />
                       </Button>
                     </TooltipTrigger>
@@ -922,13 +240,7 @@ const Builder = () => {
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={redo}
-                        disabled={!canRedo}
-                        className="h-9 w-9"
-                      >
+                      <Button variant="ghost" size="icon" onClick={history.redo} disabled={!history.canRedo} className="h-9 w-9">
                         <Redo2 className="w-4 h-4" />
                       </Button>
                     </TooltipTrigger>
@@ -938,21 +250,21 @@ const Builder = () => {
               </div>
 
               {/* Restore Draft Banner */}
-              {showDraftBanner && savedDraft && (
+              {state.showDraftBanner && state.savedDraft && (
                 <div className="p-4 rounded-xl glass border border-blue-500/30 bg-blue-500/5">
                   <div className="flex items-center gap-3">
                     <RotateCcw className="w-5 h-5 text-blue-500" />
                     <div className="flex-1">
                       <p className="text-sm font-medium">Unsaved draft found</p>
                       <p className="text-xs text-muted-foreground">
-                        From {new Date(savedDraft.lastSaved).toLocaleString()}
+                        From {new Date(state.savedDraft.lastSaved).toLocaleString()}
                       </p>
                     </div>
-                    <Button variant="outline" size="sm" onClick={restoreDraft} className="gap-1">
+                    <Button variant="outline" size="sm" onClick={state.restoreDraft} className="gap-1">
                       <RotateCcw className="w-3 h-3" />
                       Restore
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={dismissDraft} className="h-8 w-8">
+                    <Button variant="ghost" size="icon" onClick={state.dismissDraft} className="h-8 w-8">
                       <X className="w-4 h-4" />
                     </Button>
                   </div>
@@ -992,11 +304,20 @@ const Builder = () => {
               {generatedProject && (
                 <div className="p-6 rounded-xl bg-accent/10 border border-accent/30">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center"><Check className="w-5 h-5 text-accent" /></div>
-                    <div><p className="font-semibold text-accent">Website Live!</p><p className="text-sm text-muted-foreground">{generatedProject.subdomain}.solsite.fun</p></div>
+                    <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
+                      <Check className="w-5 h-5 text-accent" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-accent">Website Live!</p>
+                      <p className="text-sm text-muted-foreground">{generatedProject.subdomain}.solsite.fun</p>
+                    </div>
                   </div>
                   <div className="flex gap-2">
-                    <a href={previewUrl!} target="_blank" rel="noopener noreferrer" className="flex-1"><Button variant="accent" className="w-full gap-2"><ExternalLink className="w-4 h-4" />View Live</Button></a>
+                    <a href={previewUrl!} target="_blank" rel="noopener noreferrer" className="flex-1">
+                      <Button variant="accent" className="w-full gap-2">
+                        <ExternalLink className="w-4 h-4" />View Live
+                      </Button>
+                    </a>
                     <Link to="/dashboard"><Button variant="outline">Dashboard</Button></Link>
                   </div>
                 </div>
@@ -1010,34 +331,42 @@ const Builder = () => {
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pt-4 space-y-4">
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2"><Label htmlFor="coinName">Coin Name *</Label><Input id="coinName" name="coinName" placeholder="Moon Doge" value={formData.coinName} onChange={handleInputChange} /></div>
-                    <div className="space-y-2"><Label htmlFor="ticker">Ticker *</Label><Input id="ticker" name="ticker" placeholder="$MDOGE" value={formData.ticker} onChange={handleInputChange} /></div>
+                    <div className="space-y-2">
+                      <Label htmlFor="coinName">Coin Name *</Label>
+                      <Input id="coinName" name="coinName" placeholder="Moon Doge" value={state.formData.coinName} onChange={state.handleInputChange} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="ticker">Ticker *</Label>
+                      <Input id="ticker" name="ticker" placeholder="$MDOGE" value={state.formData.ticker} onChange={state.handleInputChange} />
+                    </div>
                   </div>
-                  <div className="space-y-2"><Label htmlFor="tagline">Tagline</Label><Input id="tagline" name="tagline" placeholder="To the moon and beyond 🚀" value={formData.tagline} onChange={handleInputChange} /></div>
-                  <div className="space-y-2"><Label htmlFor="description">Description</Label><Textarea id="description" name="description" placeholder="Tell the world about your coin..." value={formData.description} onChange={handleInputChange} rows={3} /></div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tagline">Tagline</Label>
+                    <Input id="tagline" name="tagline" placeholder="To the moon and beyond 🚀" value={state.formData.tagline} onChange={state.handleInputChange} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea id="description" name="description" placeholder="Tell the world about your coin..." value={state.formData.description} onChange={state.handleInputChange} rows={3} />
+                  </div>
                   <div className="space-y-2">
                     <Label>Logo</Label>
                     <div className="flex items-center gap-4">
                       <label className="flex-1 cursor-pointer">
                         <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-dashed border-border hover:border-primary/50 transition-colors bg-secondary/30">
-                          <Upload className="w-5 h-5 text-muted-foreground" /><span className="text-sm text-muted-foreground">{logoPreview ? 'Change logo' : 'Upload logo'}</span>
+                          <Upload className="w-5 h-5 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">{state.logoPreview ? 'Change logo' : 'Upload logo'}</span>
                         </div>
-                        <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                        <input type="file" accept="image/*" className="hidden" onChange={state.handleLogoUpload} />
                       </label>
-                      {logoPreview && (
+                      {state.logoPreview && (
                         <div className="flex items-center gap-2">
                           <div className="w-14 h-14 rounded-lg overflow-hidden border border-border">
-                            <img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover" />
+                            <img src={state.logoPreview} alt="Logo preview" className="w-full h-full object-cover" />
                           </div>
-                          <Button 
-                            type="button" 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => {
-                              setTempLogoSrc(logoPreview);
-                              setShowLogoCropper(true);
-                            }}
-                          >
+                          <Button type="button" variant="ghost" size="sm" onClick={() => {
+                            state.setTempLogoSrc(state.logoPreview);
+                            state.setShowLogoCropper(true);
+                          }}>
                             Crop
                           </Button>
                         </div>
@@ -1054,10 +383,22 @@ const Builder = () => {
                   {openSections.socials ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pt-4 space-y-3">
-                  <div className="relative"><Twitter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input name="twitter" placeholder="twitter.com/yourcoin" value={formData.twitter} onChange={handleInputChange} className="pl-10" /></div>
-                  <div className="relative"><MessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input name="discord" placeholder="discord.gg/yourcoin" value={formData.discord} onChange={handleInputChange} className="pl-10" /></div>
-                  <div className="relative"><MessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input name="telegram" placeholder="t.me/yourcoin" value={formData.telegram} onChange={handleInputChange} className="pl-10" /></div>
-                  <div className="relative"><Rocket className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input name="dexLink" placeholder="DEX / Buy Link" value={formData.dexLink} onChange={handleInputChange} className="pl-10" /></div>
+                  <div className="relative">
+                    <Twitter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input name="twitter" placeholder="twitter.com/yourcoin" value={state.formData.twitter} onChange={state.handleInputChange} className="pl-10" />
+                  </div>
+                  <div className="relative">
+                    <MessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input name="discord" placeholder="discord.gg/yourcoin" value={state.formData.discord} onChange={state.handleInputChange} className="pl-10" />
+                  </div>
+                  <div className="relative">
+                    <MessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input name="telegram" placeholder="t.me/yourcoin" value={state.formData.telegram} onChange={state.handleInputChange} className="pl-10" />
+                  </div>
+                  <div className="relative">
+                    <Rocket className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input name="dexLink" placeholder="DEX / Buy Link" value={state.formData.dexLink} onChange={state.handleInputChange} className="pl-10" />
+                  </div>
                 </CollapsibleContent>
               </Collapsible>
 
@@ -1072,29 +413,32 @@ const Builder = () => {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <p className="text-xs text-muted-foreground font-medium">Buy Now Button</p>
-                      <Switch checked={formData.showBuyNow} onCheckedChange={(checked) => setFormData(prev => ({ ...prev, showBuyNow: checked }))} />
+                      <Switch checked={state.formData.showBuyNow} onCheckedChange={(checked) => state.setFormData(prev => ({ ...prev, showBuyNow: checked }))} />
                     </div>
-                    {formData.showBuyNow && (
+                    {state.formData.showBuyNow && (
                       <div className="space-y-2">
                         <div className="flex flex-wrap gap-1 mb-2">
                           {BUY_PRESETS.map((preset) => (
                             <button
                               key={preset}
                               type="button"
-                              onClick={() => setFormData(prev => ({ ...prev, buyNowText: preset.replace('$TICKER', formData.ticker || '$TICKER') }))}
+                              onClick={() => state.setFormData(prev => ({ ...prev, buyNowText: preset.replace('$TICKER', state.formData.ticker || '$TICKER') }))}
                               className={cn(
                                 "text-xs px-2 py-1 rounded-md border transition-colors",
-                                (formData.buyNowText || 'Buy Now') === preset.replace('$TICKER', formData.ticker || '$TICKER')
+                                (state.formData.buyNowText || 'Buy Now') === preset.replace('$TICKER', state.formData.ticker || '$TICKER')
                                   ? "bg-primary/20 border-primary text-primary"
                                   : "border-border hover:border-primary/50"
                               )}
                             >
-                              {preset.replace('$TICKER', formData.ticker || '$TICKER')}
+                              {preset.replace('$TICKER', state.formData.ticker || '$TICKER')}
                             </button>
                           ))}
                         </div>
-                        <Input name="buyNowText" placeholder={`Button text (default: "Buy Now")`} value={formData.buyNowText} onChange={handleInputChange} />
-                        <div className="relative"><ExternalLink className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input name="buyNowLink" placeholder="Link URL (defaults to DEX link)" value={formData.buyNowLink} onChange={handleInputChange} className="pl-10" /></div>
+                        <Input name="buyNowText" placeholder='Button text (default: "Buy Now")' value={state.formData.buyNowText} onChange={state.handleInputChange} />
+                        <div className="relative">
+                          <ExternalLink className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input name="buyNowLink" placeholder="Link URL (defaults to DEX link)" value={state.formData.buyNowLink} onChange={state.handleInputChange} className="pl-10" />
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1103,19 +447,19 @@ const Builder = () => {
                   <div className="space-y-3 pt-3 border-t border-border">
                     <div className="flex items-center justify-between">
                       <p className="text-xs text-muted-foreground font-medium">Learn More Button</p>
-                      <Switch checked={formData.showLearnMore} onCheckedChange={(checked) => setFormData(prev => ({ ...prev, showLearnMore: checked }))} />
+                      <Switch checked={state.formData.showLearnMore} onCheckedChange={(checked) => state.setFormData(prev => ({ ...prev, showLearnMore: checked }))} />
                     </div>
-                    {formData.showLearnMore && (
+                    {state.formData.showLearnMore && (
                       <div className="space-y-2">
                         <div className="flex flex-wrap gap-1 mb-2">
                           {LEARN_PRESETS.map((preset) => (
                             <button
                               key={preset}
                               type="button"
-                              onClick={() => setFormData(prev => ({ ...prev, learnMoreText: preset }))}
+                              onClick={() => state.setFormData(prev => ({ ...prev, learnMoreText: preset }))}
                               className={cn(
                                 "text-xs px-2 py-1 rounded-md border transition-colors",
-                                (formData.learnMoreText || 'Learn More') === preset
+                                (state.formData.learnMoreText || 'Learn More') === preset
                                   ? "bg-primary/20 border-primary text-primary"
                                   : "border-border hover:border-primary/50"
                               )}
@@ -1124,36 +468,23 @@ const Builder = () => {
                             </button>
                           ))}
                         </div>
-                        <Input name="learnMoreText" placeholder={`Button text (default: "Learn More")`} value={formData.learnMoreText} onChange={handleInputChange} />
-                        <div className="relative"><ExternalLink className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input name="learnMoreLink" placeholder="Link URL (defaults to #about)" value={formData.learnMoreLink} onChange={handleInputChange} className="pl-10" /></div>
+                        <Input name="learnMoreText" placeholder='Button text (default: "Learn More")' value={state.formData.learnMoreText} onChange={state.handleInputChange} />
+                        <div className="relative">
+                          <ExternalLink className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input name="learnMoreLink" placeholder="Link URL (defaults to #about)" value={state.formData.learnMoreLink} onChange={state.handleInputChange} className="pl-10" />
+                        </div>
                       </div>
                     )}
                   </div>
 
-                  {/* Live Preview */}
+                  {/* Button Preview */}
                   <div className="pt-4 border-t border-border">
                     <p className="text-xs text-muted-foreground font-medium mb-3">Preview</p>
                     <div className="p-4 rounded-lg bg-background/50 border border-border flex items-center justify-center gap-3 min-h-[52px]">
-                      {formData.showBuyNow && (
-                        <Button variant="glow" size="sm" className="pointer-events-none">
-                          {formData.buyNowText || 'Buy Now'}
-                        </Button>
-                      )}
-                      {formData.showLearnMore && (
-                        <Button variant="outline" size="sm" className="pointer-events-none">
-                          {formData.learnMoreText || 'Learn More'}
-                        </Button>
-                      )}
-                      {!formData.showBuyNow && !formData.showLearnMore && (
-                        <p className="text-xs text-muted-foreground italic">No buttons visible</p>
-                      )}
+                      {state.formData.showBuyNow && <Button variant="glow" size="sm" className="pointer-events-none">{state.formData.buyNowText || 'Buy Now'}</Button>}
+                      {state.formData.showLearnMore && <Button variant="outline" size="sm" className="pointer-events-none">{state.formData.learnMoreText || 'Learn More'}</Button>}
+                      {!state.formData.showBuyNow && !state.formData.showLearnMore && <p className="text-xs text-muted-foreground italic">No buttons visible</p>}
                     </div>
-                    {(formData.showBuyNow || formData.showLearnMore) && (
-                      <div className="mt-2 text-xs text-muted-foreground space-y-1">
-                        {formData.showBuyNow && <p className="truncate">{formData.buyNowText || 'Buy Now'} → {formData.buyNowLink || formData.dexLink || '(no link set)'}</p>}
-                        {formData.showLearnMore && <p className="truncate">{formData.learnMoreText || 'Learn More'} → {formData.learnMoreLink || '#about'}</p>}
-                      </div>
-                    )}
                   </div>
                 </CollapsibleContent>
               </Collapsible>
@@ -1165,174 +496,174 @@ const Builder = () => {
                   {openSections.tokenomics ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pt-4 space-y-3">
-                  <div className="space-y-2"><Label htmlFor="totalSupply">Total Supply</Label><Input id="totalSupply" name="totalSupply" placeholder="1,000,000,000" value={formData.totalSupply} onChange={handleInputChange} /></div>
-                  <div className="space-y-2"><Label htmlFor="circulatingSupply">Circulating Supply</Label><Input id="circulatingSupply" name="circulatingSupply" placeholder="850,000,000" value={formData.circulatingSupply} onChange={handleInputChange} /></div>
-                  <div className="space-y-2"><Label htmlFor="contractAddress">Contract Address</Label><Input id="contractAddress" name="contractAddress" placeholder="0x..." value={formData.contractAddress} onChange={handleInputChange} className="font-mono text-sm" /></div>
+                  <div className="space-y-2">
+                    <Label htmlFor="totalSupply">Total Supply</Label>
+                    <Input id="totalSupply" name="totalSupply" placeholder="1,000,000,000" value={state.formData.totalSupply} onChange={state.handleInputChange} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="circulatingSupply">Circulating Supply</Label>
+                    <Input id="circulatingSupply" name="circulatingSupply" placeholder="500,000,000" value={state.formData.circulatingSupply} onChange={state.handleInputChange} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contractAddress">Contract Address</Label>
+                    <Input id="contractAddress" name="contractAddress" placeholder="0x..." value={state.formData.contractAddress} onChange={state.handleInputChange} className="font-mono text-sm" />
+                  </div>
                 </CollapsibleContent>
               </Collapsible>
 
-              {/* FAQ Editor */}
+              {/* FAQ */}
               <Collapsible open={openSections.faq} onOpenChange={() => toggleSection('faq')}>
                 <CollapsibleTrigger className="flex items-center justify-between w-full p-4 rounded-xl glass hover:bg-secondary/50 transition-colors">
-                  <div className="flex items-center gap-2"><HelpCircle className="w-5 h-5 text-primary" /><span className="font-semibold">FAQ Content</span><span className="text-xs text-muted-foreground">({faqItems.length})</span></div>
+                  <div className="flex items-center gap-2"><HelpCircle className="w-5 h-5 text-primary" /><span className="font-semibold">FAQ</span></div>
                   {openSections.faq ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 </CollapsibleTrigger>
-                <CollapsibleContent className="pt-4"><FaqEditor items={faqItems} onChange={setFaqItems} /></CollapsibleContent>
+                <CollapsibleContent className="pt-4">
+                  <FaqEditor items={state.faqItems} onChange={state.setFaqItems} />
+                </CollapsibleContent>
               </Collapsible>
 
-              {/* Roadmap Editor */}
+              {/* Roadmap */}
               <Collapsible open={openSections.roadmap} onOpenChange={() => toggleSection('roadmap')}>
                 <CollapsibleTrigger className="flex items-center justify-between w-full p-4 rounded-xl glass hover:bg-secondary/50 transition-colors">
-                  <div className="flex items-center gap-2"><Map className="w-5 h-5 text-primary" /><span className="font-semibold">Roadmap</span><span className="text-xs text-muted-foreground">({roadmapPhases.length} phases)</span></div>
+                  <div className="flex items-center gap-2"><Map className="w-5 h-5 text-primary" /><span className="font-semibold">Roadmap</span></div>
                   {openSections.roadmap ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 </CollapsibleTrigger>
-                <CollapsibleContent className="pt-4"><RoadmapEditor phases={roadmapPhases} onChange={setRoadmapPhases} /></CollapsibleContent>
+                <CollapsibleContent className="pt-4">
+                  <RoadmapEditor phases={state.roadmapPhases} onChange={state.setRoadmapPhases} />
+                </CollapsibleContent>
               </Collapsible>
 
-              {/* Team Editor */}
+              {/* Team */}
               <Collapsible open={openSections.team} onOpenChange={() => toggleSection('team')}>
                 <CollapsibleTrigger className="flex items-center justify-between w-full p-4 rounded-xl glass hover:bg-secondary/50 transition-colors">
-                  <div className="flex items-center gap-2"><Users className="w-5 h-5 text-primary" /><span className="font-semibold">Team</span><span className="text-xs text-muted-foreground">({teamMembers.length})</span></div>
+                  <div className="flex items-center gap-2"><Users className="w-5 h-5 text-primary" /><span className="font-semibold">Team</span></div>
                   {openSections.team ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 </CollapsibleTrigger>
-                <CollapsibleContent className="pt-4"><TeamEditor members={teamMembers} onChange={setTeamMembers} /></CollapsibleContent>
+                <CollapsibleContent className="pt-4">
+                  <TeamEditor members={state.teamMembers} onChange={state.setTeamMembers} />
+                </CollapsibleContent>
               </Collapsible>
 
-              {/* Features Editor */}
+              {/* Features */}
               <Collapsible open={openSections.features} onOpenChange={() => toggleSection('features')}>
                 <CollapsibleTrigger className="flex items-center justify-between w-full p-4 rounded-xl glass hover:bg-secondary/50 transition-colors">
-                  <div className="flex items-center gap-2"><Zap className="w-5 h-5 text-primary" /><span className="font-semibold">Features</span><span className="text-xs text-muted-foreground">({features.length})</span></div>
+                  <div className="flex items-center gap-2"><Zap className="w-5 h-5 text-primary" /><span className="font-semibold">Features</span></div>
                   {openSections.features ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 </CollapsibleTrigger>
-                <CollapsibleContent className="pt-4"><FeaturesEditor features={features} onChange={setFeatures} /></CollapsibleContent>
+                <CollapsibleContent className="pt-4">
+                  <FeaturesEditor features={state.features} onChange={state.setFeatures} />
+                </CollapsibleContent>
               </Collapsible>
 
               {/* Section Manager */}
               <Collapsible open={openSections.sections} onOpenChange={() => toggleSection('sections')}>
                 <CollapsibleTrigger className="flex items-center justify-between w-full p-4 rounded-xl glass hover:bg-secondary/50 transition-colors">
-                  <div className="flex items-center gap-2"><LayoutGrid className="w-5 h-5 text-primary" /><span className="font-semibold">Section Order & Visibility</span></div>
+                  <div className="flex items-center gap-2"><LayoutGrid className="w-5 h-5 text-primary" /><span className="font-semibold">Page Sections</span></div>
                   {openSections.sections ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 </CollapsibleTrigger>
-                <CollapsibleContent className="pt-4"><div className="p-4 rounded-xl glass border border-border"><SectionManager sections={sections} onChange={setSections} /></div></CollapsibleContent>
+                <CollapsibleContent className="pt-4">
+                  <SectionManager sections={state.sections} onChange={state.setSections} />
+                </CollapsibleContent>
               </Collapsible>
 
-              {/* Domain Preview / Subdomain Editor */}
-              <div className="p-4 rounded-xl glass">
-                <p className="text-sm text-muted-foreground mb-2">{generatedProject ? 'Your site is live at:' : 'Your site will be live at:'}</p>
-                {generatedProject ? (
-                  <p className="text-primary font-mono text-sm">{generatedProject.subdomain}.solsite.fun</p>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Input
-                        value={customSubdomain}
-                        onChange={(e) => handleSubdomainChange(e.target.value)}
-                        placeholder="yourcoin"
-                        className="font-mono text-sm max-w-[200px]"
-                        maxLength={63}
-                      />
-                      <span className="text-muted-foreground font-mono text-sm">.solsite.fun</span>
-                      <div className="w-5 h-5 flex items-center justify-center">
-                        {checkingSubdomain ? (
-                          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                        ) : subdomainAvailable === true ? (
-                          <Check className="w-4 h-4 text-accent" />
-                        ) : subdomainAvailable === false ? (
-                          <X className="w-4 h-4 text-destructive" />
-                        ) : null}
-                      </div>
-                    </div>
-                    {customSubdomain.length > 0 && customSubdomain.length < 3 && (
-                      <p className="text-xs text-destructive">Must be at least 3 characters</p>
-                    )}
-                    {subdomainAvailable === false && (
-                      <p className="text-xs text-destructive">This subdomain is already taken</p>
-                    )}
-                    {subdomainAvailable === true && (
-                      <p className="text-xs text-accent">Subdomain is available!</p>
-                    )}
+              {/* Subdomain */}
+              {!generatedProject && (
+                <div className="p-4 rounded-xl glass border border-border">
+                  <Label className="text-sm font-medium mb-2 block">Subdomain</Label>
+                  <div className="flex items-center gap-2">
+                    <Input 
+                      value={subdomain.customSubdomain} 
+                      onChange={(e) => subdomain.handleSubdomainChange(e.target.value)}
+                      placeholder="yourcoin"
+                      className="flex-1"
+                    />
+                    <span className="text-muted-foreground text-sm">.solsite.fun</span>
                   </div>
+                  {subdomain.checkingSubdomain && <p className="text-xs text-muted-foreground mt-2">Checking availability...</p>}
+                  {subdomain.subdomainAvailable === true && <p className="text-xs text-accent mt-2">✓ Available</p>}
+                  {subdomain.subdomainAvailable === false && <p className="text-xs text-destructive mt-2">✗ Already taken</p>}
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="pt-6 flex gap-3">
+                {generatedProject ? (
+                  <Button 
+                    variant="glow" 
+                    className="flex-1 gap-2" 
+                    onClick={actions.saveChanges}
+                    disabled={actions.isSaving}
+                  >
+                    {actions.isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    Save Changes
+                  </Button>
+                ) : (
+                  <Button 
+                    variant="glow" 
+                    className="flex-1 gap-2" 
+                    onClick={actions.handleGenerate}
+                    disabled={actions.isGenerating || !state.formData.coinName || !state.formData.ticker}
+                  >
+                    {actions.isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
+                    Generate Website
+                  </Button>
                 )}
               </div>
-
-              {/* Generate / Save Button */}
-              {!generatedProject ? (
-                <Button 
-                  variant="hero" 
-                  size="xl" 
-                  className="w-full" 
-                  onClick={handleGenerate} 
-                  disabled={isGenerating || !formData.coinName || !formData.ticker || customSubdomain.length < 3 || subdomainAvailable === false || checkingSubdomain}
-                >
-                  {isGenerating ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Generating...</> : <><Rocket className="w-5 h-5 mr-2" />Generate Website</>}
-                </Button>
-              ) : (
-                <Button variant="hero" size="xl" className="w-full" onClick={saveChanges} disabled={isSaving}>
-                  {isSaving ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Saving...</> : <><Save className="w-5 h-5 mr-2" />Save Changes</>}
-                </Button>
-              )}
             </div>
           </div>
 
           {/* Preview Panel */}
-          <div className="flex-1 bg-secondary/30 relative">
-            <div className="sticky top-20 p-4 lg:p-6 h-[calc(100vh-5rem)]">
-              <div className="h-full rounded-2xl overflow-hidden border border-border bg-background shadow-2xl">
-                <PreviewControls
-                  subdomain={displaySubdomain}
-                  previewUrl={previewUrl}
-                  isGeneratedProject={!!generatedProject}
-                  isSaving={isSaving}
-                  isRefreshing={isRefreshingPreview}
-                  deviceSize={deviceSize}
-                  currentTemplateKey={selectedTemplateId || 'cult_minimal'}
-                  currentBlueprintId={blueprintId}
-                  currentLayout={currentLayout}
-                  currentPersonality={currentPersonality}
-                  onRefresh={refreshPreview}
-                  onSave={saveChanges}
-                  onDeviceChange={setDeviceSize}
-                  onTemplateChange={handleTemplateChange}
-                  onFullscreen={() => window.open(previewUrl || '', '_blank')}
+          <div className="w-full lg:w-1/2 xl:w-3/5 bg-secondary/30 p-6 lg:p-8 overflow-hidden flex flex-col">
+            <PreviewControls
+              deviceSize={deviceSize}
+              onDeviceSizeChange={setDeviceSize}
+              onRefresh={refreshPreview}
+              isRefreshing={isRefreshingPreview}
+              onTemplateChange={template.handleTemplateChange}
+              currentLayout={template.currentLayout}
+              currentPersonality={template.currentPersonality}
+            />
+            
+            <div className="flex-1 flex items-center justify-center overflow-hidden">
+              <div 
+                className="bg-background rounded-lg shadow-2xl overflow-hidden transition-all duration-300"
+                style={{ 
+                  width: deviceWidths[deviceSize], 
+                  maxWidth: '100%',
+                  height: deviceSize === 'mobile' ? '667px' : deviceSize === 'tablet' ? '100%' : '100%'
+                }}
+              >
+                <iframe
+                  key={previewKey}
+                  srcDoc={generatedProject ? previewHtml || '' : state.livePreviewHtml}
+                  className="w-full h-full border-0"
+                  title="Website Preview"
+                  sandbox="allow-scripts"
                 />
-                <div className="h-[calc(100%-3.5rem)] overflow-hidden flex justify-center bg-muted/20">
-                  <div style={{ width: deviceWidths[deviceSize], maxWidth: '100%', transition: 'width 0.3s ease' }} className="h-full">
-                    {generatedProject ? (
-                      isRefreshingPreview && !previewHtml ? (
-                        <div className="w-full h-full flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
-                      ) : previewHtml ? (
-                        <iframe key={previewKey} srcDoc={previewHtml} className="w-full h-full border-0" title="Site Preview" sandbox="allow-scripts allow-same-origin" />
-                      ) : null
-                    ) : isLoadingTemplatePreview ? (
-                      <div className="w-full h-full flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
-                    ) : (
-                      <iframe key={`preview-${previewKey}`} srcDoc={livePreviewHtml} className="w-full h-full border-0" title="Live Preview" sandbox="allow-scripts allow-same-origin" />
-                    )}
-                  </div>
-                </div>
               </div>
             </div>
           </div>
         </div>
       </main>
 
-      {user && (
-        <PaymentModal
-          isOpen={showPaymentModal}
-          onClose={() => setShowPaymentModal(false)}
-          onSuccess={() => { setHasPaid(true); setShowPaymentModal(false); createProject(); }}
-          paymentType="website"
-          userId={user.id}
-          walletAddress={user.wallet_address}
-        />
-      )}
+      {/* Payment Modal */}
+      <PaymentModal 
+        isOpen={actions.showPaymentModal} 
+        onClose={() => actions.setShowPaymentModal(false)}
+        onSuccess={() => {
+          actions.setHasPaid(true);
+          actions.setShowPaymentModal(false);
+          actions.handleGenerate();
+        }}
+        paymentType="website"
+      />
 
-      {tempLogoSrc && (
+      {/* Logo Cropper */}
+      {state.showLogoCropper && state.tempLogoSrc && (
         <LogoCropper
-          open={showLogoCropper}
-          onOpenChange={setShowLogoCropper}
-          imageSrc={tempLogoSrc}
-          onCropComplete={handleCropComplete}
+          src={state.tempLogoSrc}
+          onComplete={state.handleCropComplete}
+          onCancel={() => state.setShowLogoCropper(false)}
         />
       )}
     </div>

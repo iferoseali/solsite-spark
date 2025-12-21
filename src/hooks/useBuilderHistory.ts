@@ -1,19 +1,14 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { toast } from "sonner";
-import type { SectionConfig } from "@/types/section";
-import type { FaqItem, RoadmapPhase, TeamMember, Feature } from "@/types/builder";
-import type { BuilderFormData } from "./useBuilderState";
+import type { BuilderSnapshot } from "./useBuilderState";
 
 const MAX_HISTORY = 50;
 
-export interface BuilderSnapshot {
-  formData: BuilderFormData;
-  faqItems: FaqItem[];
-  roadmapPhases: RoadmapPhase[];
-  teamMembers: TeamMember[];
-  features: Feature[];
-  sections: SectionConfig[];
-  logoPreview: string | null;
+export interface UseBuilderHistoryProps {
+  createSnapshot: () => BuilderSnapshot;
+  applySnapshot: (snapshot: BuilderSnapshot) => void;
+  isEditMode: boolean;
+  dependencies: React.DependencyList;
 }
 
 export interface UseBuilderHistoryReturn {
@@ -21,29 +16,24 @@ export interface UseBuilderHistoryReturn {
   canRedo: boolean;
   undo: () => void;
   redo: () => void;
-  pushToHistory: () => void;
   initializeHistory: (snapshot: BuilderSnapshot) => void;
-  restoreSnapshot: (snapshot: BuilderSnapshot) => void;
-}
-
-interface UseBuilderHistoryProps {
-  createSnapshot: () => BuilderSnapshot;
-  applySnapshot: (snapshot: BuilderSnapshot) => void;
-  isEditMode: boolean;
 }
 
 export function useBuilderHistory({
   createSnapshot,
   applySnapshot,
   isEditMode,
+  dependencies,
 }: UseBuilderHistoryProps): UseBuilderHistoryReturn {
   const [history, setHistory] = useState<BuilderSnapshot[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const historyDebounce = useRef<NodeJS.Timeout | null>(null);
   const isRestoringHistory = useRef(false);
+  const isInitialized = useRef(false);
 
+  // Push to history with debounce (1000ms for performance)
   const pushToHistory = useCallback(() => {
-    if (isRestoringHistory.current) return;
+    if (isRestoringHistory.current || !isInitialized.current) return;
 
     if (historyDebounce.current) {
       clearTimeout(historyDebounce.current);
@@ -61,7 +51,7 @@ export function useBuilderHistory({
         return newHistory;
       });
       setHistoryIndex(prev => Math.min(prev + 1, MAX_HISTORY - 1));
-    }, 500);
+    }, 1000);
   }, [createSnapshot, historyIndex]);
 
   const undo = useCallback(() => {
@@ -99,19 +89,20 @@ export function useBuilderHistory({
   }, [history, historyIndex, applySnapshot]);
 
   const initializeHistory = useCallback((snapshot: BuilderSnapshot) => {
-    if (history.length === 0 && !isEditMode) {
+    if (!isInitialized.current && !isEditMode) {
       setHistory([snapshot]);
       setHistoryIndex(0);
+      isInitialized.current = true;
     }
-  }, [history.length, isEditMode]);
+  }, [isEditMode]);
 
-  const restoreSnapshot = useCallback((snapshot: BuilderSnapshot) => {
-    isRestoringHistory.current = true;
-    applySnapshot(snapshot);
-    setTimeout(() => {
-      isRestoringHistory.current = false;
-    }, 100);
-  }, [applySnapshot]);
+  // Track changes for history
+  useEffect(() => {
+    if (isInitialized.current) {
+      pushToHistory();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, dependencies);
 
   // Keyboard shortcuts for undo/redo
   useEffect(() => {
@@ -138,8 +129,6 @@ export function useBuilderHistory({
     canRedo,
     undo,
     redo,
-    pushToHistory,
     initializeHistory,
-    restoreSnapshot,
   };
 }
