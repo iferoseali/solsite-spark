@@ -158,6 +158,12 @@ const Builder = () => {
   const [hasPaid, setHasPaid] = useState(true);
   const { checkExistingPayment } = usePayment();
 
+  // Subdomain state
+  const [customSubdomain, setCustomSubdomain] = useState("");
+  const [subdomainAvailable, setSubdomainAvailable] = useState<boolean | null>(null);
+  const [checkingSubdomain, setCheckingSubdomain] = useState(false);
+  const subdomainCheckTimeout = useRef<NodeJS.Timeout | null>(null);
+
   // Draft restore state
   const [showDraftBanner, setShowDraftBanner] = useState(false);
   const [savedDraft, setSavedDraft] = useState<AutoSaveData | null>(null);
@@ -703,10 +709,83 @@ const Builder = () => {
 
   const generateSubdomain = (coinName: string): string => coinName.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').slice(0, 30);
 
+  // Sanitize subdomain input
+  const sanitizeSubdomain = (value: string): string => {
+    return value
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 63);
+  };
+
+  // Check subdomain availability with debounce
+  const checkSubdomainAvailability = useCallback(async (subdomain: string) => {
+    if (!subdomain || subdomain.length < 3) {
+      setSubdomainAvailable(null);
+      setCheckingSubdomain(false);
+      return;
+    }
+
+    setCheckingSubdomain(true);
+    try {
+      const { data, error } = await supabase
+        .from('domains')
+        .select('subdomain, project_id')
+        .eq('subdomain', subdomain)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error checking subdomain:', error);
+        setSubdomainAvailable(null);
+        return;
+      }
+
+      // Available if no match found, or if it matches current project
+      const isAvailable = !data || (editProjectId && data.project_id === editProjectId);
+      setSubdomainAvailable(isAvailable);
+    } catch (err) {
+      console.error('Failed to check subdomain:', err);
+      setSubdomainAvailable(null);
+    } finally {
+      setCheckingSubdomain(false);
+    }
+  }, [editProjectId]);
+
+  // Handle subdomain input change with debounce
+  const handleSubdomainChange = useCallback((value: string) => {
+    const sanitized = sanitizeSubdomain(value);
+    setCustomSubdomain(sanitized);
+    setSubdomainAvailable(null);
+
+    if (subdomainCheckTimeout.current) {
+      clearTimeout(subdomainCheckTimeout.current);
+    }
+
+    if (sanitized.length >= 3) {
+      subdomainCheckTimeout.current = setTimeout(() => {
+        checkSubdomainAvailability(sanitized);
+      }, 500);
+    }
+  }, [checkSubdomainAvailability]);
+
+  // Auto-populate subdomain from coin name if user hasn't customized it
+  useEffect(() => {
+    if (!customSubdomain && formData.coinName && !editProjectId && !generatedProject) {
+      const autoSubdomain = sanitizeSubdomain(formData.coinName);
+      setCustomSubdomain(autoSubdomain);
+      if (autoSubdomain.length >= 3) {
+        checkSubdomainAvailability(autoSubdomain);
+      }
+    }
+  }, [formData.coinName, customSubdomain, editProjectId, generatedProject, checkSubdomainAvailability]);
+
   const handleGenerate = async () => {
     if (!formData.coinName || !formData.ticker) { toast.error("Please fill in at least the coin name and ticker"); return; }
     if (!connected) { toast.error("Please connect your wallet first"); setVisible(true); return; }
     if (!isVerified || !user) { toast.error("Please verify your wallet on the dashboard first"); return; }
+    if (customSubdomain.length < 3) { toast.error("Subdomain must be at least 3 characters"); return; }
+    if (subdomainAvailable === false) { toast.error("This subdomain is already taken"); return; }
     const alreadyPaid = await checkExistingPayment(user.id, 'website');
     if (!alreadyPaid && !hasPaid) { setShowPaymentModal(true); return; }
     await createProject();
@@ -716,10 +795,8 @@ const Builder = () => {
     if (!user) return;
     setIsGenerating(true);
     try {
-      const subdomain = generateSubdomain(formData.coinName);
-      const { data: existingProject } = await supabase.from('projects').select('id').eq('subdomain', subdomain).maybeSingle();
-      let finalSubdomain = subdomain;
-      if (existingProject) finalSubdomain = `${subdomain}-${Math.random().toString(36).substring(2, 6)}`;
+      // Use the custom subdomain the user chose
+      const finalSubdomain = customSubdomain || generateSubdomain(formData.coinName);
 
       const projectConfig = {
         tokenomics: { totalSupply: formData.totalSupply || null, circulatingSupply: formData.circulatingSupply || null, contractAddress: formData.contractAddress || null },
@@ -790,7 +867,7 @@ const Builder = () => {
     }
   };
 
-  const subdomain = formData.coinName ? generateSubdomain(formData.coinName) : 'yourcoin';
+  const displaySubdomain = customSubdomain || (formData.coinName ? generateSubdomain(formData.coinName) : 'yourcoin');
   const previewUrl = generatedProject ? `/site/${generatedProject.subdomain}` : null;
 
   useEffect(() => { if (generatedProject) refreshPreview(); }, [generatedProject?.subdomain]);
@@ -1123,15 +1200,54 @@ const Builder = () => {
                 <CollapsibleContent className="pt-4"><div className="p-4 rounded-xl glass border border-border"><SectionManager sections={sections} onChange={setSections} /></div></CollapsibleContent>
               </Collapsible>
 
-              {/* Domain Preview */}
+              {/* Domain Preview / Subdomain Editor */}
               <div className="p-4 rounded-xl glass">
-                <p className="text-sm text-muted-foreground mb-1">{generatedProject ? 'Your site is live at:' : 'Your site will be live at:'}</p>
-                <p className="text-primary font-mono text-sm">{generatedProject?.subdomain || subdomain}.solsite.fun</p>
+                <p className="text-sm text-muted-foreground mb-2">{generatedProject ? 'Your site is live at:' : 'Your site will be live at:'}</p>
+                {generatedProject ? (
+                  <p className="text-primary font-mono text-sm">{generatedProject.subdomain}.solsite.fun</p>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={customSubdomain}
+                        onChange={(e) => handleSubdomainChange(e.target.value)}
+                        placeholder="yourcoin"
+                        className="font-mono text-sm max-w-[200px]"
+                        maxLength={63}
+                      />
+                      <span className="text-muted-foreground font-mono text-sm">.solsite.fun</span>
+                      <div className="w-5 h-5 flex items-center justify-center">
+                        {checkingSubdomain ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                        ) : subdomainAvailable === true ? (
+                          <Check className="w-4 h-4 text-accent" />
+                        ) : subdomainAvailable === false ? (
+                          <X className="w-4 h-4 text-destructive" />
+                        ) : null}
+                      </div>
+                    </div>
+                    {customSubdomain.length > 0 && customSubdomain.length < 3 && (
+                      <p className="text-xs text-destructive">Must be at least 3 characters</p>
+                    )}
+                    {subdomainAvailable === false && (
+                      <p className="text-xs text-destructive">This subdomain is already taken</p>
+                    )}
+                    {subdomainAvailable === true && (
+                      <p className="text-xs text-accent">Subdomain is available!</p>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Generate / Save Button */}
               {!generatedProject ? (
-                <Button variant="hero" size="xl" className="w-full" onClick={handleGenerate} disabled={isGenerating || !formData.coinName || !formData.ticker}>
+                <Button 
+                  variant="hero" 
+                  size="xl" 
+                  className="w-full" 
+                  onClick={handleGenerate} 
+                  disabled={isGenerating || !formData.coinName || !formData.ticker || customSubdomain.length < 3 || subdomainAvailable === false || checkingSubdomain}
+                >
                   {isGenerating ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Generating...</> : <><Rocket className="w-5 h-5 mr-2" />Generate Website</>}
                 </Button>
               ) : (
@@ -1147,7 +1263,7 @@ const Builder = () => {
             <div className="sticky top-20 p-4 lg:p-6 h-[calc(100vh-5rem)]">
               <div className="h-full rounded-2xl overflow-hidden border border-border bg-background shadow-2xl">
                 <PreviewControls
-                  subdomain={subdomain}
+                  subdomain={displaySubdomain}
                   previewUrl={previewUrl}
                   isGeneratedProject={!!generatedProject}
                   isSaving={isSaving}
