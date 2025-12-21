@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Columns, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { TEMPLATE_ID_MAP, getTemplateMeta } from "@/lib/templateData";
+import { TEMPLATE_ID_MAP, getTemplateMeta } from "@/lib/templates";
 import type { TemplateBlueprint } from "@/types/template";
 
 interface ComparisonViewProps {

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import { getTemplateId } from "@/lib/templateData";
+import { getTemplateId } from "@/lib/templates";
 
 interface TemplateBlueprintRow {
   id: string;

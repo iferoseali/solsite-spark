@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Check, Columns, Eye, Heart, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getTemplateMeta } from "@/lib/templateData";
+import { getTemplateMeta } from "@/lib/templates";
 import type { TemplateBlueprint } from "@/types/template";
 
 interface TemplateCardProps {
