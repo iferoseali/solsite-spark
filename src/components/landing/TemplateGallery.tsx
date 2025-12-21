@@ -1,9 +1,10 @@
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
 import { useRef, useState } from "react";
-import { Rocket, Flame, Sparkles, Zap, Crown, Code, Skull, Eye, X } from "lucide-react";
+import { Rocket, Flame, Sparkles, Zap, Crown, Code, Skull, Eye, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { SOLSITE_TEMPLATE_REGISTRY, type TemplateDefinition } from "@/lib/templates";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Map template IDs to visual metadata with brand-matched colors
 const templateMeta: Record<string, {
@@ -85,12 +86,12 @@ const MockPreview = ({ meta }: { meta: typeof templateMeta[string] }) => {
       style={{ background: mockupStyle.bg }}
     >
       {/* Mock navbar */}
-      <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: `${accentColor}20` }}>
+      <div className="flex items-center justify-between px-3 md:px-4 py-2 md:py-3 border-b" style={{ borderColor: `${accentColor}20` }}>
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full" style={{ background: accentColor }} />
-          <div className="w-16 h-2 rounded" style={{ background: `${mockupStyle.text}30` }} />
+          <div className="w-5 h-5 md:w-6 md:h-6 rounded-full" style={{ background: accentColor }} />
+          <div className="w-12 md:w-16 h-2 rounded" style={{ background: `${mockupStyle.text}30` }} />
         </div>
-        <div className="flex gap-2">
+        <div className="hidden md:flex gap-2">
           <div className="w-12 h-2 rounded" style={{ background: `${mockupStyle.text}20` }} />
           <div className="w-12 h-2 rounded" style={{ background: `${mockupStyle.text}20` }} />
           <div className="w-16 h-5 rounded-full" style={{ background: accentColor }} />
@@ -98,40 +99,40 @@ const MockPreview = ({ meta }: { meta: typeof templateMeta[string] }) => {
       </div>
       
       {/* Mock hero section */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-6 relative overflow-hidden">
         {/* Background glow */}
         <div 
-          className="absolute top-1/4 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full blur-3xl opacity-30"
+          className="absolute top-1/4 left-1/2 -translate-x-1/2 w-32 md:w-48 h-32 md:h-48 rounded-full blur-3xl opacity-30"
           style={{ background: accentColor }}
         />
         
         {/* Mock logo */}
         <div 
-          className="w-16 h-16 rounded-2xl mb-4 relative z-10"
+          className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl mb-3 md:mb-4 relative z-10"
           style={{ background: `${accentColor}30`, border: `2px solid ${accentColor}` }}
         />
         
         {/* Mock title */}
-        <div className="w-32 h-4 rounded mb-2 relative z-10" style={{ background: mockupStyle.text }} />
-        <div className="w-24 h-3 rounded mb-4 relative z-10" style={{ background: accentColor }} />
+        <div className="w-24 md:w-32 h-3 md:h-4 rounded mb-2 relative z-10" style={{ background: mockupStyle.text }} />
+        <div className="w-20 md:w-24 h-2 md:h-3 rounded mb-3 md:mb-4 relative z-10" style={{ background: accentColor }} />
         
         {/* Mock description */}
-        <div className="w-40 h-2 rounded mb-1 relative z-10" style={{ background: `${mockupStyle.text}40` }} />
-        <div className="w-32 h-2 rounded mb-4 relative z-10" style={{ background: `${mockupStyle.text}30` }} />
+        <div className="w-32 md:w-40 h-2 rounded mb-1 relative z-10" style={{ background: `${mockupStyle.text}40` }} />
+        <div className="w-24 md:w-32 h-2 rounded mb-3 md:mb-4 relative z-10" style={{ background: `${mockupStyle.text}30` }} />
         
         {/* Mock button */}
         <div 
-          className="w-24 h-6 rounded-full relative z-10"
+          className="w-20 md:w-24 h-5 md:h-6 rounded-full relative z-10"
           style={{ background: accentColor }}
         />
       </div>
       
       {/* Mock stats section */}
-      <div className="flex justify-center gap-4 py-4 border-t" style={{ borderColor: `${accentColor}20` }}>
+      <div className="flex justify-center gap-3 md:gap-4 py-3 md:py-4 border-t" style={{ borderColor: `${accentColor}20` }}>
         {[1, 2, 3].map((i) => (
           <div key={i} className="flex flex-col items-center">
-            <div className="w-8 h-2 rounded mb-1" style={{ background: accentColor }} />
-            <div className="w-12 h-1.5 rounded" style={{ background: `${mockupStyle.text}30` }} />
+            <div className="w-6 md:w-8 h-2 rounded mb-1" style={{ background: accentColor }} />
+            <div className="w-10 md:w-12 h-1.5 rounded" style={{ background: `${mockupStyle.text}30` }} />
           </div>
         ))}
       </div>
@@ -142,11 +143,13 @@ const MockPreview = ({ meta }: { meta: typeof templateMeta[string] }) => {
 const TemplateCard = ({ 
   template, 
   index,
-  onPreview 
+  onPreview,
+  isMobile
 }: { 
   template: TemplateDefinition; 
   index: number;
   onPreview: (template: TemplateDefinition) => void;
+  isMobile: boolean;
 }) => {
   const meta = templateMeta[template.template_id] || {
     icon: Sparkles,
@@ -161,13 +164,15 @@ const TemplateCard = ({
   
   return (
     <motion.div
-      initial={{ opacity: 0, y: 100 }}
+      initial={{ opacity: 0, y: 50 }}
       whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: index * 0.1 }}
-      viewport={{ once: true, margin: "-100px" }}
-      className="group relative flex-shrink-0"
+      transition={{ duration: 0.4, delay: isMobile ? 0 : index * 0.1 }}
+      viewport={{ once: true, margin: "-50px" }}
+      className="group relative flex-shrink-0 snap-center"
     >
-      <div className="relative h-[520px] w-[380px] overflow-hidden rounded-3xl border border-border/50 bg-card/50 backdrop-blur-sm transition-all duration-500 hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/20">
+      <div className={`relative overflow-hidden rounded-2xl md:rounded-3xl border border-border/50 bg-card/50 backdrop-blur-sm transition-all duration-500 hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/20 ${
+        isMobile ? 'h-[400px] w-[280px]' : 'h-[520px] w-[380px]'
+      }`}>
         {/* Gradient overlay */}
         <div className={`absolute inset-0 bg-gradient-to-br ${meta.gradient} opacity-5 transition-opacity duration-500 group-hover:opacity-15`} />
         
@@ -179,39 +184,55 @@ const TemplateCard = ({
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
         </div>
         
-        {/* Hover overlay for preview */}
-        <div 
-          className="absolute inset-0 flex items-center justify-center bg-background/60 opacity-0 transition-opacity duration-300 group-hover:opacity-100 cursor-pointer z-10"
-          onClick={() => onPreview(template)}
-        >
-          <div className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-primary-foreground font-medium">
-            <Eye className="h-4 w-4" />
-            Live Preview
+        {/* Hover overlay for preview - only on desktop */}
+        {!isMobile && (
+          <div 
+            className="absolute inset-0 flex items-center justify-center bg-background/60 opacity-0 transition-opacity duration-300 group-hover:opacity-100 cursor-pointer z-10"
+            onClick={() => onPreview(template)}
+          >
+            <div className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-primary-foreground font-medium">
+              <Eye className="h-4 w-4" />
+              Live Preview
+            </div>
           </div>
-        </div>
+        )}
         
         {/* Content */}
-        <div className="absolute inset-x-0 bottom-0 p-6 z-20">
-          <div className={`mb-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r ${meta.gradient} px-4 py-1.5`}>
-            <Icon className="h-4 w-4 text-white" />
-            <span className="text-sm font-medium text-white">{meta.personality}</span>
+        <div className="absolute inset-x-0 bottom-0 p-4 md:p-6 z-20">
+          <div className={`mb-3 md:mb-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r ${meta.gradient} px-3 md:px-4 py-1 md:py-1.5`}>
+            <Icon className="h-3 w-3 md:h-4 md:w-4 text-white" />
+            <span className="text-xs md:text-sm font-medium text-white">{meta.personality}</span>
           </div>
           
-          <h3 className="mb-2 text-2xl font-bold text-foreground">{template.name}</h3>
-          <p className="mb-4 text-sm text-muted-foreground line-clamp-2">{meta.description}</p>
+          <h3 className="mb-2 text-xl md:text-2xl font-bold text-foreground">{template.name}</h3>
+          <p className="mb-3 md:mb-4 text-xs md:text-sm text-muted-foreground line-clamp-2">{meta.description}</p>
           
-          <Link to={`/builder?templateId=${template.template_id}`}>
-            <Button 
-              variant="outline" 
-              className="w-full border-border/50 bg-background/50 backdrop-blur-sm transition-all duration-300 hover:bg-primary hover:text-primary-foreground hover:border-primary"
-            >
-              Use Template
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            {isMobile && (
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => onPreview(template)}
+                className="border border-border/50"
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+            )}
+            <Link to={`/builder?templateId=${template.template_id}`} className="flex-1">
+              <Button 
+                variant="outline" 
+                className={`w-full border-border/50 bg-background/50 backdrop-blur-sm transition-all duration-300 hover:bg-primary hover:text-primary-foreground hover:border-primary ${
+                  isMobile ? 'text-sm py-2' : ''
+                }`}
+              >
+                Use Template
+              </Button>
+            </Link>
+          </div>
         </div>
         
         {/* Floating badge */}
-        <div className="absolute right-4 top-4 rounded-full bg-background/80 px-3 py-1 text-xs font-semibold backdrop-blur-sm z-20">
+        <div className="absolute right-3 md:right-4 top-3 md:top-4 rounded-full bg-background/80 px-2 md:px-3 py-1 text-xs font-semibold backdrop-blur-sm z-20">
           #{index + 1} Popular
         </div>
       </div>
@@ -237,36 +258,36 @@ const PreviewModal = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-lg p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-lg p-2 md:p-4"
       onClick={onClose}
     >
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="relative w-full max-w-6xl h-[85vh] rounded-2xl overflow-hidden border border-border bg-card shadow-2xl"
+        className="relative w-full max-w-6xl h-[90vh] md:h-[85vh] rounded-xl md:rounded-2xl overflow-hidden border border-border bg-card shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 bg-gradient-to-b from-background via-background/80 to-transparent">
+        <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-3 md:p-4 bg-gradient-to-b from-background via-background/80 to-transparent">
           <div className="flex items-center gap-3">
-            <div className={`inline-flex items-center gap-2 rounded-full bg-gradient-to-r ${meta?.gradient || 'from-primary to-accent'} px-4 py-1.5`}>
-              <span className="text-sm font-medium text-white">{template.name}</span>
+            <div className={`inline-flex items-center gap-2 rounded-full bg-gradient-to-r ${meta?.gradient || 'from-primary to-accent'} px-3 md:px-4 py-1 md:py-1.5`}>
+              <span className="text-xs md:text-sm font-medium text-white truncate max-w-[120px] md:max-w-none">{template.name}</span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
             <Link to={`/builder?templateId=${template.template_id}`}>
-              <Button variant="glow" size="sm">
-                Use This Template
+              <Button variant="glow" size="sm" className="text-xs md:text-sm">
+                Use Template
               </Button>
             </Link>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="h-5 w-5" />
+            <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 md:h-10 md:w-10">
+              <X className="h-4 w-4 md:h-5 md:w-5" />
             </Button>
           </div>
         </div>
         
-        {/* iframe Preview - opens in new window on click */}
+        {/* iframe Preview */}
         <iframe
           src={previewUrl}
           className="w-full h-full border-0"
@@ -279,66 +300,125 @@ const PreviewModal = ({
 };
 
 export const TemplateGallery = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateDefinition | null>(null);
-  
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start end", "end start"],
-  });
-
-  const x = useTransform(scrollYProgress, [0, 1], ["0%", "-30%"]);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  const isMobile = useIsMobile();
   
   const templates = SOLSITE_TEMPLATE_REGISTRY.templates;
 
+  const checkScroll = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setCanScrollLeft(scrollLeft > 10);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const scrollAmount = isMobile ? 300 : 400;
+      scrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   return (
     <>
-      <section ref={containerRef} className="relative overflow-hidden py-24" id="templates">
-        {/* Background effects */}
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-1/4 top-1/4 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
-          <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-accent/10 blur-3xl" />
-        </div>
+      <section className="relative overflow-hidden py-16 md:py-24" id="templates">
+        {/* Background effects - hidden on mobile for performance */}
+        {!isMobile && (
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute left-1/4 top-1/4 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
+            <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-accent/10 blur-3xl" />
+          </div>
+        )}
 
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto px-4 md:px-6">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
-            className="mb-16 text-center"
+            className="mb-10 md:mb-16 text-center"
           >
             <span className="mb-4 inline-block rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
               Template Gallery
             </span>
-            <h2 className="mb-4 text-4xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl">
+            <h2 className="mb-4 text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-foreground">
               Choose Your <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">Vibe</span>
             </h2>
-            <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-              {templates.length} stunning templates designed to make your meme coin stand out. Each one crafted for maximum impact.
+            <p className="mx-auto max-w-2xl text-base md:text-lg text-muted-foreground">
+              {templates.length} stunning templates designed to make your meme coin stand out.
             </p>
           </motion.div>
 
-          {/* Horizontal scroll gallery */}
-          <div className="relative overflow-hidden">
-            {/* Gradient fades */}
-            <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-24 bg-gradient-to-r from-background to-transparent" />
-            <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-24 bg-gradient-to-l from-background to-transparent" />
+          {/* Horizontal scroll gallery with CSS-based scrolling */}
+          <div className="relative">
+            {/* Navigation arrows - hidden on mobile, users swipe instead */}
+            {!isMobile && (
+              <>
+                <button
+                  onClick={() => scroll('left')}
+                  className={`absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full glass flex items-center justify-center transition-all duration-300 ${
+                    canScrollLeft ? 'opacity-100 hover:bg-primary/20' : 'opacity-0 pointer-events-none'
+                  }`}
+                >
+                  <ChevronLeft className="w-6 h-6 text-foreground" />
+                </button>
+                <button
+                  onClick={() => scroll('right')}
+                  className={`absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full glass flex items-center justify-center transition-all duration-300 ${
+                    canScrollRight ? 'opacity-100 hover:bg-primary/20' : 'opacity-0 pointer-events-none'
+                  }`}
+                >
+                  <ChevronRight className="w-6 h-6 text-foreground" />
+                </button>
+              </>
+            )}
             
-            <motion.div 
-              style={{ x }}
-              className="flex gap-8 pb-8"
+            {/* Gradient fades - smaller on mobile */}
+            <div className={`pointer-events-none absolute left-0 top-0 z-10 h-full bg-gradient-to-r from-background to-transparent ${isMobile ? 'w-8' : 'w-24'}`} />
+            <div className={`pointer-events-none absolute right-0 top-0 z-10 h-full bg-gradient-to-l from-background to-transparent ${isMobile ? 'w-8' : 'w-24'}`} />
+            
+            {/* Scrollable container with CSS snap */}
+            <div 
+              ref={scrollRef}
+              onScroll={checkScroll}
+              className="flex gap-4 md:gap-8 pb-4 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide touch-pan-x"
+              style={{ 
+                WebkitOverflowScrolling: 'touch',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none'
+              }}
             >
+              {/* Spacer for centered first item */}
+              <div className={`flex-shrink-0 ${isMobile ? 'w-4' : 'w-12'}`} />
+              
               {templates.map((template, index) => (
                 <TemplateCard 
                   key={template.template_id} 
                   template={template} 
                   index={index}
                   onPreview={setSelectedTemplate}
+                  isMobile={isMobile}
                 />
               ))}
-            </motion.div>
+              
+              {/* Spacer for centered last item */}
+              <div className={`flex-shrink-0 ${isMobile ? 'w-4' : 'w-12'}`} />
+            </div>
+            
+            {/* Scroll indicator for mobile */}
+            {isMobile && (
+              <div className="flex justify-center gap-1 mt-4">
+                <span className="text-xs text-muted-foreground">← Swipe to explore →</span>
+              </div>
+            )}
           </div>
 
           {/* CTA */}
@@ -347,10 +427,10 @@ export const TemplateGallery = () => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
             viewport={{ once: true }}
-            className="mt-12 text-center"
+            className="mt-8 md:mt-12 text-center"
           >
             <Link to="/templates">
-              <Button size="lg" variant="glow" className="text-lg">
+              <Button size="lg" variant="glow" className="text-base md:text-lg">
                 Explore All Templates
               </Button>
             </Link>

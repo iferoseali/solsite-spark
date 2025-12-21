@@ -58,26 +58,26 @@ export const TemplateShowcase = () => {
   };
 
   return (
-    <section className="py-24 relative overflow-hidden">
+    <section className="py-16 md:py-24 relative overflow-hidden">
       <div className="container px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold mb-4">
+        <div className="text-center mb-8 md:mb-12">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-display font-bold mb-3 md:mb-4">
             <span className="text-gradient-primary">30+ Templates</span> to Choose From
           </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto">
             Pick your style and customize everything
           </p>
         </div>
 
-        {/* Marquee Personality Pills */}
-        <div className="relative mb-12 overflow-hidden">
+        {/* Marquee Personality Pills - smaller on mobile */}
+        <div className="relative mb-8 md:mb-12 overflow-hidden">
           <div className="flex animate-marquee">
             {[...personalities, ...personalities].map((p, i) => (
               <div
                 key={i}
-                className={`flex-shrink-0 mx-2 px-5 py-2.5 rounded-full bg-gradient-to-r ${p.color} text-primary-foreground font-medium text-sm flex items-center gap-2 hover:scale-105 transition-transform cursor-pointer shadow-lg`}
+                className={`flex-shrink-0 mx-1.5 md:mx-2 px-3 md:px-5 py-2 md:py-2.5 rounded-full bg-gradient-to-r ${p.color} text-primary-foreground font-medium text-xs md:text-sm flex items-center gap-1.5 md:gap-2 hover:scale-105 transition-transform cursor-pointer shadow-lg`}
               >
-                <span className="text-lg">{p.emoji}</span>
+                <span className="text-sm md:text-lg">{p.emoji}</span>
                 <span>{p.name}</span>
               </div>
             ))}
@@ -86,64 +86,69 @@ export const TemplateShowcase = () => {
 
         {/* Horizontal Scrolling Templates */}
         <div className="relative group">
-          {/* Left Arrow */}
+          {/* Left Arrow - hidden on mobile */}
           <button
             onClick={() => scroll('left')}
-            className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full glass flex items-center justify-center transition-all duration-300 ${
+            className={`hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full glass items-center justify-center transition-all duration-300 ${
               canScrollLeft ? 'opacity-100 hover:bg-primary/20' : 'opacity-0 pointer-events-none'
             }`}
           >
             <ChevronLeft className="w-6 h-6 text-foreground" />
           </button>
 
-          {/* Right Arrow */}
+          {/* Right Arrow - hidden on mobile */}
           <button
             onClick={() => scroll('right')}
-            className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full glass flex items-center justify-center transition-all duration-300 ${
+            className={`hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full glass items-center justify-center transition-all duration-300 ${
               canScrollRight ? 'opacity-100 hover:bg-primary/20' : 'opacity-0 pointer-events-none'
             }`}
           >
             <ChevronRight className="w-6 h-6 text-foreground" />
           </button>
 
-          {/* Gradient Fades */}
-          <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-background to-transparent z-[5] pointer-events-none" />
-          <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-background to-transparent z-[5] pointer-events-none" />
+          {/* Gradient Fades - smaller on mobile */}
+          <div className="absolute left-0 top-0 bottom-0 w-8 md:w-20 bg-gradient-to-r from-background to-transparent z-[5] pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-8 md:w-20 bg-gradient-to-l from-background to-transparent z-[5] pointer-events-none" />
 
-          {/* Scrollable Container */}
+          {/* Scrollable Container with touch support */}
           <div
             ref={scrollRef}
-            className="flex gap-6 overflow-x-auto scroll-container pb-4 px-4"
+            className="flex gap-4 md:gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 px-2 md:px-4 touch-pan-x scrollbar-hide"
+            style={{ 
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
+            }}
           >
             {templates.map((template, i) => (
               <div
                 key={i}
-                className="flex-shrink-0 w-72 aspect-[3/4] rounded-2xl overflow-hidden group/card cursor-pointer hover:scale-[1.02] transition-all duration-300"
+                className="flex-shrink-0 w-56 md:w-72 aspect-[3/4] rounded-xl md:rounded-2xl overflow-hidden group/card cursor-pointer hover:scale-[1.02] transition-all duration-300 snap-center"
               >
-                <div className={`w-full h-full bg-gradient-to-br ${template.gradient} p-4 flex flex-col relative`}>
+                <div className={`w-full h-full bg-gradient-to-br ${template.gradient} p-3 md:p-4 flex flex-col relative`}>
                   {/* Mock browser header */}
-                  <div className="flex items-center gap-1.5 mb-4">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
-                    <div className="flex-1 h-5 rounded bg-white/10 ml-2" />
+                  <div className="flex items-center gap-1 md:gap-1.5 mb-3 md:mb-4">
+                    <div className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-red-500/60" />
+                    <div className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-yellow-500/60" />
+                    <div className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-green-500/60" />
+                    <div className="flex-1 h-4 md:h-5 rounded bg-white/10 ml-2" />
                   </div>
 
                   {/* Mock content */}
                   <div className="flex-1 flex flex-col">
-                    <div className="w-12 h-12 rounded-xl bg-white/10 mb-3" />
-                    <div className="w-3/4 h-4 rounded bg-white/20 mb-2" />
-                    <div className="w-1/2 h-3 rounded bg-white/10 mb-4" />
-                    <div className="flex-1 rounded-lg bg-white/5 mb-3" />
-                    <div className="w-full h-10 rounded-lg bg-white/20" />
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg md:rounded-xl bg-white/10 mb-2 md:mb-3" />
+                    <div className="w-3/4 h-3 md:h-4 rounded bg-white/20 mb-1.5 md:mb-2" />
+                    <div className="w-1/2 h-2 md:h-3 rounded bg-white/10 mb-3 md:mb-4" />
+                    <div className="flex-1 rounded-lg bg-white/5 mb-2 md:mb-3" />
+                    <div className="w-full h-8 md:h-10 rounded-lg bg-white/20" />
                   </div>
 
-                  {/* Overlay on hover */}
-                  <div className="absolute inset-0 bg-background/90 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-6">
-                    <span className="text-lg font-bold text-foreground mb-1">{template.name}</span>
-                    <span className="text-sm text-muted-foreground mb-4">{template.personality}</span>
+                  {/* Overlay on hover/tap */}
+                  <div className="absolute inset-0 bg-background/90 opacity-0 group-hover/card:opacity-100 active:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-4 md:p-6">
+                    <span className="text-base md:text-lg font-bold text-foreground mb-1">{template.name}</span>
+                    <span className="text-xs md:text-sm text-muted-foreground mb-3 md:mb-4">{template.personality}</span>
                     <Link to="/templates">
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" className="text-xs md:text-sm">
                         View Template
                       </Button>
                     </Link>
@@ -152,13 +157,18 @@ export const TemplateShowcase = () => {
               </div>
             ))}
           </div>
+          
+          {/* Swipe indicator for mobile */}
+          <div className="flex md:hidden justify-center mt-3">
+            <span className="text-xs text-muted-foreground">← Swipe to explore →</span>
+          </div>
         </div>
 
-        <div className="text-center mt-12">
+        <div className="text-center mt-8 md:mt-12">
           <Link to="/templates">
-            <Button variant="glow" size="lg" className="group">
+            <Button variant="glow" size="lg" className="group text-sm md:text-base min-h-[48px]">
               Explore All Templates
-              <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+              <ArrowRight className="w-4 h-4 md:w-5 md:h-5 transition-transform group-hover:translate-x-1" />
             </Button>
           </Link>
         </div>
