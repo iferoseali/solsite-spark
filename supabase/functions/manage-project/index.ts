@@ -261,6 +261,7 @@ Deno.serve(async (req) => {
 
       // Handle subdomain change
       let oldSubdomain: string | null = null;
+      let subdomainChangesRemaining: number | null = null;
       if (body.updates.subdomain !== undefined) {
         const newSubdomain = body.updates.subdomain.toLowerCase().trim();
         
@@ -272,7 +273,7 @@ Deno.serve(async (req) => {
           );
         }
 
-        // Get current subdomain for cache purging
+        // Get current subdomain and change count
         const { data: currentProject } = await supabaseAdmin
           .from('projects')
           .select('subdomain')
@@ -283,6 +284,21 @@ Deno.serve(async (req) => {
 
         // Check if new subdomain is different and available
         if (newSubdomain !== oldSubdomain) {
+          // Check subdomain change limit
+          const { data: domainData } = await supabaseAdmin
+            .from('domains')
+            .select('subdomain_changes_count')
+            .eq('project_id', body.project_id)
+            .maybeSingle();
+
+          const currentChanges = domainData?.subdomain_changes_count || 0;
+          if (currentChanges >= 2) {
+            return new Response(
+              JSON.stringify({ error: 'Subdomain change limit reached. You can only change your subdomain 2 times.' }),
+              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+
           const { data: existingDomain } = await supabaseAdmin
             .from('domains')
             .select('id, project_id')
@@ -299,11 +315,17 @@ Deno.serve(async (req) => {
           updates.subdomain = newSubdomain;
           updates.generated_url = `https://${newSubdomain}.solsite.fun`;
 
-          // Update domains table
+          // Update domains table with incremented change count
           await supabaseAdmin
             .from('domains')
-            .update({ subdomain: newSubdomain, updated_at: new Date().toISOString() })
+            .update({ 
+              subdomain: newSubdomain, 
+              subdomain_changes_count: currentChanges + 1,
+              updated_at: new Date().toISOString() 
+            })
             .eq('project_id', body.project_id);
+
+          subdomainChangesRemaining = 2 - (currentChanges + 1);
         }
       }
 
@@ -325,7 +347,7 @@ Deno.serve(async (req) => {
 
       console.log('Project updated:', body.project_id);
       return new Response(
-        JSON.stringify({ success: true, project: updatedProject, oldSubdomain }),
+        JSON.stringify({ success: true, project: updatedProject, oldSubdomain, subdomainChangesRemaining }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

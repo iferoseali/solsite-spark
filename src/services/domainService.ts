@@ -140,7 +140,7 @@ export const domainService = {
     userId: string, 
     walletAddress: string, 
     newSubdomain: string
-  ): Promise<{ success: boolean; message: string; oldSubdomain?: string }> {
+  ): Promise<{ success: boolean; message: string; oldSubdomain?: string; subdomainChangesRemaining?: number }> {
     try {
       const response = await supabase.functions.invoke("manage-project", {
         body: {
@@ -166,11 +166,35 @@ export const domainService = {
       return { 
         success: true, 
         message: "Subdomain updated successfully",
-        oldSubdomain: response.data?.oldSubdomain 
+        oldSubdomain: response.data?.oldSubdomain,
+        subdomainChangesRemaining: response.data?.subdomainChangesRemaining
       };
     } catch (error) {
       console.error("Failed to update subdomain:", error);
       return { success: false, message: "Failed to update subdomain" };
+    }
+  },
+
+  /**
+   * Get subdomain changes count for a project
+   */
+  async getSubdomainChangesCount(projectId: string): Promise<number> {
+    try {
+      const { data, error } = await supabase
+        .from("domains")
+        .select("subdomain_changes_count")
+        .eq("project_id", projectId)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error getting subdomain changes count:", error);
+        return 0;
+      }
+
+      return (data as { subdomain_changes_count?: number })?.subdomain_changes_count ?? 0;
+    } catch (error) {
+      console.error("Failed to get subdomain changes count:", error);
+      return 0;
     }
   },
 

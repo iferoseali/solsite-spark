@@ -22,6 +22,7 @@ export type Database = {
           project_id: string
           status: string | null
           subdomain: string
+          subdomain_changes_count: number
           updated_at: string
         }
         Insert: {
@@ -31,6 +32,7 @@ export type Database = {
           project_id: string
           status?: string | null
           subdomain: string
+          subdomain_changes_count?: number
           updated_at?: string
         }
         Update: {
@@ -40,6 +42,7 @@ export type Database = {
           project_id?: string
           status?: string | null
           subdomain?: string
+          subdomain_changes_count?: number
           updated_at?: string
         }
         Relationships: [
