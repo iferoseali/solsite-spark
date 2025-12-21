@@ -9,15 +9,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { 
-  Wallet, 
-  LogOut, 
-  Copy, 
-  Check, 
+import {
+  Wallet,
+  LogOut,
+  Copy,
+  Check,
   ExternalLink,
-  User
+  User,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 
 interface WalletButtonProps {
   className?: string;
@@ -52,9 +53,9 @@ export const WalletButton: FC<WalletButtonProps> = ({ className }) => {
 
   if (!connected || !publicKey) {
     return (
-      <Button 
-        variant="glow" 
-        size="sm" 
+      <Button
+        variant="glow"
+        size="sm"
         className={`gap-2 ${className}`}
         onClick={handleConnect}
       >
@@ -69,9 +70,9 @@ export const WalletButton: FC<WalletButtonProps> = ({ className }) => {
       <DropdownMenuTrigger asChild>
         <Button variant="glass" size="sm" className={`gap-2 ${className}`}>
           {wallet?.adapter.icon && (
-            <img 
-              src={wallet.adapter.icon} 
-              alt={wallet.adapter.name} 
+            <img
+              src={wallet.adapter.icon}
+              alt={wallet.adapter.name}
               className="w-4 h-4"
             />
           )}
@@ -79,10 +80,7 @@ export const WalletButton: FC<WalletButtonProps> = ({ className }) => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48 glass-strong border-border">
-        <DropdownMenuItem 
-          className="gap-2 cursor-pointer"
-          onClick={handleCopyAddress}
-        >
+        <DropdownMenuItem className="gap-2 cursor-pointer" onClick={handleCopyAddress}>
           {copied ? (
             <Check className="w-4 h-4 text-accent" />
           ) : (
@@ -90,11 +88,8 @@ export const WalletButton: FC<WalletButtonProps> = ({ className }) => {
           )}
           Copy Address
         </DropdownMenuItem>
-        <DropdownMenuItem 
-          className="gap-2 cursor-pointer"
-          asChild
-        >
-          <a 
+        <DropdownMenuItem className="gap-2 cursor-pointer" asChild>
+          <a
             href={`https://solscan.io/account/${publicKey.toBase58()}`}
             target="_blank"
             rel="noopener noreferrer"
@@ -103,17 +98,14 @@ export const WalletButton: FC<WalletButtonProps> = ({ className }) => {
             View on Solscan
           </a>
         </DropdownMenuItem>
-        <DropdownMenuItem 
-          className="gap-2 cursor-pointer"
-          asChild
-        >
-          <a href="/dashboard">
+        <DropdownMenuItem className="gap-2 cursor-pointer" asChild>
+          <Link to="/dashboard">
             <User className="w-4 h-4" />
             My Projects
-          </a>
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem 
+        <DropdownMenuItem
           className="gap-2 cursor-pointer text-destructive focus:text-destructive"
           onClick={handleDisconnect}
         >
