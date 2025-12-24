@@ -17,9 +17,9 @@ export const MobileDebugOverlay: FC = () => {
   const [events, setEvents] = useState<NavigationEvent[]>([]);
   const [isMinimized, setIsMinimized] = useState(true);
 
-  // Only show on mobile in development or with debug query param
-  const shouldShow = isMobile && (
-    import.meta.env.DEV || 
+  // Show on mobile (dev) OR on any device when explicitly enabled via ?debug
+  const shouldShow = (
+    (isMobile && import.meta.env.DEV) ||
     new URLSearchParams(window.location.search).has('debug')
   );
 
