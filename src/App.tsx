@@ -9,6 +9,7 @@ import { SplashScreen } from "@/components/SplashScreen";
 import { PageLoader } from "@/components/ui/page-loader";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { WalletAuthProvider } from "@/contexts/WalletAuthContext";
+import { MobileDebugOverlay } from "@/components/debug/MobileDebugOverlay";
 
 // Eagerly loaded (critical path)
 import Index from "./pages/Index";
@@ -93,6 +94,7 @@ const App = () => {
                       <Route path="/faq" element={<FAQ />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
+                    <MobileDebugOverlay />
                   </Suspense>
                 </BrowserRouter>
               </TooltipProvider>
