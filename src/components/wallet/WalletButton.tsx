@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { MobileWalletModal } from './MobileWalletModal';
 
 interface WalletButtonProps {
   className?: string;
@@ -28,10 +30,16 @@ export const WalletButton: FC<WalletButtonProps> = ({ className }) => {
   const { publicKey, wallet, disconnect, connected } = useWallet();
   const { setVisible } = useWalletModal();
   const [copied, setCopied] = useState(false);
+  const [mobileModalOpen, setMobileModalOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const handleConnect = useCallback(() => {
-    setVisible(true);
-  }, [setVisible]);
+    if (isMobile) {
+      setMobileModalOpen(true);
+    } else {
+      setVisible(true);
+    }
+  }, [setVisible, isMobile]);
 
   const handleDisconnect = useCallback(async () => {
     await disconnect();
@@ -53,15 +61,21 @@ export const WalletButton: FC<WalletButtonProps> = ({ className }) => {
 
   if (!connected || !publicKey) {
     return (
-      <Button
-        variant="glow"
-        size="sm"
-        className={`gap-2 ${className}`}
-        onClick={handleConnect}
-      >
-        <Wallet className="w-4 h-4" />
-        Connect Wallet
-      </Button>
+      <>
+        <Button
+          variant="glow"
+          size="sm"
+          className={`gap-2 min-h-[44px] touch-manipulation ${className}`}
+          onClick={handleConnect}
+        >
+          <Wallet className="w-4 h-4" />
+          Connect Wallet
+        </Button>
+        <MobileWalletModal 
+          open={mobileModalOpen} 
+          onOpenChange={setMobileModalOpen} 
+        />
+      </>
     );
   }
 
