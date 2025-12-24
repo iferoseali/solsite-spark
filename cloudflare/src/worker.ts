@@ -64,11 +64,21 @@ export default {
       // If it's the main app domain without subdomain, proxy to Lovable app
       if (!subdomain && !isCustomDomain) {
         // Root domain - proxy to Lovable app (URL stays as solsite.fun)
-        const originResponse = await fetch(`${LOVABLE_ORIGIN}${url.pathname}${url.search}`, {
+        const originUrl = `${LOVABLE_ORIGIN}${url.pathname}${url.search}`;
+        let originResponse = await fetch(originUrl, {
           method: request.method,
           headers: request.headers,
           body: request.body,
         });
+
+        // SPA fallback: if a deep-link route 404s on origin, serve "/" and let the client router handle it
+        if (originResponse.status === 404 && request.method === 'GET' && !isAssetPath(url.pathname)) {
+          originResponse = await fetch(`${LOVABLE_ORIGIN}/`, {
+            method: 'GET',
+            headers: request.headers,
+          });
+        }
+
         return new Response(originResponse.body, {
           status: originResponse.status,
           headers: originResponse.headers,
@@ -169,6 +179,17 @@ function parseHostname(hostname: string): { subdomain: string | null; isCustomDo
   
   // It's a custom domain
   return { subdomain: null, isCustomDomain: true };
+}
+
+function isAssetPath(pathname: string): boolean {
+  if (pathname.startsWith('/assets/')) return true;
+  if (pathname.startsWith('/favicon')) return true;
+  if (pathname.startsWith('/robots')) return true;
+  if (pathname.startsWith('/images/')) return true;
+
+  // If it has a file extension, treat as asset
+  const last = pathname.split('/').pop() || '';
+  return /\.[a-zA-Z0-9]+$/.test(last);
 }
 
 /**
