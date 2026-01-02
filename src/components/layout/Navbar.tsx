@@ -52,6 +52,7 @@ export const Navbar = () => {
   const navLinks = [
     { href: "/", label: "Home", section: null },
     { href: "/templates", label: "Templates", section: null },
+    { href: "/showcase", label: "Showcase", section: null },
     { href: "/builder", label: "Builder", section: null },
     { href: "/dashboard", label: "Dashboard", section: null },
   ];

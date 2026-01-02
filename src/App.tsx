@@ -23,6 +23,7 @@ const DomainSettings = lazy(() => import("./pages/DomainSettings"));
 const Site = lazy(() => import("./pages/Site"));
 const WebsiteRenderer = lazy(() => import("./pages/WebsiteRenderer"));
 const TemplateBuilder = lazy(() => import("./pages/admin/TemplateBuilder"));
+const Showcase = lazy(() => import("./pages/Showcase"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const FAQ = lazy(() => import("./pages/FAQ"));
@@ -83,6 +84,11 @@ const App = () => {
                         </ErrorBoundary>
                       } />
                       <Route path="/site/:subdomain" element={<Site />} />
+                      <Route path="/showcase" element={
+                        <ErrorBoundary>
+                          <Showcase />
+                        </ErrorBoundary>
+                      } />
                       <Route path="/preview" element={<WebsiteRenderer />} />
                       <Route path="/admin/template-builder" element={
                         <ErrorBoundary>
