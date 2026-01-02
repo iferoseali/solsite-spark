@@ -11,3 +11,6 @@ export { generateFaq } from './faq';
 export { generateFooter } from './footer';
 export { generateTeam } from './team';
 export { generateFeatures } from './features';
+export { generateGallery } from './gallery';
+export { generatePartners } from './partners';
+export { generateStatsMetrics } from './statsMetrics';

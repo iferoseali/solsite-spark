@@ -29,6 +29,27 @@ export interface Feature {
   icon?: string;
 }
 
+// New section types
+export interface GalleryImage {
+  id: string;
+  url: string;
+  caption?: string;
+}
+
+export interface Partner {
+  id: string;
+  name: string;
+  logo: string;
+  url?: string;
+}
+
+export interface StatItem {
+  id: string;
+  value: string;
+  label: string;
+  icon?: string;
+}
+
 export interface BuilderFormData {
   // Basic Info
   coinName: string;
@@ -52,6 +73,9 @@ export interface BuilderFormData {
   roadmapPhases: RoadmapPhase[];
   teamMembers: TeamMember[];
   features: Feature[];
+  galleryImages: GalleryImage[];
+  partners: Partner[];
+  stats: StatItem[];
 }
 
 // Default FAQ items
@@ -73,6 +97,15 @@ export const DEFAULT_TEAM_MEMBERS: TeamMember[] = [];
 
 // Default features
 export const DEFAULT_FEATURES: Feature[] = [];
+
+// Default gallery images
+export const DEFAULT_GALLERY_IMAGES: GalleryImage[] = [];
+
+// Default partners
+export const DEFAULT_PARTNERS: Partner[] = [];
+
+// Default stats
+export const DEFAULT_STATS: StatItem[] = [];
 
 // Generate unique IDs
 export function generateItemId(prefix: string): string {

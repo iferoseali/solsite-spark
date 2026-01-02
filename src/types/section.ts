@@ -17,7 +17,10 @@ export type SectionType =
   | 'community' 
   | 'team' 
   | 'story' 
-  | 'utility';
+  | 'utility'
+  | 'gallery'
+  | 'partners'
+  | 'stats';
 
 export interface SectionVariant {
   value: string;
@@ -67,6 +70,20 @@ export const SECTION_VARIANTS: Record<SectionType, SectionVariant[]> = {
   utility: [
     { value: 'default', label: 'Utility Features' },
   ],
+  gallery: [
+    { value: 'grid', label: 'Grid Layout' },
+    { value: 'masonry', label: 'Masonry' },
+    { value: 'carousel', label: 'Carousel' },
+  ],
+  partners: [
+    { value: 'marquee', label: 'Scrolling Marquee' },
+    { value: 'grid', label: 'Logo Grid' },
+  ],
+  stats: [
+    { value: 'grid', label: 'Stats Grid' },
+    { value: 'horizontal', label: 'Horizontal' },
+    { value: 'cards', label: 'Stat Cards' },
+  ],
 };
 
 export const SECTION_LABELS: Record<SectionType, string> = {
@@ -79,6 +96,9 @@ export const SECTION_LABELS: Record<SectionType, string> = {
   team: 'Team',
   story: 'Story',
   utility: 'Utility',
+  gallery: 'Gallery',
+  partners: 'Partners',
+  stats: 'Stats',
 };
 
 export const SECTION_ICONS: Record<SectionType, string> = {
@@ -91,6 +111,9 @@ export const SECTION_ICONS: Record<SectionType, string> = {
   team: '🧑‍🤝‍🧑',
   story: '📜',
   utility: '⚡',
+  gallery: '🖼️',
+  partners: '🤝',
+  stats: '📈',
 };
 
 export const DEFAULT_SECTIONS: SectionConfig[] = [
@@ -110,16 +133,19 @@ const BLUEPRINT_TYPE_MAP: Record<string, SectionType | null> = {
   hero: 'hero',
   about: 'about',
   tokenomics: 'tokenomics',
-  stats: 'tokenomics', // stats -> tokenomics
+  stats: 'stats',
   roadmap: 'roadmap',
   faq: 'faq',
   community: 'community',
   team: 'team',
   story: 'story',
-  narrative: 'story', // narrative -> story
+  narrative: 'story',
   utility: 'utility',
-  features: 'utility', // features -> utility
-  rituals: 'utility', // rituals -> utility
+  features: 'utility',
+  rituals: 'utility',
+  gallery: 'gallery',
+  partners: 'partners',
+  sponsors: 'partners',
   // These types are not mapped (footer, cta, etc.)
   footer: null,
   cta: null,
