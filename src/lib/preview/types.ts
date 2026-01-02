@@ -29,6 +29,23 @@ export interface FeatureData {
   icon?: string;
 }
 
+export interface GalleryImageData {
+  url: string;
+  caption?: string;
+}
+
+export interface PartnerData {
+  name: string;
+  logo: string;
+  url?: string;
+}
+
+export interface StatItemData {
+  value: string;
+  label: string;
+  icon?: string;
+}
+
 export interface TokenomicsInput {
   totalSupply?: string;
   circulatingSupply?: string;
@@ -60,6 +77,9 @@ export interface ProjectData {
   roadmapPhases?: RoadmapPhaseData[];
   teamMembers?: TeamMemberData[];
   features?: FeatureData[];
+  galleryImages?: GalleryImageData[];
+  partners?: PartnerData[];
+  stats?: StatItemData[];
 }
 
 export interface TemplateConfig {
@@ -103,4 +123,7 @@ export interface SanitizedData {
   roadmapPhases?: RoadmapPhaseData[];
   teamMembers?: TeamMemberData[];
   features?: FeatureData[];
+  galleryImages?: GalleryImageData[];
+  partners?: PartnerData[];
+  stats?: StatItemData[];
 }

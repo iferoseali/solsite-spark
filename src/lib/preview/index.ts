@@ -1,6 +1,6 @@
 // Preview HTML Generator - Main entry point
 import { escapeHtml, sanitizeUrl } from '../htmlSanitize';
-import type { ProjectData, TemplateConfig, SanitizedData, FaqItemData, RoadmapPhaseData, TeamMemberData, FeatureData } from './types';
+import type { ProjectData, TemplateConfig, SanitizedData, FaqItemData, RoadmapPhaseData, TeamMemberData, FeatureData, GalleryImageData, PartnerData, StatItemData } from './types';
 import { getTemplateStyles, generateFontUrl } from './styles';
 import { generateCss } from './css';
 import { SITE_CONFIG } from '../config';
@@ -17,6 +17,9 @@ import {
   generateFooter,
   generateTeam,
   generateFeatures,
+  generateGallery,
+  generatePartners,
+  generateStatsMetrics,
 } from './sections';
 
 // Re-export types
@@ -56,6 +59,26 @@ function sanitizeProjectData(project: ProjectData): SanitizedData {
     icon: feature.icon,
   }));
 
+  // Sanitize gallery images
+  const galleryImages: GalleryImageData[] | undefined = project.galleryImages?.map(image => ({
+    url: sanitizeUrl(image.url, true) || '',
+    caption: image.caption ? escapeHtml(image.caption) : undefined,
+  }));
+
+  // Sanitize partners
+  const partners: PartnerData[] | undefined = project.partners?.map(partner => ({
+    name: escapeHtml(partner.name) || '',
+    logo: sanitizeUrl(partner.logo, true) || '',
+    url: partner.url ? sanitizeUrl(partner.url) : undefined,
+  }));
+
+  // Sanitize stats
+  const stats: StatItemData[] | undefined = project.stats?.map(stat => ({
+    value: escapeHtml(stat.value) || '',
+    label: escapeHtml(stat.label) || '',
+    icon: stat.icon,
+  }));
+
   return {
     coinName: escapeHtml(project.coinName) || 'Your Coin',
     ticker: escapeHtml(project.ticker) || '$TICKER',
@@ -79,6 +102,9 @@ function sanitizeProjectData(project: ProjectData): SanitizedData {
     roadmapPhases,
     teamMembers,
     features,
+    galleryImages,
+    partners,
+    stats,
   };
 }
 
@@ -103,6 +129,9 @@ export function generatePreviewHtml(project: ProjectData, config: TemplateConfig
     utility: () => generateUtility(data, layout),
     roadmap: () => generateRoadmap(data, project.showRoadmap),
     faq: () => generateFaq(data, project.showFaq),
+    gallery: () => generateGallery(data),
+    partners: () => generatePartners(data),
+    stats: () => generateStatsMetrics(data),
   };
 
   const orderedSectionTypes = (project.sections && project.sections.length > 0)

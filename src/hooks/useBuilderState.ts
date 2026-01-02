@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect, useRef, useTransition } from "react";
 import { generatePreviewHtml } from "@/lib/preview";
 import type { SectionConfig } from "@/types/section";
-import type { FaqItem, RoadmapPhase, TeamMember, Feature } from "@/types/builder";
-import { DEFAULT_FAQ_ITEMS, DEFAULT_ROADMAP_PHASES } from "@/types/builder";
+import type { FaqItem, RoadmapPhase, TeamMember, Feature, GalleryImage, Partner, StatItem } from "@/types/builder";
+import { DEFAULT_FAQ_ITEMS, DEFAULT_ROADMAP_PHASES, DEFAULT_GALLERY_IMAGES, DEFAULT_PARTNERS, DEFAULT_STATS } from "@/types/builder";
 import { DEFAULT_SECTIONS } from "@/types/section";
 import { useAutoSave, type AutoSaveData } from "@/hooks/useAutoSave";
 import { toast } from "sonner";
@@ -57,6 +57,9 @@ export interface BuilderSnapshot {
   roadmapPhases: RoadmapPhase[];
   teamMembers: TeamMember[];
   features: Feature[];
+  galleryImages: GalleryImage[];
+  partners: Partner[];
+  stats: StatItem[];
   sections: SectionConfig[];
   logoPreview: string | null;
 }
@@ -138,6 +141,9 @@ export function useBuilderState({
   const [roadmapPhases, setRoadmapPhases] = useState<RoadmapPhase[]>(DEFAULT_ROADMAP_PHASES);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [features, setFeatures] = useState<Feature[]>([]);
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>(DEFAULT_GALLERY_IMAGES);
+  const [partners, setPartners] = useState<Partner[]>(DEFAULT_PARTNERS);
+  const [stats, setStats] = useState<StatItem[]>(DEFAULT_STATS);
   
   // Sections
   const [sections, setSections] = useState<SectionConfig[]>(DEFAULT_SECTIONS);
@@ -245,9 +251,12 @@ export function useBuilderState({
     roadmapPhases: JSON.parse(JSON.stringify(roadmapPhases)),
     teamMembers: JSON.parse(JSON.stringify(teamMembers)),
     features: JSON.parse(JSON.stringify(features)),
+    galleryImages: JSON.parse(JSON.stringify(galleryImages)),
+    partners: JSON.parse(JSON.stringify(partners)),
+    stats: JSON.parse(JSON.stringify(stats)),
     sections: JSON.parse(JSON.stringify(sections)),
     logoPreview,
-  }), [formData, faqItems, roadmapPhases, teamMembers, features, sections, logoPreview]);
+  }), [formData, faqItems, roadmapPhases, teamMembers, features, galleryImages, partners, stats, sections, logoPreview]);
   
   const applySnapshot = useCallback((snapshot: BuilderSnapshot) => {
     setFormData(snapshot.formData);
@@ -255,6 +264,9 @@ export function useBuilderState({
     setRoadmapPhases(snapshot.roadmapPhases);
     setTeamMembers(snapshot.teamMembers);
     setFeatures(snapshot.features);
+    setGalleryImages(snapshot.galleryImages || []);
+    setPartners(snapshot.partners || []);
+    setStats(snapshot.stats || []);
     setSections(snapshot.sections);
     setLogoPreview(snapshot.logoPreview);
   }, []);
@@ -322,6 +334,12 @@ export function useBuilderState({
     setTeamMembers,
     features,
     setFeatures,
+    galleryImages,
+    setGalleryImages,
+    partners,
+    setPartners,
+    stats,
+    setStats,
     sections,
     setSections,
     logoPreview,
