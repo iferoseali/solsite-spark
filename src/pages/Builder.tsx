@@ -60,6 +60,7 @@ const Builder = () => {
   const editProjectId = searchParams.get('edit');
   const urlTemplateId = searchParams.get('templateId');
   const urlBlueprintId = searchParams.get('blueprintId');
+  const urlSubdomain = searchParams.get('subdomain');
   const preselectedLayout = searchParams.get('layout') || 'minimal';
   const preselectedPersonality = searchParams.get('personality') || 'degen';
 
@@ -126,8 +127,8 @@ const Builder = () => {
     onProjectLoaded: setGeneratedProject,
   });
 
-  // Subdomain validator hook
-  const subdomain = useSubdomainValidator(state.formData.coinName, editProjectId);
+  // Subdomain validator hook - pass URL subdomain as initial value
+  const subdomain = useSubdomainValidator(editProjectId, state.formData.coinName, urlSubdomain || undefined);
 
   // History hook
   const history = useBuilderHistory({

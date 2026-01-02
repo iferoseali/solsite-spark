@@ -13,12 +13,14 @@ export interface UseSubdomainValidatorReturn {
 
 export function useSubdomainValidator(
   editProjectId: string | null,
-  coinName: string
+  coinName: string,
+  initialSubdomain?: string
 ): UseSubdomainValidatorReturn {
-  const [customSubdomain, setCustomSubdomain] = useState("");
+  const [customSubdomain, setCustomSubdomain] = useState(initialSubdomain || "");
   const [subdomainAvailable, setSubdomainAvailable] = useState<boolean | null>(null);
   const [checkingSubdomain, setCheckingSubdomain] = useState(false);
   const subdomainCheckTimeout = useRef<NodeJS.Timeout | null>(null);
+  const initialCheckDone = useRef(false);
 
   const sanitizeSubdomain = useCallback((value: string): string => {
     return value
@@ -92,16 +94,26 @@ export function useSubdomainValidator(
     [sanitizeSubdomain, checkSubdomainAvailability]
   );
 
-  // Auto-populate subdomain from coin name if user hasn't customized it
+  // Check initial subdomain from URL param on mount
   useEffect(() => {
-    if (!customSubdomain && coinName && !editProjectId) {
+    if (initialSubdomain && !initialCheckDone.current) {
+      initialCheckDone.current = true;
+      if (initialSubdomain.length >= 3) {
+        checkSubdomainAvailability(initialSubdomain);
+      }
+    }
+  }, [initialSubdomain, checkSubdomainAvailability]);
+
+  // Auto-populate subdomain from coin name if user hasn't customized it and no initial subdomain
+  useEffect(() => {
+    if (!customSubdomain && !initialSubdomain && coinName && !editProjectId) {
       const autoSubdomain = sanitizeSubdomain(coinName);
       setCustomSubdomain(autoSubdomain);
       if (autoSubdomain.length >= 3) {
         checkSubdomainAvailability(autoSubdomain);
       }
     }
-  }, [coinName, customSubdomain, editProjectId, sanitizeSubdomain, checkSubdomainAvailability]);
+  }, [coinName, customSubdomain, initialSubdomain, editProjectId, sanitizeSubdomain, checkSubdomainAvailability]);
 
   return {
     customSubdomain,
