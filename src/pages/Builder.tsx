@@ -23,6 +23,9 @@ import {
   Map,
   Users,
   Zap,
+  Image,
+  Award,
+  TrendingUp,
   RotateCcw,
   X,
   Undo2,
@@ -38,7 +41,7 @@ import { PaymentModal } from "@/components/payment/PaymentModal";
 import { SectionManager } from "@/components/builder/SectionManager";
 import { LogoCropper } from "@/components/builder/LogoCropper";
 import { PreviewControls, type DeviceSize } from "@/components/builder/PreviewControls";
-import { FaqEditor, RoadmapEditor, TeamEditor, FeaturesEditor } from "@/components/builder/editors";
+import { FaqEditor, RoadmapEditor, TeamEditor, FeaturesEditor, GalleryEditor, PartnersEditor, StatsEditor } from "@/components/builder/editors";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
@@ -87,6 +90,9 @@ const Builder = () => {
     roadmap: false,
     team: false,
     features: false,
+    gallery: false,
+    partners: false,
+    stats: false,
     sections: false,
   });
 
@@ -555,6 +561,39 @@ const Builder = () => {
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pt-4">
                   <FeaturesEditor features={state.features} onChange={state.setFeatures} />
+                </CollapsibleContent>
+              </Collapsible>
+
+              {/* Gallery */}
+              <Collapsible open={openSections.gallery} onOpenChange={() => toggleSection('gallery')}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full p-4 rounded-xl glass hover:bg-secondary/50 transition-colors">
+                  <div className="flex items-center gap-2"><Image className="w-5 h-5 text-primary" /><span className="font-semibold">Gallery</span></div>
+                  {openSections.gallery ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-4">
+                  <GalleryEditor images={state.galleryImages} onChange={state.setGalleryImages} />
+                </CollapsibleContent>
+              </Collapsible>
+
+              {/* Partners */}
+              <Collapsible open={openSections.partners} onOpenChange={() => toggleSection('partners')}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full p-4 rounded-xl glass hover:bg-secondary/50 transition-colors">
+                  <div className="flex items-center gap-2"><Award className="w-5 h-5 text-primary" /><span className="font-semibold">Partners / Sponsors</span></div>
+                  {openSections.partners ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-4">
+                  <PartnersEditor partners={state.partners} onChange={state.setPartners} />
+                </CollapsibleContent>
+              </Collapsible>
+
+              {/* Stats */}
+              <Collapsible open={openSections.stats} onOpenChange={() => toggleSection('stats')}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full p-4 rounded-xl glass hover:bg-secondary/50 transition-colors">
+                  <div className="flex items-center gap-2"><TrendingUp className="w-5 h-5 text-primary" /><span className="font-semibold">Stats / Metrics</span></div>
+                  {openSections.stats ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-4">
+                  <StatsEditor stats={state.stats} onChange={state.setStats} />
                 </CollapsibleContent>
               </Collapsible>
 
