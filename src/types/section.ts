@@ -119,9 +119,12 @@ export const SECTION_ICONS: Record<SectionType, string> = {
 export const DEFAULT_SECTIONS: SectionConfig[] = [
   { id: 'hero-1', type: 'hero', variant: 'centered', visible: true, order: 0 },
   { id: 'about-1', type: 'about', variant: 'centered', visible: true, order: 1 },
-  { id: 'tokenomics-1', type: 'tokenomics', variant: 'grid', visible: true, order: 2 },
-  { id: 'roadmap-1', type: 'roadmap', variant: 'timeline', visible: true, order: 3 },
-  { id: 'faq-1', type: 'faq', variant: 'accordion', visible: true, order: 4 },
+  { id: 'stats-1', type: 'stats', variant: 'grid', visible: true, order: 2 },
+  { id: 'gallery-1', type: 'gallery', variant: 'grid', visible: true, order: 3 },
+  { id: 'partners-1', type: 'partners', variant: 'marquee', visible: true, order: 4 },
+  { id: 'tokenomics-1', type: 'tokenomics', variant: 'grid', visible: true, order: 5 },
+  { id: 'roadmap-1', type: 'roadmap', variant: 'timeline', visible: true, order: 6 },
+  { id: 'faq-1', type: 'faq', variant: 'accordion', visible: true, order: 7 },
 ];
 
 export function generateSectionId(type: SectionType): string {

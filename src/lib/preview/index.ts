@@ -143,6 +143,9 @@ export function generatePreviewHtml(project: ProjectData, config: TemplateConfig
     : [
         'hero',
         'about',
+        'stats',
+        'gallery',
+        'partners',
         'features',
         'tokenomics',
         'team',

@@ -160,6 +160,12 @@ export function usePayment() {
     amount: number,
     projectId?: string
   ): Promise<PaymentResult> => {
+    // Development mode bypass
+    if (import.meta.env.DEV) {
+      console.log('[DEV] Payment bypassed for testing');
+      return { success: true, paymentId: 'dev-bypass', transactionSignature: 'dev-bypass' };
+    }
+
     if (!publicKey) {
       return { success: false, error: 'Wallet not connected' };
     }
