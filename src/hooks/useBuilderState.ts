@@ -84,6 +84,12 @@ export interface UseBuilderStateReturn {
   setTeamMembers: React.Dispatch<React.SetStateAction<TeamMember[]>>;
   features: Feature[];
   setFeatures: React.Dispatch<React.SetStateAction<Feature[]>>;
+  galleryImages: GalleryImage[];
+  setGalleryImages: React.Dispatch<React.SetStateAction<GalleryImage[]>>;
+  partners: Partner[];
+  setPartners: React.Dispatch<React.SetStateAction<Partner[]>>;
+  stats: StatItem[];
+  setStats: React.Dispatch<React.SetStateAction<StatItem[]>>;
   
   // Sections
   sections: SectionConfig[];
@@ -308,6 +314,9 @@ export function useBuilderState({
             roadmapPhases: roadmapPhases.filter(p => p.title),
             teamMembers: teamMembers.filter(m => m.name),
             features: features.filter(f => f.title),
+            galleryImages: galleryImages.filter(g => g.url),
+            partners: partners.filter(p => p.name || p.logo),
+            stats: stats.filter(s => s.value || s.label),
           },
           { layout: currentLayout, personality: currentPersonality, templateId: selectedTemplateId || undefined }
         );
@@ -320,7 +329,7 @@ export function useBuilderState({
         clearTimeout(previewTimeoutRef.current);
       }
     };
-  }, [formData, logoPreview, currentLayout, currentPersonality, selectedTemplateId, showRoadmap, showFaq, sections, faqItems, roadmapPhases, teamMembers, features]);
+  }, [formData, logoPreview, currentLayout, currentPersonality, selectedTemplateId, showRoadmap, showFaq, sections, faqItems, roadmapPhases, teamMembers, features, galleryImages, partners, stats]);
   
   return {
     formData,
