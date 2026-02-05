@@ -96,16 +96,30 @@ export const DEFAULT_ROADMAP_PHASES: RoadmapPhase[] = [
 export const DEFAULT_TEAM_MEMBERS: TeamMember[] = [];
 
 // Default features
-export const DEFAULT_FEATURES: Feature[] = [];
+export const DEFAULT_FEATURES: Feature[] = [
+  { id: 'feature-1', title: 'Lightning Fast', description: 'Built on Solana for instant transactions and minimal fees.', icon: '⚡' },
+  { id: 'feature-2', title: 'Community First', description: 'Decisions are made by the community through governance.', icon: '🤝' },
+  { id: 'feature-3', title: 'Secure', description: 'Audited smart contracts and transparent tokenomics.', icon: '🔒' },
+];
 
 // Default gallery images
-export const DEFAULT_GALLERY_IMAGES: GalleryImage[] = [];
+export const DEFAULT_GALLERY_IMAGES: GalleryImage[] = [
+  { id: 'gallery-1', url: 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=400&h=400&fit=crop', caption: 'Community Event' },
+  { id: 'gallery-2', url: 'https://images.unsplash.com/photo-1642790106117-e829e14a795f?w=400&h=400&fit=crop', caption: 'Token Launch' },
+];
 
 // Default partners
-export const DEFAULT_PARTNERS: Partner[] = [];
+export const DEFAULT_PARTNERS: Partner[] = [
+  { id: 'partner-1', name: 'Solana', logo: 'https://cryptologos.cc/logos/solana-sol-logo.png?v=029', url: 'https://solana.com' },
+  { id: 'partner-2', name: 'Jupiter', logo: 'https://jup.ag/svg/jupiter-logo.svg', url: 'https://jup.ag' },
+];
 
 // Default stats
-export const DEFAULT_STATS: StatItem[] = [];
+export const DEFAULT_STATS: StatItem[] = [
+  { id: 'stat-1', value: '10K+', label: 'Holders', icon: '👥' },
+  { id: 'stat-2', value: '$1M+', label: 'Market Cap', icon: '💰' },
+  { id: 'stat-3', value: '50K+', label: 'Transactions', icon: '⚡' },
+];
 
 // Generate unique IDs
 export function generateItemId(prefix: string): string {
