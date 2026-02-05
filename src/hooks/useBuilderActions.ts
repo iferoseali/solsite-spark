@@ -202,8 +202,16 @@ export function useBuilderActions({
       return; 
     }
     
-    const alreadyPaid = await checkExistingPayment(user.id, 'website');
-    if (!alreadyPaid && !hasPaid) { 
+    // In DEV mode, skip payment entirely
+    if (import.meta.env.DEV) {
+      console.log('[DEV] Payment bypassed for testing');
+      await createProject();
+      return;
+    }
+    
+    // Check for existing payment or if user already paid in this session
+    const alreadyPaid = hasPaid || await checkExistingPayment(user.id, 'website');
+    if (!alreadyPaid) { 
       setShowPaymentModal(true); 
       return; 
     }

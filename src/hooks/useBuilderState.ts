@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef, useTransition } from "react";
 import { generatePreviewHtml } from "@/lib/preview";
 import type { SectionConfig } from "@/types/section";
 import type { FaqItem, RoadmapPhase, TeamMember, Feature, GalleryImage, Partner, StatItem } from "@/types/builder";
-import { DEFAULT_FAQ_ITEMS, DEFAULT_ROADMAP_PHASES, DEFAULT_GALLERY_IMAGES, DEFAULT_PARTNERS, DEFAULT_STATS } from "@/types/builder";
+import { DEFAULT_FAQ_ITEMS, DEFAULT_ROADMAP_PHASES, DEFAULT_FEATURES, DEFAULT_GALLERY_IMAGES, DEFAULT_PARTNERS, DEFAULT_STATS } from "@/types/builder";
 import { DEFAULT_SECTIONS } from "@/types/section";
 import { useAutoSave, type AutoSaveData } from "@/hooks/useAutoSave";
 import { toast } from "sonner";
@@ -146,7 +146,7 @@ export function useBuilderState({
   const [faqItems, setFaqItems] = useState<FaqItem[]>(DEFAULT_FAQ_ITEMS);
   const [roadmapPhases, setRoadmapPhases] = useState<RoadmapPhase[]>(DEFAULT_ROADMAP_PHASES);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [features, setFeatures] = useState<Feature[]>([]);
+  const [features, setFeatures] = useState<Feature[]>(DEFAULT_FEATURES);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>(DEFAULT_GALLERY_IMAGES);
   const [partners, setPartners] = useState<Partner[]>(DEFAULT_PARTNERS);
   const [stats, setStats] = useState<StatItem[]>(DEFAULT_STATS);

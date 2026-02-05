@@ -18,6 +18,7 @@ export type SectionType =
   | 'team' 
   | 'story' 
   | 'utility'
+  | 'features'
   | 'gallery'
   | 'partners'
   | 'stats';
@@ -70,6 +71,10 @@ export const SECTION_VARIANTS: Record<SectionType, SectionVariant[]> = {
   utility: [
     { value: 'default', label: 'Utility Features' },
   ],
+  features: [
+    { value: 'grid', label: 'Feature Grid' },
+    { value: 'cards', label: 'Feature Cards' },
+  ],
   gallery: [
     { value: 'grid', label: 'Grid Layout' },
     { value: 'masonry', label: 'Masonry' },
@@ -96,6 +101,7 @@ export const SECTION_LABELS: Record<SectionType, string> = {
   team: 'Team',
   story: 'Story',
   utility: 'Utility',
+  features: 'Features',
   gallery: 'Gallery',
   partners: 'Partners',
   stats: 'Stats',
@@ -111,6 +117,7 @@ export const SECTION_ICONS: Record<SectionType, string> = {
   team: '🧑‍🤝‍🧑',
   story: '📜',
   utility: '⚡',
+  features: '✨',
   gallery: '🖼️',
   partners: '🤝',
   stats: '📈',
@@ -120,11 +127,12 @@ export const DEFAULT_SECTIONS: SectionConfig[] = [
   { id: 'hero-1', type: 'hero', variant: 'centered', visible: true, order: 0 },
   { id: 'about-1', type: 'about', variant: 'centered', visible: true, order: 1 },
   { id: 'stats-1', type: 'stats', variant: 'grid', visible: true, order: 2 },
-  { id: 'gallery-1', type: 'gallery', variant: 'grid', visible: true, order: 3 },
-  { id: 'partners-1', type: 'partners', variant: 'marquee', visible: true, order: 4 },
-  { id: 'tokenomics-1', type: 'tokenomics', variant: 'grid', visible: true, order: 5 },
-  { id: 'roadmap-1', type: 'roadmap', variant: 'timeline', visible: true, order: 6 },
-  { id: 'faq-1', type: 'faq', variant: 'accordion', visible: true, order: 7 },
+  { id: 'features-1', type: 'features', variant: 'grid', visible: true, order: 3 },
+  { id: 'gallery-1', type: 'gallery', variant: 'grid', visible: true, order: 4 },
+  { id: 'partners-1', type: 'partners', variant: 'marquee', visible: true, order: 5 },
+  { id: 'tokenomics-1', type: 'tokenomics', variant: 'grid', visible: true, order: 6 },
+  { id: 'roadmap-1', type: 'roadmap', variant: 'timeline', visible: true, order: 7 },
+  { id: 'faq-1', type: 'faq', variant: 'accordion', visible: true, order: 8 },
 ];
 
 export function generateSectionId(type: SectionType): string {
@@ -144,7 +152,7 @@ const BLUEPRINT_TYPE_MAP: Record<string, SectionType | null> = {
   story: 'story',
   narrative: 'story',
   utility: 'utility',
-  features: 'utility',
+  features: 'features',
   rituals: 'utility',
   gallery: 'gallery',
   partners: 'partners',
